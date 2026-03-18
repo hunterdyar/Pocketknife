@@ -2,15 +2,19 @@ namespace PocketKnifeCore;
 
 public class Command : RootNode
 {
+    public string Name => commandName; 
     private string commandName;
-    private Expression[] Arguments;
-    private List<PropertyValuePair>? Options;
+    public Expression[] Arguments => _arguments;
+    private Expression[] _arguments;
+    
+    public List<PropertyValuePair>? Options => _options;
+    private List<PropertyValuePair>? _options;
     
     public Command(string name, List<Expression> args, List<PropertyValuePair>? opts)
     {
         commandName = name;
-        Arguments = args.ToArray();
-        Options = opts;
+        _arguments = args.ToArray();
+        _options = opts;
     }
 }
 

@@ -33,7 +33,21 @@ public class Interpreter
                 //>dir directoryPathString
                 //go to our dictionary of InputProviders, which should take the arguments and return an IPKInputProvider
                     //so >dir path returns a PKDirectoryInfo(new DirectoryInfo(path))
-                
+                var arguments = inputProvider.Arguments.Select(x=>WalkExpression(x)).ToArray();
+                if (inputProvider.Options != null)
+                {
+                    throw new NotImplementedException("Arguments not yet implemented");
+                    //todo: convert to key/value pairs as a runtime?
+                }
+                var input = _env.GetInputProvider(inputProvider.Name, arguments);
+                //push it on the stack. Then start enumerating!
+
+                foreach (var item in input.Enumerate())
+                {
+                    //pushContext
+                    //WalkOnItem
+                        //abortable.
+                }
                 //create a new context from the source and start enumerating the pkitems.
                 break;
             case PipelineCommand pipelineCommand:
@@ -51,6 +65,23 @@ public class Interpreter
                 throw new Exception($"Unhandled node {node}");
                 break;
             
+        }
+    }
+
+    private PKItem WalkExpression(Expression expression)
+    {
+        switch (expression)
+        {
+            case Identifier identifier:
+                return new PKString(identifier.Name);
+            case StringLiteral stringLiteral:
+                return new PKString(stringLiteral.Value);
+            case Number number:
+                return new PKNumber(number.Value);
+            case Label label:
+                throw new NotImplementedException("label value lookup not yet implemented");
+            default:
+                throw new Exception($"Unhandled node {expression}");
         }
     }
 
