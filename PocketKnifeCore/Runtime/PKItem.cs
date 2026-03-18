@@ -14,6 +14,11 @@ public class PKItem<T> : PKItem
     {
         Value = value;
     }
+
+    public override string ToString()
+    {
+        return Value.ToString();
+    }
 }
 
 //PKItem has a type, and it has a value, like FileInfo or string

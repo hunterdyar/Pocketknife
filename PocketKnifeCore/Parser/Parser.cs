@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Reflection.Emit;
 
 namespace PocketKnifeCore.Parser;
@@ -37,14 +38,26 @@ public class Parser
     private RootNode ParseRootNode()
     {
         EatOptionalLinebreaks();
+        //todo: switch/case
         if (tokens.TryPeek(out var token))
         {
+            if (token.Type == TokenType.Input)
+            {
+                return ParseInputToOutputBranch();
+            }
             if (token.Type == TokenType.StartBranch)
             {
                return ParseBranch();
             }else if (token.Type == TokenType.PipeOut)
             {
                 return ParsePipeOut();
+            }else if (token.Type == TokenType.SignalOut)
+            {
+                return ParseSignalOut();
+            }
+            else if (token.Type == TokenType.PipeSetLabel)
+            {
+                return ParsePipeSetLabel();
             }
             else
             {
@@ -52,6 +65,41 @@ public class Parser
             }
         }
         throw new  Exception($"Unexpected end of stream");
+    }
+
+    private RootNode ParsePipeSetLabel()
+    {
+        Consume(TokenType.PipeSetLabel);
+        var label = ParseLabel();
+        return new PipeSetLabel(label);
+    }
+
+    private InputBranch ParseInputToOutputBranch()
+    {
+        var input = ParseInputCommand();
+        List<RootNode> commands = new List<RootNode>();
+
+        while (tokens.TryPeek(out var token))
+        {
+            if (token.Type == TokenType.Output)
+            {
+                //todo:output can be a command? like <save?
+                Consume(TokenType.Output);
+                break;
+            }else if (token.Type == TokenType.Break)
+            {
+                Consume(TokenType.Break);
+            }
+            else
+            {
+                commands.Add(ParseRootNode());
+            }
+
+            EatOptionalLinebreaks();
+        }
+        
+        var b = new InputBranch(input, commands);
+        return b;
     }
 
     private void EatOptionalLinebreaks()
@@ -84,17 +132,55 @@ public class Parser
                 return ParseFilterCommand();
             case TokenType.Output:
                 //<
+           
             default:
                 throw new Exception("Unexpected token " + peek.Type);
         }
         
     }
 
+    private SignalOut ParseSignalOut()
+    {
+        Consume(TokenType.SignalOut);
+        if (tokens.Count == 0 || tokens.Peek().Type == TokenType.Break)
+        {
+            ConsumeLinebreakOrEndOfFile();
+            return new SignalOut();
+        }else if (tokens.Peek().Type == TokenType.Identifier)
+        {
+            var name = ConsumeIdent();
+            ConsumeLinebreakOrEndOfFile();
+            return new SignalOut(name);
+        }
+
+        throw new Exception($"Unexpected Token: {tokens.Peek()}");
+    }
+    
     private PipeOut ParsePipeOut()
     {
         Consume(TokenType.PipeOut);
-        var e = ParseExpression();
-        return new PipeOut(e);
+        if (tokens.Count == 0 || tokens.Peek().Type == TokenType.Break)
+        {
+            ConsumeLinebreakOrEndOfFile();
+            return new PipeOut();
+        }else if (tokens.Peek().Type == TokenType.OpenParen)
+        {
+            var opts = ParseParenOptionList();
+            ConsumeLinebreakOrEndOfFile();
+            return new PipeOut(opts);
+        }
+        else
+        {
+            var name = ConsumeIdent();
+            if (tokens.Peek().Type == TokenType.OpenParen)
+            {
+                var opts = ParseParenOptionList();
+                ConsumeLinebreakOrEndOfFile();
+                return new PipeOut(name, opts);
+            }
+            ConsumeLinebreakOrEndOfFile();
+            return new PipeOut(name);
+        }
     }
     private Branch ParseBranch()
     {
@@ -124,7 +210,7 @@ public class Parser
         Consume(TokenType.Filter);
         var (name, args, opts) = ParseStandardCommand();
         ConsumeLinebreakOrEndOfFile();
-        return new InputProvider(name, args, opts);
+        return new FilterCommand(name, args, opts);
     }
 
     private Command ParseSignalCommand()
@@ -132,7 +218,7 @@ public class Parser
         Consume(TokenType.Signal);
         var (name, args, opts) = ParseStandardCommand();
         ConsumeLinebreakOrEndOfFile();
-        return new InputProvider(name, args, opts);
+        return new SignalCommand(name, args, opts);
     }
 
     private InputProvider ParseInputCommand()
@@ -179,7 +265,6 @@ public class Parser
         List<PropertyValuePair>? opts = null;
         while (tokens.Peek().Type != TokenType.LineBreak)
         {
-            
             if (tokens.Peek().Type == TokenType.OpenParen)
             { 
                 opts = ParseParenOptionList();
@@ -254,7 +339,7 @@ public class Parser
         }
     }
 
-    private Expression ParseLabel()
+    private Label ParseLabel()
     {
         Consume(TokenType.Label);
         var id = ConsumeIdent();

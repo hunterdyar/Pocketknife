@@ -59,6 +59,13 @@ public class Lexer
                 }
                 
             case ':':
+                if (PeekMatches('<'))
+                {
+                    AddToken(TokenType.SignalOut, loc, 2);
+                    Consume(':');
+                    Consume('<');
+                    return;
+                }
                 ConsumeCurrentCharAsToken(TokenType.Signal);
                 return;
             case '|':
@@ -73,6 +80,13 @@ public class Lexer
                     AddToken(TokenType.PipeOut,loc,2);
                     Consume('|');
                     Consume('<');
+                    return;
+                }
+                else if (PeekMatches('='))
+                {
+                    AddToken(TokenType.PipeSetLabel, loc, 2);
+                    Consume('|');
+                    Consume('=');
                     return;
                 }
                 ConsumeCurrentCharAsToken(TokenType.Pipe);
@@ -97,6 +111,24 @@ public class Lexer
                     AddToken(TokenType.PackList,loc,2);
                     Consume('<');
                     Consume('>');
+                }
+                else if (PeekMatches('<'))//<<<<< is allowed for more visual weight.
+                {
+                    var startChev = loc;
+                    Consume('<');
+                    int chevLength = 1;
+                    while (Current=='<')
+                    {
+                        Consume('<');
+                        chevLength++;
+                        if (loc >= _source.Length)
+                        {
+                            break;
+                        }
+                    }
+
+                    AddToken(TokenType.Output, startChev, chevLength);
+                    return;
                 }
                 else
                 {
@@ -156,12 +188,18 @@ public class Lexer
                 {
                     var startDash = loc;
                     int dashLength = 1;
-                    while (PeekMatches('-'))
+                    Consume('-');
+                    while (Current == '-')
                     {
                         Consume('-');
                         dashLength++;
+                        if (loc >= _source.Length)
+                        {
+                            break;
+                        }
                     }
                     AddToken(TokenType.Break,startDash,dashLength);
+                    return;
                 }
                 else
                 {

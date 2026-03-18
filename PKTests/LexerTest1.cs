@@ -30,7 +30,12 @@ public class Tests
     [TestCase("|",TokenType.Pipe)]
     [TestCase(".",TokenType.StartBranch)]
     [TestCase("^",TokenType.EndBranch)]
-
+    [TestCase("^", TokenType.EndBranch)]
+    [TestCase("<", TokenType.Output)]
+    [TestCase("<<", TokenType.Output)]
+    [TestCase("<<<<<", TokenType.Output)]
+    [TestCase("--", TokenType.Break)]
+    [TestCase("----", TokenType.Break)]
     public void TestOneToken(string source, TokenType expected)
     {
         var l = new Lexer(source);
