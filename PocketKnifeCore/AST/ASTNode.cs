@@ -9,27 +9,27 @@ public abstract class ASTNode
 
 public class PKScript : ASTNode
 {
-    public List<RootNodes> RootNodes;
+    public List<RootNode> RootNodes;
 
-    public PKScript(List<RootNodes> nodes)
+    public PKScript(List<RootNode> nodes)
     {
         RootNodes = nodes;
     }
 }
 
-public class RootNodes : ASTNode
+public class RootNode : ASTNode
 {
     
 }
-public class Branch : RootNodes
+public class Branch : RootNode
 {
-    List<RootNodes> Commands;
-    public Branch(List<RootNodes> commands)
+    public List<RootNode> Commands;
+    public Branch(List<RootNode> commands)
     {
         Commands = commands;
     }
 }
-public class PipeOut : RootNodes
+public class PipeOut : RootNode
 {
     public PipeOut(Expression expression) 
     {

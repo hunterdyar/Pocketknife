@@ -23,7 +23,7 @@ public class Parser
 
     private PKScript ParseProgram()
     {
-        List<RootNodes> nodesList = new List<RootNodes>();
+        List<RootNode> nodesList = new List<RootNode>();
         while (tokens.TryPeek(out var token))
         {
             //on root level, linebreaks are extra and thats fine!
@@ -34,7 +34,7 @@ public class Parser
         return new PKScript(nodesList);
     }
 
-    private RootNodes ParseRootNode()
+    private RootNode ParseRootNode()
     {
         EatOptionalLinebreaks();
         if (tokens.TryPeek(out var token))
@@ -100,7 +100,7 @@ public class Parser
     {
         Consume(TokenType.StartBranch);
         EatOptionalLinebreaks();
-        List<RootNodes> branchCommands = new List<RootNodes>();
+        List<RootNode> branchCommands = new List<RootNode>();
         while (tokens.TryPeek(out var token))
         {
             if (token.Type == TokenType.EndBranch)

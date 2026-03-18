@@ -1,6 +1,6 @@
 namespace PocketKnifeCore;
 
-public class Command : RootNodes
+public class Command : RootNode
 {
     private string commandName;
     private Expression[] Arguments;
