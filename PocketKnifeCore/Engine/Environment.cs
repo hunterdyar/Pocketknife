@@ -9,11 +9,11 @@ public class Environment
     private Stack<IPKInputProvider> _inputProviders = new Stack<IPKInputProvider>();
     //a comtext is an item on the top of a stack...
     //it's also the list that we came from. List->Item,item,item 
-    public IPKInputProvider GetInputProvider(string callName, PKItem[] arguments)
+    public IPKInputProvider GetInputProvider(string callName, PKItem[] arguments, Dictionary<string, PKItem>? options = null)
     {
         if (BuiltinInputProviders.InputProviders.TryGetValue(callName, out var provider))
         {
-            return provider.Invoke(arguments);
+            return provider.Invoke(arguments, options);
         }
         throw new Exception("Unknown Input Provider '" + callName + $"'. Supported names are: {BuiltinInputProviders.InputProviders.Keys}");
     }
@@ -30,6 +30,7 @@ public class Environment
 
     public void PushInputProvider(IPKInputProvider input)
     {
+        //todo: move inputProvider to Context, i think?
         _inputProviders.Push(input);
     }
 

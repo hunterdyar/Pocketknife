@@ -11,7 +11,7 @@ public class InterpreterTests
 	public void GenericTest()
 	{
 		string source = """
-		                >dir "./input"
+		                >dir "../../../testdata/input" (order=command)
 		                .
 		                ~ext csv
 		                |copy-to "./out1/" //returns the new path

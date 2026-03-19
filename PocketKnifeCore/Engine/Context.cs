@@ -29,5 +29,9 @@ public class Context
 		};
 		return newTop;
 	}
-	
+
+	public override string ToString()
+	{
+		return "Ctx-top: "+this.Item.ToString();
+	}
 }

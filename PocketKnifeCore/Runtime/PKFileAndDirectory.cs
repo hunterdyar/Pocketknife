@@ -7,10 +7,17 @@ public class PKFileInfo : PKItem<FileInfo>
     }
 }
 
+public enum TraversalOrder
+{
+    ItemByItem,
+    CommandByCommand
+}
 public class PKDirectoryInfo : PKItem<DirectoryInfo>, IPKInputProvider
 {
-    public PKDirectoryInfo(PKString path)
+    public TraversalOrder TraversalOrder { get; private set; }
+    public PKDirectoryInfo(PKString path, TraversalOrder order)
     {
+        TraversalOrder = order;
         Value = new DirectoryInfo(path.Value);
     }
 

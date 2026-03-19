@@ -36,6 +36,8 @@ public class Tests
     [TestCase("<<<<<", TokenType.Output)]
     [TestCase("--", TokenType.Break)]
     [TestCase("----", TokenType.Break)]
+    [TestCase("=", TokenType.Equals)]
+
     public void TestOneToken(string source, TokenType expected)
     {
         var l = new Lexer(source);

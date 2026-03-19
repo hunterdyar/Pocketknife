@@ -24,17 +24,34 @@ public class Interpreter
                 Walk(inputBranch.Input, context);
                 if (_env.TryGetNextInput(out var provider))
                 {
-                    //if order = item-by-item
-                    //todo: do we ... Not need to get the context? it's just _env.top?
-                    foreach (var item in provider.Enumerate())
+                    if (provider.TraversalOrder == TraversalOrder.ItemByItem)
                     {
-                        var newContext = new Context(_env, item);
-                        _env.PushContext(newContext);
-                        foreach (var command in inputBranch.Commands)
+                        foreach (var item in provider.Enumerate())
                         {
-                            Walk(command, newContext);
+                            var newContext = new Context(_env, item);
+                            _env.PushContext(newContext);
+                            foreach (var command in inputBranch.Commands)
+                            {
+                                Walk(command, newContext);
+                            }
+
+                            _env.PopContext();
                         }
-                        _env.PopContext();
+                    }else if (provider.TraversalOrder == TraversalOrder.CommandByCommand)
+                    {
+                        throw new NotImplementedException();
+                        //todo: put contexts into an array to grab them.
+                        // foreach (var command in inputBranch.Commands)
+                        // {
+                        //     foreach (var item in provider.Enumerate())
+                        //     {
+                        //         var newContext = new Context(_env, item);
+                        //         _env.PushContext(newContext);
+                        //         Walk(command, newContext);
+                        //         _env.PopContext();
+                        //     }
+                        // }
+
                     }
                     //else if order = command-by-command
                 }
@@ -60,6 +77,7 @@ public class Interpreter
                 //go to our dictionary of InputProviders, which should take the arguments and return an IPKInputProvider
                     //so >dir path returns a PKDirectoryInfo(new DirectoryInfo(path))
                 var arguments = inputProvider.Arguments.Select(x=>WalkExpression(x)).ToArray();
+                Dictionary<string, PKItem> options = null;
                 //if no provided arguments (>dir) then we pull from pipeline? todo: this should be |>dir actually?
                 if (arguments.Length == 0)
                 {
@@ -67,10 +85,15 @@ public class Interpreter
                 }
                 if (inputProvider.Options != null)
                 {
-                    throw new NotImplementedException("Arguments not yet implemented");
+                    var opts = inputProvider.Options.Select(x=> new KeyValuePair(x.Key,WalkExpression(x.Value))).ToArray();
+                    options = new Dictionary<string, PKItem>();
+                    foreach (var opt in opts)
+                    {
+                        options[opt.Key] = opt.Value;
+                    }
                     //todo: convert to key/value pairs as a runtime?
                 }
-                var input = _env.GetInputProvider(inputProvider.Name, arguments);
+                var input = _env.GetInputProvider(inputProvider.Name, arguments, options);
                 //push it on the stack. Then start enumerating!
                 _env.PushInputProvider(input);
                 //create a new context from the source and start enumerating the pkitems.
@@ -78,21 +101,21 @@ public class Interpreter
             case PipeOut pipeOutCommand:
                 //there should be one argument which is a label expression. 
                 //that's not enforced by the parser, because i'm... not sure it's true!
-                Debug.WriteLine($"|<{pipeOutCommand.ExplicitCommand} on {context}");
+                Console.WriteLine($"|<{pipeOutCommand.ExplicitCommand} on {context}");
                 break;
             case PipelineCommand pipelineCommand:
                 //call transformation and pass in the context object.
-                Debug.WriteLine($"|{pipelineCommand.Name} on {context}");
+                Console.WriteLine($"|{pipelineCommand.Name} on {context}");
                 break;
             case FilterCommand filterCommand:
-                Debug.WriteLine($"~{filterCommand.Name} on {context}");
+                Console.WriteLine($"~{filterCommand.Name} on {context}");
                 //we need to the current iteration list now according to the func<bool> invoked
                 break;
             case SignalCommand signalCommand:
-                Debug.WriteLine($":{signalCommand.Name} on {context}");
+                Console.WriteLine($":{signalCommand.Name} on {context}");
                 break;
             case PipeSetLabel setLabel:
-                Debug.WriteLine($"|= Setting Label {setLabel.Label.Name}");
+                Console.WriteLine($"|= Setting Label {setLabel.Label.Name}");
                 break;
            default:
                 throw new Exception($"Unhandled node {node}");
