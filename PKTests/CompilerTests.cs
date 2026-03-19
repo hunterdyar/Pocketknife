@@ -5,13 +5,13 @@ using PocketKnifeCore.Parser;
 namespace PKTests;
 
 
-public class InterpreterTests
+public class CompilerTests
 {
 	[Test]
 	public void GenericTest()
 	{
 		string source = """
-		                >dir "../../../testdata/input" (order=command)
+		                >dir "../../../testdata/input" //(order=command)
 		                .
 		                ~ext csv
 		                |copy-to "./out1/" //returns the new path
@@ -30,8 +30,8 @@ public class InterpreterTests
 
 		var p = new Parser();
 		p.Parse(source);
-		var interpreter = new Interpreter();
-		interpreter.RunScript(p.Program);
+		var interpreter = new Compiler();
+		interpreter.CompileScript(p.Program);
 		Debug.WriteLine("done");
 	}
 }

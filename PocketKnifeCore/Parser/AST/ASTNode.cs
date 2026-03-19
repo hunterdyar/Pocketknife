@@ -8,11 +8,11 @@ public abstract class ASTNode
     public SourceSlice Start;
 }
 
-public class PKScript : ASTNode
+public class PKScriptNode : ASTNode
 {
     public List<RootNode> RootNodes;
 
-    public PKScript(List<RootNode> nodes)
+    public PKScriptNode(List<RootNode> nodes)
     {
         RootNodes = nodes;
     }
@@ -23,70 +23,70 @@ public class RootNode : ASTNode
     
 }
 
-public class InputBranch : RootNode
+public class InputBranchNode : RootNode
 {
-    public InputProvider Input;
+    public InputProviderNode Input;
     public List<RootNode> Commands;
 
-    public InputBranch(InputProvider input, List<RootNode> commands)
+    public InputBranchNode(InputProviderNode input, List<RootNode> commands)
     {
         Input = input;
         Commands = commands;
     }
 }
-public class Branch : RootNode
+public class BranchNode : RootNode
 {
     public List<RootNode> Commands;
-    public Branch(List<RootNode> commands)
+    public BranchNode(List<RootNode> commands)
     {
         Commands = commands;
     }
 }
 
-public class PipeOut : RootNode
+public class PipeOutNode : RootNode
 {
     public bool HasExplicitCommand => explicitCommandName != null;
     public string? ExplicitCommand => explicitCommandName;
     private string? explicitCommandName;
 
-    public List<PropertyValuePair> Options => _opts;
-    private List<PropertyValuePair> _opts;
-    public PipeOut(string name, List<PropertyValuePair>? opts)
+    public List<KeyValuePairNode> Options => _opts;
+    private List<KeyValuePairNode> _opts;
+    public PipeOutNode(string name, List<KeyValuePairNode>? opts)
     {
         explicitCommandName = name;
         _opts = opts;
     }
 
-    public PipeOut(List<PropertyValuePair>? opts)
+    public PipeOutNode(List<KeyValuePairNode>? opts)
     {
         explicitCommandName = null;
         _opts = opts;
     }
-    public PipeOut(string name = null)
+    public PipeOutNode(string name = null)
     {
         explicitCommandName = name;
         _opts = null;
     }
 }
 
-public class SignalOut : RootNode
+public class SignalOutNode : RootNode
 {
     public bool HasExplicitCommand => explicitCommandName != null;
     private string? explicitCommandName;
 
-    public SignalOut(string name = null)
+    public SignalOutNode(string name = null)
     {
         explicitCommandName = name;
     }
 }
 
-public class PipeSetLabel : RootNode
+public class PipeSetLabelNode : RootNode
 {
-    public Label Label => _label;
-    private Label _label;
+    public LabelNode LabelNode => _labelNode;
+    private LabelNode _labelNode;
 
-    public PipeSetLabel(Label label)
+    public PipeSetLabelNode(LabelNode labelNode)
     {
-        _label = label;
+        _labelNode = labelNode;
     }
 }
