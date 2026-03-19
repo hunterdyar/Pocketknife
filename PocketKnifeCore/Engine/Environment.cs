@@ -57,6 +57,11 @@ public class Environment
         throw new Exception("Unknown Filter '" + filterName + $"'. Supported names are: {BuiltinFilters.FilterProviders.Keys}");
     }
 
+    public Func<PKItem, PKItem> GetPipelineCommand(string pipelineCommandName, PKItem[] pipelineArgs, Dictionary<string, PKItem>? pipelineOpts)
+    {
+        throw new NotImplementedException();
+    }
+
     #endregion
 
 }

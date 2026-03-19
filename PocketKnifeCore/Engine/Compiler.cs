@@ -5,53 +5,32 @@ namespace PocketKnifeCore.Engine;
 public class Compiler
 {
     private Environment _env;
+    private PocketKnifeScript _script;
     
     public void CompileScript(PKScriptNode scriptNode)
     {
-        _env = new Environment();
+        _env = new Environment(); //environment gets all of our loaded plugins, the current working directory, etc. We can reuse the script with/without the environment, and vise-versa.
+        //we can rerun a compiled script in a few folders, recreating environments. but for now, they are just made at the same time.
+        _script = new PocketKnifeScript(); 
         string input = "";
         foreach (var rootNode in scriptNode.RootNodes)
         {
-            Walk(rootNode, new Context(_env,new PKString(input)));
+            Walk(rootNode, null);
         }
     }
     
-    private void Walk(RootNode node, Context context)
+    private void Walk(RootNode node, IProcessCollection branch)
     {
         switch (node)
         {
             case InputBranchNode inputBranch:
-                Walk(inputBranch.Input, context);
+                Walk(inputBranch.Input, branch);
                 if (_env.TryGetNextInput(out var provider))
                 {
-                    if (provider.TraversalOrder == TraversalOrder.ItemByItem)
+                    var newBranch = new PKInputToOutputBranch(provider);
+                    foreach (var command in inputBranch.Commands)
                     {
-                        foreach (var item in provider.Enumerate())
-                        {
-                            var newContext = new Context(_env, item);
-                            _env.PushContext(newContext);
-                            foreach (var command in inputBranch.Commands)
-                            {
-                                Walk(command, newContext);
-                            }
-
-                            _env.PopContext();
-                        }
-                    }else if (provider.TraversalOrder == TraversalOrder.CommandByCommand)
-                    {
-                        throw new NotImplementedException();
-                        //todo: put contexts into an array to grab them.
-                        // foreach (var command in inputBranch.Commands)
-                        // {
-                        //     foreach (var item in provider.Enumerate())
-                        //     {
-                        //         var newContext = new Context(_env, item);
-                        //         _env.PushContext(newContext);
-                        //         Walk(command, newContext);
-                        //         _env.PopContext();
-                        //     }
-                        // }
-
+                        Walk(command, newBranch);
                     }
                     //else if order = command-by-command
                 }
@@ -60,16 +39,14 @@ public class Compiler
                     throw new Exception("input branch has no input command? or that command failed.");
                 }
                 break;
-            case BranchNode branch:
+            case BranchNode subBranch:
                 //walk the branch.
-                var c = context.PushDuplicate();
-                _env.PushContext(c);
-                foreach (var nodes in branch.Commands)
+                var sb = new SubBranch();
+                foreach (var nodes in subBranch.Commands)
                 {
-                    Walk(nodes,c);
+                    Walk(nodes,sb);
                 }
-                _env.PopContext();
-                context = c;
+                branch.AddProcess(sb);
                 break;
             case InputProviderNode inputProvider:
                 //create a new context set and run it.
@@ -77,42 +54,33 @@ public class Compiler
                 //go to our dictionary of InputProviders, which should take the arguments and return an IPKInputProvider
                     //so >dir path returns a PKDirectoryInfo(new DirectoryInfo(path))
                 var arguments = WalkArguments(inputProvider.Arguments);
-                //if no provided arguments (>dir) then we pull from pipeline? todo: this should be |>dir actually?
-                if (arguments.Length == 0)
-                {
-                    arguments = new []{context.Item};
-                }
-
                 var options = WalkOptions(inputProvider.Options);
                 var input = _env.GetInputProvider(inputProvider.Name, arguments, options);
                 //push it on the stack. Then start enumerating!
-                _env.PushInputProvider(input);
+                branch.SetProvider(input);
                 //create a new context from the source and start enumerating the pkitems.
                 break;
             case PipeOutNode pipeOutCommand:
                 //there should be one argument which is a label expression. 
                 //that's not enforced by the parser, because i'm... not sure it's true!
-                Console.WriteLine($"|<{pipeOutCommand.ExplicitCommand} on {context}");
+                Console.WriteLine($"|<{pipeOutCommand.ExplicitCommand}.");
                 break;
             case PipelineCommandNode pipelineCommand:
                 //call transformation and pass in the context object.
-                Console.WriteLine($"|{pipelineCommand.Name} on {context}");
+                var pipelineArgs = WalkArguments(pipelineCommand.Arguments);
+                var pipelineOpts = WalkOptions(pipelineCommand.Options);
+                var pipeline = _env.GetPipelineCommand(pipelineCommand.Name, pipelineArgs, pipelineOpts);
+                branch.AddProcess(new PipelineProcess(pipeline));
                 break;
             case FilterCommandNode filterCommand:
-                Console.WriteLine($"~{filterCommand.Name} on {context}");
+                Console.WriteLine($"~{filterCommand.Name}.");
                 var filterArgs = WalkArguments(filterCommand.Arguments);
                 var filterOpts = WalkOptions(filterCommand.Options);
                 var filter = _env.GetFilterCommand(filterCommand.Name, filterArgs, filterOpts);
-                
-                //now we have the filter, but we don't need to process it for every single item.
-                //i was trying to punt doing a "compile" stage, but it's needed. I mean, we need to check names of things even if theyre in unreached branches too.
-                
-                //we only need to do this part:
-                context.KeepProcessing = filter.Invoke(context.Item);
-                
+                branch.AddProcess(new FilterProcess(filter));
                 break;
             case SignalCommandNode signalCommand:
-                Console.WriteLine($":{signalCommand.Name} on {context}");
+                Console.WriteLine($":{signalCommand.Name}.");
                 break;
             case PipeSetLabelNode setLabel:
                 Console.WriteLine($"|= Setting Label {setLabel.LabelNode.Name}");
