@@ -15,7 +15,7 @@ public class Compiler
         string input = "";
         foreach (var rootNode in scriptNode.RootNodes)
         {
-            Walk(rootNode, null);
+            Walk(rootNode, _script.RootInputToOutputBranch);
         }
     }
     
@@ -24,20 +24,23 @@ public class Compiler
         switch (node)
         {
             case InputBranchNode inputBranch:
-                Walk(inputBranch.Input, branch);
-                if (_env.TryGetNextInput(out var provider))
+                var b = new PKInputToOutputBranch();
+                Walk(inputBranch.Input, b);//this should set the provider.
+               
+                //debug
+                if (branch is PKInputToOutputBranch iob)
                 {
-                    var newBranch = new PKInputToOutputBranch(provider);
-                    foreach (var command in inputBranch.Commands)
-                    {
-                        Walk(command, newBranch);
-                    }
-                    //else if order = command-by-command
+                    Debug.Assert(iob.InputProvider != null);
                 }
-                else
+                
+                //add all the commands to this new branch.
+                foreach (var command in inputBranch.Commands)
                 {
-                    throw new Exception("input branch has no input command? or that command failed.");
+                    Walk(command, b);
                 }
+                
+                branch.AddProcess(b);
+                
                 break;
             case BranchNode subBranch:
                 //walk the branch.

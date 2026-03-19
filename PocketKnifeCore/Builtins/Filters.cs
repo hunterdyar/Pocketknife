@@ -1,9 +1,11 @@
-﻿namespace PocketKnifeCore;
+﻿using System.Diagnostics;
+
+namespace PocketKnifeCore;
 
 public class BuiltinFilters
 {
-	public static Dictionary<string, Func<PKItem[], Dictionary<string, PKItem>?, Func<PKItem, bool>>> FilterProviders =
-		new Dictionary<string, Func<PKItem[], Dictionary<string, PKItem>?, Func<PKItem, bool>>>()
+	public static Dictionary<string, Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, bool>>?> FilterProviders =
+		new Dictionary<string, Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, bool>>?>()
 		{
 			{
 				"ext", (a, o) =>
@@ -33,4 +35,9 @@ public class BuiltinFilters
 				}
 			}
 		};
+
+	public static void CheckPKInputType(PKItem item, Type type)
+	{
+		Debug.Assert(item.Type.ToLowerInvariant() == type.ToString().ToLowerInvariant());
+	}
 }

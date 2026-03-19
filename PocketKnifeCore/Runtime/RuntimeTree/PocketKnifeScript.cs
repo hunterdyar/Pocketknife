@@ -8,13 +8,14 @@ public class PocketKnifeScript
 	public PKInputToOutputBranch RootInputToOutputBranch;
 }
 
-public class PKInputToOutputBranch : IProcessCollection
+public class PKInputToOutputBranch : RuntimeProcess, IProcessCollection
 {
+	public IPKInputProvider InputProvider => _inputProvider;
 	private IPKInputProvider _inputProvider;
 	public List<RuntimeProcess> RootBranches;
-	public PKInputToOutputBranch(IPKInputProvider provider)
+	public PKInputToOutputBranch()
 	{
-		_inputProvider = provider;
+		
 	}
 
 	public void SetProvider(IPKInputProvider inputProvider)

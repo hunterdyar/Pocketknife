@@ -1,38 +1,9 @@
 namespace PocketKnifeCore.Engine;
 
-//The 
+//todo: rename, this is now the plugin ecosystem runtime environment, not the variables-and-such VM environment.
 public class Environment
 {
-    public List<Context> AllContexts;
-
-    private Stack<Context> _stack = new Stack<Context>();
-    private Stack<IPKInputProvider> _inputProviders = new Stack<IPKInputProvider>();
-    //a comtext is an item on the top of a stack...
-    //it's also the list that we came from. List->Item,item,item 
     
-
-    public void PushContext(Context context)
-    {
-        _stack.Push(context);
-    }
-
-    public void PopContext()
-    {
-        _stack.Pop();
-    }
-
-    public void PushInputProvider(IPKInputProvider input)
-    {
-        //todo: move inputProvider to Context, i think?
-        _inputProviders.Push(input);
-    }
-
-    public bool TryGetNextInput(out IPKInputProvider provider)
-    {
-        return _inputProviders.TryPop(out provider);
-    }
-
-
     #region Runtime Method Access
     //_env loads our plugins and stuff.
 
@@ -44,7 +15,7 @@ public class Environment
             return provider.Invoke(arguments, options);
         }
 
-        throw new Exception("Unknown Input Provider '" + callName + $"'. Supported names are: {BuiltinInputProviders.InputProviders.Keys}");
+        throw new Exception("Unknown Input Provider '" + callName + $"'. Supported names are: {BuiltinInputProviders.InputProviders.Keys.KeyListString<string, Func<PKItem[], Dictionary<string, PKItem>, IPKInputProvider>>()}");
     }
     public Func<PKItem, bool> GetFilterCommand(string filterName, PKItem[] arguments, Dictionary<string, PKItem> options)
     {
@@ -54,14 +25,21 @@ public class Environment
             return filter.Invoke(arguments, options);
         }
 
-        throw new Exception("Unknown Filter '" + filterName + $"'. Supported names are: {BuiltinFilters.FilterProviders.Keys}");
+        //i love extension methods, but WOOF it looks like i just wrote java? what the everloving fuck?
+        throw new Exception("Unknown Filter '" + filterName + $"'. Supported names are: {BuiltinFilters.FilterProviders.Keys.KeyListString<string, Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, bool>>>()}");
     }
 
-    public Func<PKItem, PKItem> GetPipelineCommand(string pipelineCommandName, PKItem[] pipelineArgs, Dictionary<string, PKItem>? pipelineOpts)
+    public Func<PKItem, PKItem> GetPipelineCommand(string pipeName, PKItem[] arguments, Dictionary<string, PKItem>? options)
     {
-        throw new NotImplementedException();
+        if (BuiltinPipes.PipelineProviders.TryGetValue(pipeName, out Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, PKItem>> pipeFunc))
+        {
+            return pipeFunc.Invoke(arguments, options);
+        }
+
+        //todo: replace all this with our poll-environment-for-supported in/out etc; the thing we will later use to write a gui...
+        throw new Exception("Unknown Pipe '" + pipeName +
+                            $"'. Supported pipe operations: {BuiltinPipes.PipelineProviders.Keys.KeyListString<string, Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, PKItem>>>()}");
     }
 
     #endregion
-
 }

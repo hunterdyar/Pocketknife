@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace PocketKnifeCore;
 
 public static class BuiltinHelpers
@@ -17,5 +19,18 @@ public static class BuiltinHelpers
             return requestedType;
         }
         throw new Exception($"Argument {argName} not of type {typeof(T).Name}");
+    }
+
+    public static string KeyListString<T1, T2>(this Dictionary<T1, T2>.KeyCollection collection)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (var item in collection)
+        {
+            sb.Append(item.ToString());
+            sb.Append(", ");
+        }
+
+        sb.Remove(sb.Length-2,2);
+        return sb.ToString();
     }
 }
