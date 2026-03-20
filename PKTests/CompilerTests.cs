@@ -11,11 +11,7 @@ public class CompilerTests
 	public void GenericTest()
 	{
 		string source = """
-		                >dir "../../../testdata/input" //(order=command)
-		                .
-		                ~ext csv
-		                |copy-to "./out1/" //returns the new path
-		                ^
+		                >dir "../../../testdata/input"
 		                .
 		                ~ext xlsx
 		                	.

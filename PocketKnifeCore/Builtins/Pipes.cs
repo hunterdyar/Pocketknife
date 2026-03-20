@@ -8,7 +8,25 @@ public class BuiltinPipes
 			{
 				"filename", (a, o) => {
 					//todo: make my own asserts
-					BuiltinHelpers.CheckArgumentCount(a, 0);
+					bool ext = true;
+					if (a.Length == 1)
+					{
+						var setting = a[0].ToString();
+						if (setting == "no-ext")
+						{
+							ext = false;
+						}
+						else
+						{
+							throw new Exception(
+								$"unknown filename argument {a[0].ToString()}. valid arguments: 'no-ext'");
+						}
+					}
+					else
+					{
+						BuiltinHelpers.CheckArgumentCount(a, 0);
+					}
+
 					string validType = typeof(FileInfo).ToString().ToLowerInvariant();
 					
 					return new(item =>
@@ -17,7 +35,15 @@ public class BuiltinPipes
 						{
 							if (item is PKFileInfo pkfi)
 							{
-								return new PKString(pkfi.Value.Name);
+								if (ext)
+								{
+									return new PKString(pkfi.Value.Name);
+								}
+								else
+								{
+									//no extension
+									return new PKString(pkfi.Value.Name.Replace(pkfi.Value.Extension, ""));
+								}
 							}
 						}
 
@@ -62,6 +88,36 @@ public class BuiltinPipes
 
 					throw new Exception($"bad argument. Unknown type of data to |load {loadType}");
 				}
+			},
+			{
+				"append", ((args, opts) =>
+				{
+					if (args.Length == 0)
+					{
+						throw new Exception("|append needs at least one argument.");
+					}
+					
+					var appends = new string[args.Length];
+					for (int i = 0; i < args.Length; i++)
+					{
+						appends[i] = args[i].ToString();
+					}
+
+					return new(item =>
+					{
+						if (item.TryGetString(out string s))
+						{
+							for (int i = 0; i < args.Length; i++)
+							{
+								s += s;
+							}
+
+							return new PKString(s);
+						}
+
+						throw new Exception($"Cannot call '|filename' on {item.Type} item.");
+					}); 
+				})
 			}
 		};
 }
