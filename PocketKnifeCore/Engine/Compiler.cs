@@ -73,14 +73,14 @@ public class Compiler
                 var pipelineArgs = WalkArguments(pipelineCommand.Arguments);
                 var pipelineOpts = WalkOptions(pipelineCommand.Options);
                 var pipeline = _env.GetPipelineCommand(pipelineCommand.Name, pipelineArgs, pipelineOpts);
-                branch.AddProcess(new PipelineProcess(pipeline));
+                branch.AddProcess(pipeline);
                 break;
             case FilterCommandNode filterCommand:
                 Console.WriteLine($"~{filterCommand.Name}.");
                 var filterArgs = WalkArguments(filterCommand.Arguments);
                 var filterOpts = WalkOptions(filterCommand.Options);
                 var filter = _env.GetFilterCommand(filterCommand.Name, filterArgs, filterOpts);
-                branch.AddProcess(new FilterProcess(filter));
+                branch.AddProcess(filter);
                 break;
             case SignalCommandNode signalCommand:
                 Console.WriteLine($":{signalCommand.Name}.");

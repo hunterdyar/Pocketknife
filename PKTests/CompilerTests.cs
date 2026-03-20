@@ -21,6 +21,14 @@ public class CompilerTests
 		                	^
 		                |load xlsx
 		                |save csv "./out1/" @filename
+		                
+		                //pipe-input turns one input into many, until an output (<) or a pipeout (|<) which becomes the new pipeline.
+		                .
+		                >table //rows
+		                |>cols //foreach row, we'll loop over each column
+		                |toUpper
+		                |< //the changes to the columns, applied.
+		                |<
 		                ^
 		                """;
 

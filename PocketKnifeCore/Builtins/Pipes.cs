@@ -73,11 +73,29 @@ public class BuiltinPipes
 								stream.Close();
 								return new PKString(content);
 							}
-							throw new Exception($"Cannot call '|load' on {item.Type} item.");
+							throw new Exception($"Cannot call '|load text' on {item.Type} item.");
 						});
 					}else if (loadType == "csv")
 					{
-						throw new NotImplementedException("csv loading (table types) not yet implemented.");
+						return new Func<PKItem, PKItem>(item =>
+						{
+							if (item is PKFileInfo pkfi)
+							{
+								if (!pkfi.Value.Exists)
+								{
+									throw new Exception($"File {pkfi.Value} does not exist. Can't |load");
+								}
+
+								var stream = pkfi.Value.OpenText();
+								var table = PKTable.ReadCSVStreamToTable(stream);
+								stream.Close();
+								return table;
+							}
+
+							throw new Exception($"Cannot call '|load csv' on {item.Type} item.");
+						});
+
+						
 					}else if (loadType == "xlsx")
 					{
 						throw new NotImplementedException("Spreadsheets not yet supported");
