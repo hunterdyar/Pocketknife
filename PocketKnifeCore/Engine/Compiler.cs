@@ -4,12 +4,12 @@ namespace PocketKnifeCore.Engine;
 
 public class Compiler
 {
-    private Environment _env;
+    private PluginEnvironment _env;
     private PocketKnifeScript _script;
     
     public void CompileScript(PKScriptNode scriptNode)
     {
-        _env = new Environment(); //environment gets all of our loaded plugins, the current working directory, etc. We can reuse the script with/without the environment, and vise-versa.
+        _env = new PluginEnvironment(); //environment gets all of our loaded plugins, the current working directory, etc. We can reuse the script with/without the environment, and vise-versa.
         //we can rerun a compiled script in a few folders, recreating environments. but for now, they are just made at the same time.
         _script = new PocketKnifeScript(); 
         string input = "";

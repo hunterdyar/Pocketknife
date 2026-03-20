@@ -1,7 +1,9 @@
-﻿namespace PocketKnifeCore;
+﻿using PocketKnifeCore.Engine;
+
+namespace PocketKnifeCore;
 
 //root class for step that receives items (e.g. pipeline, filter, etc)
-public class RuntimeProcess
+public abstract class RuntimeProcess
 {
-	// public void Execute(Context currentContext)
+	public abstract void Execute(Context context);
 }

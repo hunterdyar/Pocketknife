@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using PocketKnifeCore.Engine;
 
 namespace PocketKnifeCore;
 
@@ -16,6 +17,11 @@ public class PKInputToOutputBranch : RuntimeProcess, IProcessCollection
 	public PKInputToOutputBranch()
 	{
 		
+	}
+
+	public override void Execute(Context context)
+	{
+		throw new NotImplementedException();
 	}
 
 	public void SetProvider(IPKInputProvider inputProvider)

@@ -1,4 +1,6 @@
-﻿namespace PocketKnifeCore;
+﻿using PocketKnifeCore.Engine;
+
+namespace PocketKnifeCore;
 
 public class FilterProcess : RuntimeProcess
 {
@@ -6,6 +8,11 @@ public class FilterProcess : RuntimeProcess
 	public FilterProcess(Func<PKItem, bool> filter)
 	{
 		_filter = filter;
+	}
+
+	public override void Execute(Context context)
+	{
+		context.KeepProcessing = _filter.Invoke(context.Item);
 	}
 }
 
@@ -17,9 +24,17 @@ public class PipelineProcess : RuntimeProcess
 	{
 		_process = process;
 	}
+
+	public override void Execute(Context context)
+	{
+		context.Item = _process.Invoke(context.Item);
+	}
 }
 
 public class SignalProcess : RuntimeProcess
 {
-	
+	public override void Execute(Context context)
+	{
+		throw new NotImplementedException();
+	}
 }

@@ -1,4 +1,6 @@
-﻿namespace PocketKnifeCore;
+﻿using PocketKnifeCore.Engine;
+
+namespace PocketKnifeCore;
 
 public class SubBranch : RuntimeProcess, IProcessCollection
 {
@@ -12,5 +14,14 @@ public class SubBranch : RuntimeProcess, IProcessCollection
 	public void SetProvider(IPKInputProvider input)
 	{
 		throw new NotImplementedException("wrong type of IProcessCollection");
+	}
+
+	public override void Execute(Context context)
+	{
+		var c = context.PushDuplicate();
+		foreach (var process in Commands)
+		{
+			process.Execute(c);
+		}
 	}
 }

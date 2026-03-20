@@ -1,14 +1,11 @@
 namespace PocketKnifeCore.Engine;
 
-//todo: rename, this is now the plugin ecosystem runtime environment, not the variables-and-such VM environment.
-public class Environment
+public class PluginEnvironment
 {
-    
     #region Runtime Method Access
     //_env loads our plugins and stuff.
 
-    public IPKInputProvider GetInputProvider(string callName, PKItem[] arguments,
-        Dictionary<string, PKItem>? options = null)
+    public IPKInputProvider GetInputProvider(string callName, PKItem[] arguments, Dictionary<string, PKItem>? options = null)
     {
         if (BuiltinInputProviders.InputProviders.TryGetValue(callName, out var provider))
         {
