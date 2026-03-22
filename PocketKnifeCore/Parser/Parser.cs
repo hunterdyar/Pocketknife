@@ -185,7 +185,14 @@ public class Parser
     private BranchNode ParseBranch()
     {
         Consume(TokenType.StartBranch);
+        string ident = "";
+        if (tokens.Peek().Type == TokenType.Identifier)
+        {
+            ident = ConsumeIdent();
+        }
+
         EatOptionalLinebreaks();
+
         List<RootNode> branchCommands = new List<RootNode>();
         while (tokens.TryPeek(out var token))
         {
@@ -202,7 +209,7 @@ public class Parser
             EatOptionalLinebreaks();
         }
         
-        return new BranchNode(branchCommands);
+        return new BranchNode(ident, branchCommands);
     }
 
     private Command ParseFilterCommand()

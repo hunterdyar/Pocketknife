@@ -37,8 +37,12 @@ public class InputBranchNode : RootNode
 public class BranchNode : RootNode
 {
     public List<RootNode> Commands;
-    public BranchNode(List<RootNode> commands)
+    public bool HasLabel = false;
+    public string Label = "";
+    public BranchNode(string label, List<RootNode> commands)
     {
+        Label = label;
+        HasLabel = string.IsNullOrEmpty(label);
         Commands = commands;
     }
 }

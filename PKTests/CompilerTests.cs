@@ -14,13 +14,12 @@ public class CompilerTests
 		                >dir "../../../testdata/input"
 		                .
 		                ~ext xlsx
-		                	.
+		                	.fn
 		                	|filename no-ext
 		                	|append ".csv" //string function
-		                	|=@filename
 		                	^
 		                |load xlsx
-		                |save csv "./out1/" @filename
+		                |save csv "./out1/" @fn
 		                
 		                //pipe-input turns one input into many, until an output (<) or a pipeout (|<) which becomes the new pipeline.
 		                .

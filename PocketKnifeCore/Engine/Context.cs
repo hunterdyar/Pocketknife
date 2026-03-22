@@ -9,7 +9,7 @@ public class Context
 	public bool KeepProcessing = true;
 	public Context? Parent;
 	//todo:string should be RuntimeLabel?
-	private Dictionary<string, PKItem> _assignedValues;
+	private Dictionary<string, Context> _namedBranches;
 	private Context()
 	{
 	}
@@ -18,36 +18,28 @@ public class Context
 	{
 		Item = item;
 	}
-	public void SetValue(string key, PKItem value, bool parentmost = true)
+	public void SetNamedBranch(string key, Context value)
 	{
-		if (parentmost)
+		LazySetNamedBranchesDict();
+		if (!_namedBranches.TryAdd(key, value))
 		{
-			if (Parent != null)
-			{
-				Parent.SetValue(key, value, true);
-				return;
-			}
-		}
-
-		LazySetAssignmentDict();
-		if (!_assignedValues.TryAdd(key, value))
-		{
-			_assignedValues[key] = value;
+			_namedBranches[key] = value;
 		}
 	}
 
-	public bool TryGetValue(string key, out PKItem value)
+	public bool TryGetNamedBranch(string key, out PKItem value)
 	{
-		LazySetAssignmentDict();
-		if (_assignedValues.TryGetValue(key, out  value))
+		LazySetNamedBranchesDict();
+		if (_namedBranches.TryGetValue(key, out var context))
 		{
+			value = context.Item;
 			return true;
 		}
 		else
 		{
 			if (Parent != null)
 			{
-				return Parent.TryGetValue(key, out value);
+				return Parent.TryGetNamedBranch(key, out value);
 			}
 			else
 			{
@@ -57,11 +49,11 @@ public class Context
 		}
 	}
 
-	private void LazySetAssignmentDict()
+	private void LazySetNamedBranchesDict()
 	{
-		if (_assignedValues == null)
+		if (_namedBranches == null)
 		{
-			_assignedValues = new Dictionary<string, PKItem>();
+			_namedBranches = new Dictionary<string, Context>();
 		}
 	}
 

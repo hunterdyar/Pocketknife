@@ -44,7 +44,7 @@ public class Compiler
                 break;
             case BranchNode subBranch:
                 //walk the branch.
-                var sb = new SubBranch();
+                var sb = new SubBranch(subBranch.Label);
                 foreach (var nodes in subBranch.Commands)
                 {
                     Walk(nodes,sb);
@@ -128,6 +128,7 @@ public class Compiler
             case NumberNode number:
                 return new PKNumber(number.Value);
             case LabelNode label:
+                //this is runtime not compiletime, but we should be able to validate that the branch *exists* somewhere?
                 throw new NotImplementedException("label value lookup not yet implemented");
             default:
                 throw new Exception($"Unhandled node {expressionNode}");
