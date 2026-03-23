@@ -4,13 +4,14 @@ namespace PocketKnifeCore;
 
 public class SubBranch : ProcessCollection
 {
-
-	public string Label => _label;
-	private string _label;
-	public SubBranch(string label = "") : base()
+	public SubBranch(RuntimeExpression[] arguments, ProcessCollection? parent, string label = "") : base(arguments, parent)
 	{
 		_label = label;
 	}
+
+	public string Label => _label;
+	private string _label;
+
 
 	public override void Execute(Context context)
 	{

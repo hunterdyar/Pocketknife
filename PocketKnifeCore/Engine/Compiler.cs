@@ -24,8 +24,7 @@ public class Compiler
         switch (node)
         {
             case InputBranchNode inputBranch:
-                var b = new PKInputToOutputBranch();
-                b.Parent = branch;
+                var b = new PKInputToOutputBranch([], branch);
                 Walk(inputBranch.Input, b);//this should set the provider.
                
                 //debug
@@ -44,9 +43,7 @@ public class Compiler
                 
                 break;
             case BranchNode subBranch:
-
-                var sb = new SubBranch(subBranch.Label);
-                sb.Parent = branch;
+                var sb = new SubBranch([],branch, subBranch.Label);
                 if (subBranch.HasLabel)
                 {
                     var label = subBranch.Label;

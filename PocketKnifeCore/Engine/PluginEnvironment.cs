@@ -16,29 +16,28 @@ public class PluginEnvironment
             return provider.Invoke(arguments, options);
         }
 
-        throw new Exception("Unknown Input Provider '" + callName + $"'. Supported names are: {BuiltinInputProviders.InputProviders.Keys.KeyListString<string, Func<PKItem[], Dictionary<string, PKItem>, IPKInputProvider>>()}");
+        throw new Exception("Unknown Input Provider '" + callName + $"'. Supported names are: (todo)");
     }
     public FilterProcess GetFilterCommand(string filterName, RuntimeExpression[] arguments, Dictionary<string, PKItem> options)
     {
-        if (BuiltinFilters.FilterProviders.TryGetValue(filterName, out Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, bool>> filter))
+        if (BuiltinFilters.FilterProviders.TryGetValue(filterName, out Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, bool>> filter))
         {
-            return new FilterProcess(filter.Invoke(arguments, options));
+            return new FilterProcess(arguments, filter.Invoke(options));
         }
 
         //i love extension methods, but WOOF it looks like i just wrote java? what the everloving fuck?
-        throw new Exception("Unknown Filter '" + filterName + $"'. Supported names are: {BuiltinFilters.FilterProviders.Keys.KeyListString<string, Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, bool>>>()}");
+        throw new Exception("Unknown Filter '" + filterName + $"'. Supported names are: {BuiltinFilters.FilterProviders.KeyListString()}");
     }
 
     public PipelineProcess GetPipelineCommand(string pipeName, RuntimeExpression[] arguments, Dictionary<string, PKItem>? options)
     {
-        if (BuiltinPipes.PipelineProviders.TryGetValue(pipeName, out Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, PKItem>> pipeFunc))
+        if (BuiltinPipes.PipelineProviders.TryGetValue(pipeName, out Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>> pipeFunc))
         {
-            return new PipelineProcess(pipeFunc.Invoke(arguments, options));
+            return new PipelineProcess(arguments, pipeFunc.Invoke(options));
         }
 
         //todo: replace all this with our poll-environment-for-supported in/out etc; the thing we will later use to write a gui...
-        throw new Exception("Unknown Pipe '" + pipeName +
-                            $"'. Supported pipe operations: {BuiltinPipes.PipelineProviders.Keys.KeyListString<string, Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, PKItem>>>()}");
+        throw new Exception("Unknown Pipe '" + pipeName + $"'. Supported pipe operations: {BuiltinPipes.PipelineProviders.KeyListString()}");
     }
 
     #endregion

@@ -15,14 +15,28 @@ public enum TraversalOrder
 public class PKDirectoryInfo : PKItem<DirectoryInfo>, IPKInputProvider
 {
     public TraversalOrder TraversalOrder { get; private set; }
-    public PKDirectoryInfo(PKString path, TraversalOrder order)
+    public void SetArguments(PKItem[] args)
+    {
+        BuiltinHelpers.CheckArgumentCount(args, 1);
+        var path = BuiltinHelpers.GetArgument<PKString>(args[0], "directory path");
+        if(path.TryGetString(out var dir))
+        {
+            Value = new DirectoryInfo(dir);
+        }
+        else
+        {
+            throw new InvalidCastException($"Cannot get string cast from {args[0]}");
+        }
+    }
+
+    public PKDirectoryInfo(TraversalOrder order)
     {
         TraversalOrder = order;
-        Value = new DirectoryInfo(path.Value);
     }
 
     public IEnumerable<PKItem> Enumerate()
     {
+       
         if (!Value.Exists)
         {
             throw new Exception($"Cannot find path {Value.FullName}");

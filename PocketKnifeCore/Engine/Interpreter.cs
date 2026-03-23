@@ -6,11 +6,13 @@ public class Interpreter
 {
 	public void Execute(PocketKnifeScript script)
 	{
-		Execute(script.RootInputToOutputBranch);
+		ExecuteRoot(script.RootInputToOutputBranch);
 	}
 
-	private void Execute(PKInputToOutputBranch ioBranch)
+	private void ExecuteRoot(PKInputToOutputBranch ioBranch)
 	{
+		ioBranch.Execute(new Context(null));//sets the arguments.
+		
 		if (ioBranch.InputProvider.TraversalOrder == TraversalOrder.ItemByItem)
 		{
 			foreach (var item in ioBranch.InputProvider.Enumerate())

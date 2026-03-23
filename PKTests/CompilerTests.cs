@@ -37,4 +37,22 @@ public class CompilerTests
 		interpreter.CompileScript(p.Program);
 		Debug.WriteLine("done");
 	}
+
+	[Test]
+	public void ParseBlenderExampleTest()
+	{
+		string source = """
+		                >dir ./files
+		                |load blender
+		                |render-frame 20 (cycles-device=CUDA threads=12)
+		                """;
+
+		var p = new Parser();
+		p.Parse(source);
+		var interpreter = new Compiler();
+		interpreter.CompileScript(p.Program);
+		Debug.WriteLine("done");
+	}
+
+	
 }

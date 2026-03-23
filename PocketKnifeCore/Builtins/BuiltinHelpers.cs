@@ -33,4 +33,30 @@ public static class BuiltinHelpers
         sb.Remove(sb.Length-2,2);
         return sb.ToString();
     }
+
+    public static string KeyListString(this Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, bool>>?> dict) 
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (var item in dict.Keys)
+        {
+            sb.Append(item.ToString());
+            sb.Append(", ");
+        }
+
+        sb.Remove(sb.Length - 2, 2);
+        return sb.ToString();
+    }
+
+    public static string KeyListString(this Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>?> dict)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (var item in dict.Keys)
+        {
+            sb.Append(item.ToString());
+            sb.Append(", ");
+        }
+
+        sb.Remove(sb.Length - 2, 2);
+        return sb.ToString();
+    }
 }

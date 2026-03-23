@@ -164,17 +164,23 @@ public class Lexer
                 {
                     if (char.IsDigit(p))
                     {
-                        //this is a number, not a dot.
+                        //this is a number, not a dot. or named identifier.
                         goto default;
                     }else if (char.IsWhiteSpace(p))
                     {
                         ConsumeCurrentCharAsToken(TokenType.StartBranch);
                         return;
                     }
-                    else
+                    else if(p == '.' || p == '/')
                     {
                         //we can start a directory identifier with ./ or ../
                         goto default;
+                    }
+                    else
+                    {
+                        //this is a dot followed by an identifier probably
+                        ConsumeCurrentCharAsToken(TokenType.StartBranch);
+                        return;
                     }
                 }
                 //or, the end of the file...

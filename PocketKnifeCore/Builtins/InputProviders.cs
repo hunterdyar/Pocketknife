@@ -27,9 +27,8 @@ public static class BuiltinInputProviders
                     }
                     
                     //todo: make my own asserts
-                    BuiltinHelpers.CheckArgumentCount(a, 1);
-                    var path = BuiltinHelpers.GetArgument<PKString>(a[0], "directory path");
-                    return new PKDirectoryInfo(path,order);
+                   
+                    return new PKDirectoryInfo(order);
                 }
             }
         };

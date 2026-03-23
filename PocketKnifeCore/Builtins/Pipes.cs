@@ -2,35 +2,35 @@
 
 public class BuiltinPipes
 {
-	public static Dictionary<string, Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, PKItem>>?> PipelineProviders =
-		new Dictionary<string, Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, PKItem>>?>()
+	public static Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>?> PipelineProviders = new Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>?>()
 		{
 			{
-				"filename", (a, o) => {
+				"filename", (o) => {
 					//todo: make my own asserts
-					bool ext = true;
-					if (a.Length == 1)
+					
+					string validType = typeof(FileInfo).ToString().ToLowerInvariant();
+					
+					return new((args, item) =>
 					{
-						var setting = a[0].ToString();
-						if (setting == "no-ext")
+						bool ext = true;
+						if (args.Length == 1)
 						{
-							ext = false;
+							var setting = args[0].ToString();
+							if (setting == "no-ext")
+							{
+								ext = false;
+							}
+							else
+							{
+								throw new Exception(
+									$"unknown filename argument {args[0].ToString()}. valid arguments: 'no-ext'");
+							}
 						}
 						else
 						{
-							throw new Exception(
-								$"unknown filename argument {a[0].ToString()}. valid arguments: 'no-ext'");
+							BuiltinHelpers.CheckArgumentCount(args, 0);
 						}
-					}
-					else
-					{
-						BuiltinHelpers.CheckArgumentCount(a, 0);
-					}
 
-					string validType = typeof(FileInfo).ToString().ToLowerInvariant();
-					
-					return new(item =>
-					{
 						if (item.Type == validType)
 						{
 							if (item is PKFileInfo pkfi)
@@ -52,15 +52,15 @@ public class BuiltinPipes
 				}
 			},
 			{
-				"load", (a, o) =>
+				"load", (o) =>
 				{
-					//todo: make my own asserts
-					BuiltinHelpers.CheckArgumentCount(a, 1);
-					var loadType = a[0].ToString();
-
-					if (loadType == "text")
+					return new((a, item) =>
 					{
-						return new(item =>
+						//todo: make my own asserts
+						BuiltinHelpers.CheckArgumentCount(a, 1);
+						var loadType = a[0].ToString();
+
+						if (loadType == "text")
 						{
 							if (item is PKFileInfo pkfi)
 							{
@@ -68,16 +68,16 @@ public class BuiltinPipes
 								{
 									throw new Exception($"File {pkfi.Value} does not exist. Can't |load");
 								}
+
 								var stream = pkfi.Value.OpenText();
 								var content = stream.ReadToEnd();
 								stream.Close();
 								return new PKString(content);
 							}
+
 							throw new Exception($"Cannot call '|load text' on {item.Type} item.");
-						});
-					}else if (loadType == "csv")
-					{
-						return new Func<PKItem, PKItem>(item =>
+						}
+						else if (loadType == "csv")
 						{
 							if (item is PKFileInfo pkfi)
 							{
@@ -93,36 +93,36 @@ public class BuiltinPipes
 							}
 
 							throw new Exception($"Cannot call '|load csv' on {item.Type} item.");
-						});
+						}
+						else if (loadType == "xlsx")
+						{
+							throw new NotImplementedException("Spreadsheets not yet supported");
+						}
+						else if (loadType == "json")
+						{
+							throw new NotImplementedException("json not yet supported");
+						}
 
-						
-					}else if (loadType == "xlsx")
-					{
-						throw new NotImplementedException("Spreadsheets not yet supported");
-					}else if (loadType == "json")
-					{
-						throw new NotImplementedException("json not yet supported");
-					}
-
-					throw new Exception($"bad argument. Unknown type of data to |load {loadType}");
+						throw new Exception($"bad argument. Unknown type of data to |load {loadType}");
+					});
 				}
 			},
 			{
-				"append", ((args, opts) =>
+				"append", ((opts) =>
 				{
-					if (args.Length == 0)
+					return new((args,item) =>
 					{
-						throw new Exception("|append needs at least one argument.");
-					}
-					
-					var appends = new string[args.Length];
-					for (int i = 0; i < args.Length; i++)
-					{
-						appends[i] = args[i].ToString();
-					}
+						if (args.Length == 0)
+						{
+							throw new Exception("|append needs at least one argument.");
+						}
 
-					return new(item =>
-					{
+						var appends = new string[args.Length];
+						for (int i = 0; i < args.Length; i++)
+						{
+							appends[i] = args[i].ToString();
+						}
+						
 						if (item.TryGetString(out string s))
 						{
 							for (int i = 0; i < args.Length; i++)

@@ -6,22 +6,24 @@ namespace PocketKnifeCore;
 //The compiled Program lives in here.
 public class PocketKnifeScript
 {
+	//todo: don't limit to this as the only option. e.g. generic; but the use case is 'multiple things in a script'.
 	public PKInputToOutputBranch RootInputToOutputBranch;
 }
 
 public class PKInputToOutputBranch : ProcessCollection
 {
+	public PKInputToOutputBranch(RuntimeExpression[] arguments, ProcessCollection? parent) : base(arguments, parent)
+	{
+	}
+
 	public IPKInputProvider InputProvider => _inputProvider;
 	private IPKInputProvider _inputProvider;
 	public List<RuntimeProcess> RootBranches;
-	public PKInputToOutputBranch()
-	{
-		
-	}
+
 
 	public override void Execute(Context context)
 	{
-		throw new NotImplementedException();
+		_inputProvider.SetArguments(EvaluateArguments(context));
 	}
 
 	public void SetProvider(IPKInputProvider inputProvider)

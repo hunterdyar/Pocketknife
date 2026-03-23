@@ -7,6 +7,12 @@ public abstract class ProcessCollection : RuntimeProcess
 	public List<RuntimeProcess> Commands = new List<RuntimeProcess>();
 	private List<string> _namedBranches = new List<string>();
 	public ProcessCollection? Parent = null;
+
+	protected ProcessCollection(RuntimeExpression[] arguments, ProcessCollection? parent) : base(arguments)
+	{
+		Parent = parent;
+	}
+
 	public void AddProcess(RuntimeProcess rp)
 	{
 		Commands.Add(rp);
