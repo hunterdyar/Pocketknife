@@ -7,7 +7,9 @@ public class PluginEnvironment
     #region Runtime Method Access
     //_env loads our plugins and stuff. 
 
-    public IPKInputProvider GetInputProvider(string callName, PKItem[] arguments, Dictionary<string, PKItem>? options = null)
+    //todo: split compile time (options) and runtime (arguments). we can get the input provider getter function, and then invoke that at runtime?
+    
+    public IPKInputProvider GetInputProvider(string callName, RuntimeExpression[] arguments, Dictionary<string, PKItem>? options = null)
     {
         if (BuiltinInputProviders.InputProviders.TryGetValue(callName, out var provider))
         {
@@ -16,10 +18,9 @@ public class PluginEnvironment
 
         throw new Exception("Unknown Input Provider '" + callName + $"'. Supported names are: {BuiltinInputProviders.InputProviders.Keys.KeyListString<string, Func<PKItem[], Dictionary<string, PKItem>, IPKInputProvider>>()}");
     }
-    public FilterProcess GetFilterCommand(string filterName, PKItem[] arguments, Dictionary<string, PKItem> options)
+    public FilterProcess GetFilterCommand(string filterName, RuntimeExpression[] arguments, Dictionary<string, PKItem> options)
     {
-        if (BuiltinFilters.FilterProviders.TryGetValue(filterName,
-                out Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, bool>> filter))
+        if (BuiltinFilters.FilterProviders.TryGetValue(filterName, out Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, bool>> filter))
         {
             return new FilterProcess(filter.Invoke(arguments, options));
         }
@@ -28,7 +29,7 @@ public class PluginEnvironment
         throw new Exception("Unknown Filter '" + filterName + $"'. Supported names are: {BuiltinFilters.FilterProviders.Keys.KeyListString<string, Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, bool>>>()}");
     }
 
-    public PipelineProcess GetPipelineCommand(string pipeName, PKItem[] arguments, Dictionary<string, PKItem>? options)
+    public PipelineProcess GetPipelineCommand(string pipeName, RuntimeExpression[] arguments, Dictionary<string, PKItem>? options)
     {
         if (BuiltinPipes.PipelineProviders.TryGetValue(pipeName, out Func<PKItem[], Dictionary<string, PKItem>, Func<PKItem, PKItem>> pipeFunc))
         {

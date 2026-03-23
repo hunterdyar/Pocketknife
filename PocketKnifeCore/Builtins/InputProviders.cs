@@ -4,8 +4,8 @@ namespace PocketKnifeCore;
 
 public static class BuiltinInputProviders
 {
-    public static Dictionary<string, Func<PKItem[], Dictionary<string,PKItem>?, IPKInputProvider>> InputProviders =
-        new Dictionary<string, Func<PKItem[], Dictionary<string,PKItem>?,IPKInputProvider>>()
+    public static Dictionary<string, Func<RuntimeExpression[], Dictionary<string,PKItem>?, IPKInputProvider>> InputProviders =
+        new Dictionary<string, Func<RuntimeExpression[], Dictionary<string,PKItem>?,IPKInputProvider>>()
         {
             {
                 "dir", (a,o) =>

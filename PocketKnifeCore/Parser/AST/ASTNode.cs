@@ -23,27 +23,37 @@ public class RootNode : ASTNode
     
 }
 
+public class CommandSetNode
+{
+    public List<RootNode> Commands;
+    public List<string> BranchNames = new List<string>();
+
+    public CommandSetNode(List<RootNode> commands)
+    {
+        Commands = commands;
+    }
+}
 public class InputBranchNode : RootNode
 {
     public InputProviderNode Input;
-    public List<RootNode> Commands;
+    public CommandSetNode CommandSet;
 
     public InputBranchNode(InputProviderNode input, List<RootNode> commands)
     {
         Input = input;
-        Commands = commands;
+        CommandSet = new CommandSetNode(commands);
     }
 }
 public class BranchNode : RootNode
 {
-    public List<RootNode> Commands;
+    public CommandSetNode Commands;
     public bool HasLabel = false;
     public string Label = "";
     public BranchNode(string label, List<RootNode> commands)
     {
         Label = label;
         HasLabel = string.IsNullOrEmpty(label);
-        Commands = commands;
+        Commands = new CommandSetNode(commands);
     }
 }
 
