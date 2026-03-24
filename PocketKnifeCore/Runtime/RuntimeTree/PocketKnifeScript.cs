@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.ComponentModel;
+using System.Text;
 using PocketKnifeCore.Engine;
 
 namespace PocketKnifeCore;
@@ -12,13 +13,14 @@ public class PocketKnifeScript : ProcessCollection
 	{
 	}
 
-	public PocketKnifeScript() : base([], null)
+	public PocketKnifeScript(params RuntimeExpression[] args) : base(args, null)
 	{
 		
 	}
 
 	public override void Execute(Context context)
 	{
+		//todo: we gotta get input in here, so i think making the script as arguments makes sense.
 		EvaluateArguments(context);
 		foreach (var process in Commands)
 		{
@@ -41,6 +43,41 @@ public class PKInputToOutputBranch : ProcessCollection
 	public override void Execute(Context context)
 	{
 		_inputProvider.SetArguments(EvaluateArguments(context));
+
+		if (_inputProvider.TraversalOrder == TraversalOrder.ItemByItem)
+		{
+			foreach (var item in _inputProvider.Enumerate())
+			{
+				Context c = new Context(item);
+				foreach (var process in RootBranches)
+				{
+					if (c.KeepProcessing)
+					{
+						process.Execute(c);
+					}
+				}
+			}
+		}
+		else if (_inputProvider.TraversalOrder == TraversalOrder.CommandByCommand)
+		{
+			List<Context> contexts = new List<Context>();
+			foreach (var item in _inputProvider.Enumerate())
+			{
+				contexts.Add(new Context(item));
+			}
+
+			foreach (var process in RootBranches)
+			{
+				foreach (var c in contexts.Where(c => c.KeepProcessing))
+				{
+					process.Execute(c);
+				}
+			}
+		}
+		else
+		{
+			throw new InvalidEnumArgumentException();
+		}
 	}
 
 	public void SetProvider(IPKInputProvider inputProvider)
