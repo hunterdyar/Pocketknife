@@ -21,6 +21,16 @@ public static class BuiltinHelpers
         throw new Exception($"Argument {argName} not of type {typeof(T).Name}");
     }
 
+    public static T GetArgument<T>(PKItem[] args, int argPos, string argName) where T : PKItem
+    {
+        if (args[argPos] is T requestedType)
+        {
+            return requestedType;
+        }
+
+        throw new Exception($"Argument {argName} (position {argPos}) is not of type {typeof(T).Name}");
+    }
+
     public static string KeyListString<T1, T2>(this Dictionary<T1, T2>.KeyCollection collection)
     {
         StringBuilder sb = new StringBuilder();

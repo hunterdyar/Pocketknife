@@ -6,10 +6,10 @@ public class PluginEnvironment
 {
     public PluginEnvironment()
     {
-        RegisterPipelineOperator(typeof(StringBuiltins));
+        RegisterOperations(typeof(StringBuiltins));
     }
-    // public void LoadCommandProvider(string name...)
-    public void RegisterPipelineOperator(Type type)
+    
+    public void RegisterOperations(Type type)
     {
         MethodInfo[] classMethods = type.GetMethods();
 
@@ -17,48 +17,98 @@ public class PluginEnvironment
         // MyMemberInfo array.
         for (int i = 0; i < classMethods.Length; i++)
         {
-            var att = (PipelineOperator)Attribute.GetCustomAttribute(classMethods[i], typeof(PipelineOperator));
-            if (att != null)
+            var pattr = (PipelineOperator)Attribute.GetCustomAttribute(classMethods[i], typeof(PipelineOperator));
+            if (pattr != null)
             {
                 var method = classMethods[i];
-                
-                if (att.OnlyValidOn != null)
-                {
-                    if (method.GetParameters()[0].ParameterType != att.OnlyValidOn)
-                    {
-                        throw new Exception(
-                            $"unable to register pipeline operator {att.Name} ({method.Name}). Type does not match attribute valid type.");
-                    }
-                    BuiltinPipes.PipelineProviders.Add(att.Name,
-                        new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>(a =>
-                        {
-                            return (args, item) =>
-                            {
-                                if (item.GetType() == att.OnlyValidOn)
-                                {
-                                    return (PKItem)method.Invoke(item, args);
-                                }
-                                else
-                                {
-                                    throw new Exception(
-                                        $"Cannot call {att.Name} on item of type {item.GetType()}. {att.Name} only operates on {att.OnlyValidOn}.");
-                                }
-                            };
-                        }));
-                }
-                else
-                {
-                    BuiltinPipes.PipelineProviders.Add(att.Name, new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>(a =>
-                     {
-                         return (args, item) =>
-                         {
-                             return (PKItem)method.Invoke(item, args);
-                         };
-                     }));
-                }
+                RegisterPipelineMethod(pattr, method);
+            }
+
+            var fattr = (PipelineOperator)Attribute.GetCustomAttribute(classMethods[i], typeof(FilterOperator));
+            if (fattr != null)
+            {
+                var method = classMethods[i];
+                RegisterFilterMethod(fattr, method);
             }
         }
     }
+
+    //todo: dictionaries for only-on filters/pipes/etc. Right now we can only have one 'length' defined... but |length should convert to a number, and ~length 10 should match items. and strings and lists should both have ~length! so we need multiple methods.
+    //if the type is different, it should be fine; and we can figure it out! dictionaries in dictionaries. can't wait for this thing to be slow as shit lol.
+        //i think figuring out the "input->output" types at compile-time and tracking the validity of it is going to have to be a v1.0 thing, but im happy to kick that (very annoying) can down the road.
+    private void RegisterFilterMethod(PipelineOperator att, MethodInfo method)
+    {
+        if (att.OnlyValidOn != null)
+        {
+            if (method.GetParameters()[0].ParameterType != att.OnlyValidOn)
+            {
+                throw new Exception($"unable to register filter operator {att.Name} ({method.Name}). Type does not match attribute valid type.");
+            }
+
+            BuiltinFilters.FilterProviders.Add(att.Name,
+                new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, bool>>(a =>
+                {
+                    return (args, item) =>
+                    {
+                        if (item.GetType() == att.OnlyValidOn)
+                        {
+                            return (bool)method.Invoke(item, args);
+                        }
+                        else
+                        {
+                            throw new Exception(
+                                $"Cannot call {att.Name} on item of type {item.GetType()}. {att.Name} only operates on {att.OnlyValidOn}.");
+                        }
+                    };
+                }));
+        }
+        else
+        {
+            BuiltinFilters.FilterProviders.Add(att.Name,
+                new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, bool>>(a =>
+                {
+                    return (args, item) => (bool)method.Invoke(item, args);
+                }));
+        }
+    }
+
+    private void RegisterPipelineMethod(PipelineOperator att, MethodInfo method)
+    {
+        if (att.OnlyValidOn != null)
+        {
+            if (method.GetParameters()[0].ParameterType != att.OnlyValidOn)
+            {
+                throw new Exception(
+                    $"unable to register pipeline operator {att.Name} ({method.Name}). Type does not match attribute valid type.");
+            }
+
+            BuiltinPipes.PipelineProviders.Add(att.Name,
+                new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>(a =>
+                {
+                    return (args, item) =>
+                    {
+                        if (item.GetType() == att.OnlyValidOn)
+                        {
+                            return (PKItem)method.Invoke(item, args);
+                        }
+                        else
+                        {
+                            throw new Exception(
+                                $"Cannot call {att.Name} on item of type {item.GetType()}. {att.Name} only operates on {att.OnlyValidOn}.");
+                        }
+                    };
+                }));
+        }
+        else
+        {
+            BuiltinPipes.PipelineProviders.Add(att.Name,
+                new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>(a =>
+                {
+                    return (args, item) => { return (PKItem)method.Invoke(item, args); };
+                }));
+        }
+    }
+
     #region Runtime Method Access
     //_env loads our plugins and stuff. 
 
