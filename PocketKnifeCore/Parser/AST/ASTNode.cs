@@ -63,14 +63,23 @@ public class PipeOutNode : RootNode
     public string? ExplicitCommand => explicitCommandName;
     private string? explicitCommandName;
 
+    public LabelNode? LabelNode => _labelNode;
+    private LabelNode? _labelNode = null;
+    
     public List<KeyValuePairNode> Options => _opts;
     private List<KeyValuePairNode> _opts;
-    public PipeOutNode(string name, List<KeyValuePairNode>? opts)
+    public PipeOutNode(string name, List<KeyValuePairNode>? opts = null)
     {
         explicitCommandName = name;
         _opts = opts;
     }
 
+    public PipeOutNode(LabelNode label, List<KeyValuePairNode>? opts = null)
+    {
+        _labelNode = label;
+        explicitCommandName = null;
+        _opts = opts;
+    }
     public PipeOutNode(List<KeyValuePairNode>? opts)
     {
         explicitCommandName = null;

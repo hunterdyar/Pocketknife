@@ -163,7 +163,20 @@ public class Parser
         {
             ConsumeLinebreakOrEndOfFile();
             return new PipeOutNode();
-        }else if (tokens.Peek().Type == TokenType.OpenParen)
+        }else if (tokens.Peek().Type == TokenType.Label)
+        {
+            var label = ParseLabel();
+            if (tokens.Peek().Type == TokenType.OpenParen)
+            {
+                var opts = ParseParenOptionList();
+                ConsumeLinebreakOrEndOfFile();
+                return new PipeOutNode(label, opts);
+            }
+
+            return new PipeOutNode(label);
+        }
+        
+        if (tokens.Peek().Type == TokenType.OpenParen)
         {
             var opts = ParseParenOptionList();
             ConsumeLinebreakOrEndOfFile();
@@ -270,7 +283,7 @@ public class Parser
         var name = ConsumeIdent();
         List<ExpressionNode> args = new List<ExpressionNode>();
         List<KeyValuePairNode>? opts = null;
-        while (tokens.Peek().Type != TokenType.LineBreak)
+        while (tokens.Count > 0 && tokens.Peek().Type != TokenType.LineBreak)
         {
             if (tokens.Peek().Type == TokenType.OpenParen)
             { 

@@ -258,8 +258,12 @@ public class Lexer
 
                 if (identLength > 0)
                 {
-                    AddToken(TokenType.Number, identStart, identLength);
-                    return;
+                    string number = _source.Substring(identStart, identLength);
+                    if (double.TryParse(number, out var num))
+                    {
+                        AddToken(TokenType.Number, identStart, identLength);
+                        return;
+                    }
                 }
                 //otherwise, it's valid-identifier-characters until we hit whitespace.
 

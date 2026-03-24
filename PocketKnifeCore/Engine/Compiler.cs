@@ -77,7 +77,9 @@ public class Compiler
                 //create a new context from the source and start enumerating the pkitems.
                 break;
             case PipeOutNode pipeOutCommand:
+                //todo pipeout compilation
                 //there should be one argument which is a label expression. 
+                
                 //that's not enforced by the parser, because i'm... not sure it's true!
                 Console.WriteLine($"|<{pipeOutCommand.ExplicitCommand}.");
                 break;

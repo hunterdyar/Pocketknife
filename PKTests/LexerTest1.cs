@@ -2,7 +2,7 @@
 
 namespace PKTests;
 
-public class Tests
+public class LexerTests
 {
     [SetUp]
     public void Setup()
@@ -43,6 +43,20 @@ public class Tests
         var l = new Lexer(source);
         Assert.That(l.TokenCount, Is.EqualTo(1));
         Assert.That(l.Tokens[0].Type, Is.EqualTo(expected));
+    }
+
+    [TestCase("|< 0.1", TokenType.PipeOut, TokenType.Number)]
+    [TestCase("|< @banana", TokenType.PipeOut, TokenType.Label, TokenType.Identifier)]
+    
+    public void TestTokens(string source, params TokenType[] expected)
+    {
+        var l = new Lexer(source);
+        Assert.That(l.TokenCount, Is.EqualTo(expected.Length));
+        for (int i = 0; i < expected.Length; i++)
+        {
+            Assert.That(l.Tokens[i].Type, Is.EqualTo(expected[i]));
+        }
+        
     }
     
 }
