@@ -4,9 +4,10 @@ namespace PocketKnifeCore.Engine;
 
 public class Interpreter
 {
-	public void Execute(PocketKnifeScript script)
+	public void Execute(PocketKnifeScript script, string input)
 	{
-		ExecuteRoot(script.RootInputToOutputBranch);
+		var context = new Context(new PKString(input));
+		script.Execute(context);
 	}
 
 	private void ExecuteRoot(PKInputToOutputBranch ioBranch)

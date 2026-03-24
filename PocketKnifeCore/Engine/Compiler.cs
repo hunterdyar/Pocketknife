@@ -15,7 +15,7 @@ public class Compiler
         string input = "";
         foreach (var rootNode in scriptNode.RootNodes)
         {
-            Walk(rootNode, _script.RootInputToOutputBranch);
+            Walk(rootNode, _script);
         }
     }
     

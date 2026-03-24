@@ -4,10 +4,27 @@ using PocketKnifeCore.Engine;
 namespace PocketKnifeCore;
 
 //The compiled Program lives in here.
-public class PocketKnifeScript
+public class PocketKnifeScript : ProcessCollection
 {
 	//todo: don't limit to this as the only option. e.g. generic; but the use case is 'multiple things in a script'.
-	public PKInputToOutputBranch RootInputToOutputBranch;
+
+	public PocketKnifeScript(RuntimeExpression[] arguments, ProcessCollection? parent) : base(arguments, parent)
+	{
+	}
+
+	public PocketKnifeScript() : base([], null)
+	{
+		
+	}
+
+	public override void Execute(Context context)
+	{
+		EvaluateArguments(context);
+		foreach (var process in Commands)
+		{
+			process.Execute(context);
+		}
+	}
 }
 
 public class PKInputToOutputBranch : ProcessCollection
