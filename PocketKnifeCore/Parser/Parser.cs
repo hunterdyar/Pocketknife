@@ -44,8 +44,10 @@ public class Parser
             if (token.Type == TokenType.Input)
             {
                 return ParseInputToOutputBranch();
-            }
-            if (token.Type == TokenType.StartBranch)
+            }else if (token.Type == TokenType.PipeIn)
+            {
+                return ParsePipeIn();
+            } else if (token.Type == TokenType.StartBranch)
             {
                return ParseBranch();
             }else if (token.Type == TokenType.PipeOut)
@@ -65,6 +67,14 @@ public class Parser
             }
         }
         throw new  Exception($"Unexpected end of stream");
+    }
+
+    private RootNode ParsePipeIn()
+    {
+       //pipeIn takes an item and returns an input provider, and following elements loop through it.
+       //this means it is a parent (PKInputOutputCollection, really)... so we need to know when it ends.
+
+       throw new NotImplementedException("PipeIn is in progress.");
     }
 
     private RootNode ParsePipeSetLabel()
