@@ -4,12 +4,43 @@ namespace PocketKnifeCore.Engine;
 
 public class PluginEnvironment
 {
+    //todo: should this be static?
+    public static Dictionary<string, Func<FileInfo, PKItem>> AllLoaders = new Dictionary<string, Func<FileInfo, PKItem>>();
     public PluginEnvironment()
     {
         RegisterOperations(typeof(StringBuiltins));
+        RegisterOperations(typeof(CSVBuiltins));
+    }
+
+    public void RegisterOperations(Type type)
+    {
+        RegisterCommands(type);
+        RegisterLoader(type);
+    }
+
+    public void RegisterLoader(Type type)
+    {
+        MethodInfo[] classMethods = type.GetMethods();
+        for (int i = 0; i < classMethods.Length; i++)
+        {
+            var att = (LoaderAttribute)Attribute.GetCustomAttribute(classMethods[i], typeof(LoaderAttribute));
+            if (att != null)
+            {
+                var method = classMethods[i];
+                AllLoaders.Add(att.Name, fi =>
+                {
+                    if (!fi.Exists)
+                    {
+                        throw new Exception($"File {fi} does not exist. Can't |load");
+                    }
+                    
+                    return (PKItem)method.Invoke(null, [fi]);
+                });
+            }
+        }
     }
     
-    public void RegisterOperations(Type type)
+    public void RegisterCommands(Type type)
     {
         MethodInfo[] classMethods = type.GetMethods();
 
@@ -52,7 +83,7 @@ public class PluginEnvironment
                     {
                         if (item.GetType() == att.OnlyValidOn)
                         {
-                            return (bool)method.Invoke(item, args);
+                            return (bool)method.Invoke(null, [item, args]);
                         }
                         else
                         {
@@ -67,7 +98,7 @@ public class PluginEnvironment
             BuiltinFilters.FilterProviders.Add(att.Name,
                 new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, bool>>(a =>
                 {
-                    return (args, item) => (bool)method.Invoke(item, args);
+                    return (args, item) => (bool)method.Invoke(null, [item, args]);
                 }));
         }
     }

@@ -1,4 +1,6 @@
-﻿namespace PocketKnifeCore;
+﻿using PocketKnifeCore.Engine;
+
+namespace PocketKnifeCore;
 
 public class BuiltinPipes
 {
@@ -6,8 +8,6 @@ public class BuiltinPipes
 		{
 			{
 				"filename", (o) => {
-					//todo: make my own asserts
-					
 					string validType = typeof(FileInfo).ToString().ToLowerInvariant();
 					
 					return new((args, item) =>
@@ -23,7 +23,7 @@ public class BuiltinPipes
 							else
 							{
 								throw new Exception(
-									$"unknown filename argument {args[0].ToString()}. valid arguments: 'no-ext'");
+									$"unknown filename argument {args[0].ToString()}. valid arguments: '' (none), 'no-ext'");
 							}
 						}
 						else
@@ -60,82 +60,18 @@ public class BuiltinPipes
 						BuiltinHelpers.CheckArgumentCount(a, 1);
 						var loadType = a[0].ToString();
 
-						if (loadType == "text")
+						if (PluginEnvironment.AllLoaders.TryGetValue(loadType, out var func))
 						{
-							if (item is PKFileInfo pkfi)
+							if(item is PKFileInfo fi)
 							{
-								if (!pkfi.Value.Exists)
-								{
-									throw new Exception($"File {pkfi.Value} does not exist. Can't |load");
-								}
-
-								var stream = pkfi.Value.OpenText();
-								var content = stream.ReadToEnd();
-								stream.Close();
-								return new PKString(content);
+								var loaded = func.Invoke(fi.Value);
+								return loaded;
 							}
-
-							throw new Exception($"Cannot call '|load text' on {item.Type} item.");
-						}
-						else if (loadType == "csv")
-						{
-							if (item is PKFileInfo pkfi)
-							{
-								if (!pkfi.Value.Exists)
-								{
-									throw new Exception($"File {pkfi.Value} does not exist. Can't |load");
-								}
-
-								var stream = pkfi.Value.OpenText();
-								var table = PKTable.ReadCSVStreamToTable(stream);
-								stream.Close();
-								return table;
-							}
-
-							throw new Exception($"Cannot call '|load csv' on {item.Type} item.");
-						}
-						else if (loadType == "xlsx")
-						{
-							throw new NotImplementedException("Spreadsheets not yet supported");
-						}
-						else if (loadType == "json")
-						{
-							throw new NotImplementedException("json not yet supported");
 						}
 
 						throw new Exception($"bad argument. Unknown type of data to |load {loadType}");
 					});
 				}
 			},
-			{
-				"append", ((opts) =>
-				{
-					return new((args,item) =>
-					{
-						if (args.Length == 0)
-						{
-							throw new Exception("|append needs at least one argument.");
-						}
-
-						var appends = new string[args.Length];
-						for (int i = 0; i < args.Length; i++)
-						{
-							appends[i] = args[i].ToString();
-						}
-						
-						if (item.TryGetString(out string s))
-						{
-							for (int i = 0; i < args.Length; i++)
-							{
-								s += s;
-							}
-
-							return new PKString(s);
-						}
-
-						throw new Exception($"Cannot call '|filename' on {item.Type} item.");
-					}); 
-				})
-			}
 		};
 }

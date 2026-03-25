@@ -2,6 +2,15 @@
 
 public static class StringBuiltins
 {
+	[Loader("text")]
+	public static PKString LoadTextToString(FileInfo file)
+	{
+		var stream = file.OpenText();
+		var content = stream.ReadToEnd();
+		stream.Close();
+		return new PKString(content);
+	}
+	
 	[PipelineOperator("to-upper", typeof(PKString))]
 	public static PKItem ToUpperCasePipe(PKString a, PKItem[] arguments)
 	{
@@ -34,5 +43,32 @@ public static class StringBuiltins
 		BuiltinHelpers.CheckArgumentCount(arguments, 1);
 		var length = BuiltinHelpers.GetArgument<PKNumber>(arguments,0, "length");
 		return (int)a.Value.Length == (int)length.Value;
+	}
+
+	[PipelineOperator("append", typeof(PKString))]
+	public static PKItem Append(PKString item, PKItem[] args)
+	{
+		if (args.Length == 0)
+		{
+			throw new Exception("|append needs at least one argument.");
+		}
+
+		var appends = new string[args.Length];
+		for (int i = 0; i < args.Length; i++)
+		{
+			appends[i] = args[i].ToString();
+		}
+
+		if (item.TryGetString(out string s))
+		{
+			for (int i = 0; i < args.Length; i++)
+			{
+				s += s;
+			}
+
+			return new PKString(s);
+		}
+
+		throw new Exception($"Cannot call |append on type {item.Type}");
 	}
 }
