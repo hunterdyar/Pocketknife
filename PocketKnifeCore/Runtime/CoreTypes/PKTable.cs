@@ -37,9 +37,29 @@ public class PKTable : PKItem<DataTable>
 			}
 		}
 	}
+
+	public static void ReadTableToCSVStream(FileStream writer, PKTable table)
+	{
+		using (var sw = new StreamWriter(writer))
+		{
+			using (var csv = new CsvWriter(sw, CultureInfo.InvariantCulture))
+			{
+				csv.WriteRecords(table.Value.Columns);
+			}
+		}
+	}
 }
 
 public class PKTableRow : PKItem<DataRow>
 {
-	
+	public PKTableRow(DataRow row) : base(row)
+	{
+	}
+}
+
+public class PKTableCol : PKItem<DataColumn>
+{
+	public PKTableCol(DataColumn col) : base(col)
+	{
+	}
 }

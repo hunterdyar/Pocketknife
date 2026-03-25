@@ -11,4 +11,3 @@ public class LoaderAttribute : Attribute
 		_name = name;
 	}
 }
-

@@ -52,7 +52,7 @@ public class BranchNode : RootNode
     public BranchNode(string label, List<RootNode> commands)
     {
         Label = label;
-        HasLabel = string.IsNullOrEmpty(label);
+        HasLabel = !string.IsNullOrEmpty(label);
         Commands = new CommandSetNode(commands);
     }
 }

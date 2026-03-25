@@ -30,8 +30,6 @@ public class InputProviderNode : Command
 
 public class PipelineCommandNode : Command
 {
-  
-    //
     public PipelineCommandNode(string name, List<ExpressionNode> args, List<KeyValuePairNode>? opts) : base(name, args, opts)
     {
     }
@@ -50,5 +48,16 @@ public class SignalCommandNode : Command
     //:start-row
     public SignalCommandNode(string name, List<ExpressionNode> args, List<KeyValuePairNode>? opts) : base(name, args, opts)
     {
+    }
+}
+
+public class PipeInCommandNode : Command
+{
+    public List<RootNode> Commands;
+    //:start-row
+    public PipeInCommandNode(List<RootNode> commands, string name, List<ExpressionNode> args, List<KeyValuePairNode>? opts) : base(name, args,
+        opts)
+    {
+        Commands = commands;
     }
 }

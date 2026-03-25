@@ -32,6 +32,21 @@ public class PipelineProcess : RuntimeProcess
 	}
 }
 
+public class OnContextPipelineProcess : RuntimeProcess
+{
+	private Func<Context, PKItem[], PKItem> _process;
+
+	public OnContextPipelineProcess(RuntimeExpression[] arguments, Func<Context, PKItem[], PKItem> process) : base(arguments)
+	{
+		_process = process;
+	}
+
+	public override void Execute(Context context)
+	{
+		context.Item = _process.Invoke(context, EvaluateArguments(context));
+	}
+}
+
 public class SignalProcess : RuntimeProcess
 {
 	public SignalProcess(RuntimeExpression[] arguments) : base(arguments)

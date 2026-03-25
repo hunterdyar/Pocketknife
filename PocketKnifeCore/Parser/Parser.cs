@@ -44,9 +44,6 @@ public class Parser
             if (token.Type == TokenType.Input)
             {
                 return ParseInputToOutputBranch();
-            }else if (token.Type == TokenType.PipeIn)
-            {
-                return ParsePipeIn();
             } else if (token.Type == TokenType.StartBranch)
             {
                return ParseBranch();
@@ -69,13 +66,7 @@ public class Parser
         throw new  Exception($"Unexpected end of stream");
     }
 
-    private RootNode ParsePipeIn()
-    {
-       //pipeIn takes an item and returns an input provider, and following elements loop through it.
-       //this means it is a parent (PKInputOutputCollection, really)... so we need to know when it ends.
-
-       throw new NotImplementedException("PipeIn is in progress.");
-    }
+  
 
     private RootNode ParsePipeSetLabel()
     {
@@ -140,6 +131,8 @@ public class Parser
                 return ParseSignalCommand();
             case TokenType.Filter:
                 return ParseFilterCommand();
+            case TokenType.PipeIn:
+                return ParsePipeIn();
             case TokenType.Output:
                 //<
            
@@ -267,6 +260,30 @@ public class Parser
         return new PipelineCommandNode(name, args, opts);
     }
 
+    private Command ParsePipeIn()
+    {
+        Consume(TokenType.PipeIn);
+        var (name, args, opts) = ParseStandardCommand();
+        EatOptionalLinebreaks();
+
+        List<RootNode> branchCommands = new List<RootNode>();
+        while (tokens.TryPeek(out var token))
+        {
+            if (token.Type == TokenType.Output)
+            {
+                Consume(TokenType.Output);
+                break;
+            }
+            else
+            {
+                branchCommands.Add(ParseRootNode());
+            }
+
+            EatOptionalLinebreaks();
+        }
+        
+        return new PipeInCommandNode(branchCommands, name, args, opts);
+    }
 
     private void ConsumeLinebreakOrEndOfFile()
     {

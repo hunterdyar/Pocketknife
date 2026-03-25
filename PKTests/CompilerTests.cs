@@ -14,21 +14,19 @@ public class CompilerTests
 		                >dir "../../../testdata/input"
 		                .
 		                ~ext xlsx
-		                	.fn
-		                	|filename no-ext
-		                	|append ".csv" //string function
-		                	^
+		                .fn
+		                |filename no-ext
+		                |append ".csv" //string function
+		                ^
 		                |load xlsx
 		                |save csv "./out1/" @fn
 		                
-		                //pipe-input turns one input into many, until an output (<) or a pipeout (|<) which becomes the new pipeline.
-		                .
-		                >table //rows
+		                //pipe-input turns one input into many, until an output (<).
+		                
 		                |>cols //foreach row, we'll loop over each column
-		                |toUpper
-		                |< //the changes to the columns, applied.
-		                |<
-		                ^
+		                |to-upper
+		                < //the changes to the columns, applied.
+		                
 		                """;
 
 		var p = new Parser();

@@ -57,6 +57,22 @@ public class Compiler
                 }
                 branch.AddProcess(sb);
                 break;
+            case PipeInCommandNode pipeInCommand:
+                //the command is used to get an input provider.
+                //we parsed it as a command instead of as an 'inputprovider' node. todo: frankly this is cleaner. should flatten out and get rid of InputProviderNode.
+                var piArgs = WalkArguments(pipeInCommand.Arguments, branch);
+                var piOpts = WalkOptions(pipeInCommand.Options, branch);
+                var piInputProvider = _env.GetPipeInputProvider(pipeInCommand.Name, piOpts);
+
+                var pi = new PKPipeInputToOutputBranch(piArgs, branch);
+                pi.SetProvider(piInputProvider);
+                foreach (var command in pipeInCommand.Commands)
+                {
+                    Walk(command, pi);
+                }
+                branch.AddProcess(pi);
+                
+                break;
             case InputProviderNode inputProvider:
                 //create a new context set and run it.
                 //>dir directoryPathString

@@ -1,3 +1,5 @@
+using PocketKnifeCore.Engine;
+
 namespace PocketKnifeCore;
 
 public class PKFileInfo : PKItem<FileInfo> 
@@ -15,8 +17,13 @@ public enum TraversalOrder
 public class PKDirectoryInfo : PKItem<DirectoryInfo>, IPKInputProvider
 {
     public TraversalOrder TraversalOrder { get; private set; }
-    public void SetArguments(PKItem[] args)
+    public void SetArguments(bool asPipeline, Context context, PKItem[] args)
     {
+        if (asPipeline)
+        {
+            throw new Exception("not implemented");
+        }
+        
         BuiltinHelpers.CheckArgumentCount(args, 1);
         var path = BuiltinHelpers.GetArgument<PKString>(args[0], "directory path");
         if(path.TryGetString(out var dir))
