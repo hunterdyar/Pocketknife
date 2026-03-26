@@ -73,30 +73,13 @@ public static class BuiltinHelpers
 
     public static void ExecuteCommand(string fullcomamnd, bool async = false)
     {
-        //if windows...
-        System.Diagnostics.Process process = new System.Diagnostics.Process();
-		System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
-		startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-		startInfo.FileName = "cmd.exe"; //if we know it's windows, we can do 'PowerShell' which has a whole type
-        //https://learn.microsoft.com/en-us/dotnet/api/system.management.automation.powershell?view=powershellsdk-7.2.0
-		startInfo.Arguments = $"/C {fullcomamnd}"; ///"C carries out the command specified by the string and then terminates."
-		process.StartInfo = startInfo;
-		process.Start();
-        
-        //if we are threaded, it's not here, but 'above' this.
-        if (async)
-        {
-            process.WaitForExitAsync();
-        }
-        else
-        {
-            process.WaitForExit();
-        }
+        PowerShell ps = PowerShell.Create();
+        ps.AddCommand(fullcomamnd);
+        ps.Invoke();
 
-        if (process.ExitCode != 0)
+        if (ps.HadErrors)
         {
-            var e = process.StandardError.ReadToEnd();
-            throw new Exception($"uh oh! command '{fullcomamnd}' failed. errors:\n{e}");
+            throw new Exception($"command ({fullcomamnd}) had errors:\n{ps.Streams.Error.ReadAll()}");
         }
         //later, when we have a sideways logging system. we'll add error output or full output.
         
