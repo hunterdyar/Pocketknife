@@ -155,7 +155,7 @@ public class PluginEnvironment
             AllPipeInputProviders.Add(att.Name,
                 new Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>((opts)=>
                 {
-                    return (args, item) =>
+                    return (item, args) =>
                     {
                         if (item.GetType() == att.OnlyValidOn)
                         {
@@ -198,7 +198,7 @@ public class PluginEnvironment
                     {
                         if (item.GetType() == att.OnlyValidOn)
                         {
-                            return (PKItem)method.Invoke(item, args);
+                            return (PKItem)method.Invoke(null, [item, args]);
                         }
                         else
                         {

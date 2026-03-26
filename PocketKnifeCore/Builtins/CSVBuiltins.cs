@@ -16,7 +16,7 @@ public static class CSVBuiltins
 	[Saver("csv", ".csv", typeof(PKTable))]
 	public static void SaveTableToCSV(FileStream writer, PKTable table)
 	{
-		PKTable.ReadTableToCSVStream(writer, table);
+		PKTable.WriteTableToCSVStream(writer, table);
 	}
 
 	[PipeInputOperator("rows", typeof(PKTable))]

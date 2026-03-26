@@ -5,9 +5,10 @@ namespace PocketKnifeCore.Engine;
 public class Compiler
 {
     private PluginEnvironment _env;
+    public PocketKnifeScript Script => _script;
     private PocketKnifeScript _script;
     
-    public void CompileScript(PKScriptNode scriptNode)
+    public PocketKnifeScript CompileScript(PKScriptNode scriptNode)
     {
         _env = new PluginEnvironment(); //environment gets all of our loaded plugins, the current working directory, etc. We can reuse the script with/without the environment, and vise-versa.
         //we can rerun a compiled script in a few folders, recreating environments. but for now, they are just made at the same time.
@@ -17,6 +18,8 @@ public class Compiler
         {
             Walk(rootNode, _script);
         }
+
+        return _script;
     }
     
     private void Walk(RootNode node, ProcessCollection branch)
@@ -24,23 +27,20 @@ public class Compiler
         switch (node)
         {
             case InputBranchNode inputBranch:
-                var b = new PKInputToOutputBranch([], branch);
-                Walk(inputBranch.Input, b);//this should set the provider.
-               
-                //debug
-                if (branch is PKInputToOutputBranch iob)
-                {
-                    Debug.Assert(iob.InputProvider != null);
-                }
+
+                var n = inputBranch.Input;
+                var arguments = WalkArguments(n.Arguments, branch);
+                var options = WalkOptions(n.Options, branch);
+                var input = _env.GetInputProvider(n.Name, arguments, options);
+                var b = new PKInputToOutputBranch(arguments, branch, input);
                 
                 //add all the commands to this new branch.
                 foreach (var command in inputBranch.CommandSet.Commands)
                 {
                     Walk(command, b);
                 }
-                
+
                 branch.AddProcess(b);
-                
                 break;
             case BranchNode subBranch:
                 var sb = new SubBranch([],branch, subBranch.Label);
@@ -74,23 +74,7 @@ public class Compiler
                 
                 break;
             case InputProviderNode inputProvider:
-                //create a new context set and run it.
-                //>dir directoryPathString
-                //go to our dictionary of InputProviders, which should take the arguments and return an IPKInputProvider
-                    //so >dir path returns a PKDirectoryInfo(new DirectoryInfo(path))
-                var arguments = WalkArguments(inputProvider.Arguments,branch);
-                var options = WalkOptions(inputProvider.Options,branch);
-                var input = _env.GetInputProvider(inputProvider.Name, arguments, options);
-                //push it on the stack. Then start enumerating!
-                if (branch is PKInputToOutputBranch pkio)
-                {
-                    pkio.SetProvider(input);
-                }
-                else
-                {
-                    throw new Exception("parsing error during compilation.");
-                }
-                //create a new context from the source and start enumerating the pkitems.
+                throw new Exception("this should only get called from within InputToOutput Node");
                 break;
             case PipeOutNode pipeOutCommand:
                 //todo pipeout compilation

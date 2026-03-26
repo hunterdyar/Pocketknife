@@ -4,53 +4,35 @@ using PocketKnifeCore.Parser;
 
 namespace PKTests;
 
-
-public class CompilerTests
+public class InterpreterTests
 {
 	[Test]
-	public void GenericTest()
+	public void GenericCSVTestOne()
 	{
 		string source = """
 		                >dir "../../../testdata/input"
 		                .
-		                ~ext xlsx
+		                ~ext csv
 		                .fn
 		                |filename no-ext
-		                |append ".csv" //string function
+		                |append ".csv"
 		                ^
-		                |load xlsx
+		                |load csv
 		                |save csv "./out1/" @fn
-		                
+
 		                //pipe-input turns one input into many, until an output (<).
-		                
+
 		                |>cols //foreach row, we'll loop over each column
 		                |to-upper
 		                < //the changes to the columns, applied.
-		                
+
 		                """;
 
 		var p = new Parser();
 		p.Parse(source);
 		var compiler = new Compiler();
 		compiler.CompileScript(p.Program);
-		Debug.WriteLine("done");
+		var i = new Interpreter();
+		i.Execute(compiler.Script, "");
 	}
-
-	[Test]
-	public void ParseBlenderExampleTest()
-	{
-		string source = """
-		                >dir ./files
-		                |load blender
-		                |render-frame 20 (cycles-device=CUDA threads=12)
-		                """;
-
-		var p = new Parser();
-		p.Parse(source);
-		var compiler = new Compiler();
-		compiler.CompileScript(p.Program);
-		Debug.WriteLine("done");
-	}
-
-	
 }

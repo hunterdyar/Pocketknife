@@ -89,9 +89,12 @@ public class NativePipes
 							if (PluginEnvironment.AllSavers.TryGetValue(saveType, out var saver))
 							{
 								saver.Execute(c, a);
+								return c.Item;
 							}
-
-							throw new Exception($"bad argument. Unknown type of data to |save {saveType}");
+							else
+							{
+								throw new Exception($"bad argument. Unknown type of data to |save {saveType}");
+							}
 						});
 					}
 				}

@@ -61,15 +61,15 @@ public class Context
 	/// Each branch (not each pipeline) keeps the context. We can find the context from a parent class by searching for the type of object there.
 	/// At the root will be the original input branch.
 	/// </summary>
-	public bool TryFindItemAsTypeSearchUp(string type, out PKItem item)
+	public bool TryFindItemAsTypeSearchUp<T>(out T item) where T : PKItem
 	{
-		if (Item.Type == type)
+		if (Item.GetType() == typeof(T))
 		{
-			item = Item;
+			item = Item as T ?? throw new InvalidOperationException();
 			return true;
 		}else if (Parent != null)
 		{
-			return Parent.TryFindItemAsTypeSearchUp(type, out item);
+			return Parent.TryFindItemAsTypeSearchUp<T>(out item);
 		}
 
 		item = null;

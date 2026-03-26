@@ -38,13 +38,13 @@ public class PKTable : PKItem<DataTable>
 		}
 	}
 
-	public static void ReadTableToCSVStream(FileStream writer, PKTable table)
+	public static void WriteTableToCSVStream(FileStream writer, PKTable table)
 	{
 		using (var sw = new StreamWriter(writer))
 		{
 			using (var csv = new CsvWriter(sw, CultureInfo.InvariantCulture))
 			{
-				csv.WriteRecords(table.Value.Columns);
+				csv.WriteRecords(table.Value.Rows);
 			}
 		}
 	}

@@ -73,7 +73,7 @@ public static class StringBuiltins
 		{
 			for (int i = 0; i < args.Length; i++)
 			{
-				s += s;
+				s += args[i];
 			}
 
 			return new PKString(s);
