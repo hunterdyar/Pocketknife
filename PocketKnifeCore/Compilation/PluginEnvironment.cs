@@ -51,10 +51,13 @@ public class PluginEnvironment
                 var p = method.GetParameters();
                 if (p[0].ParameterType != typeof(FileStream))
                 {
-                    throw new Exception("saver attribute must have type 'filestream, pkitem (or descendent)");
+                    throw new Exception($"saver attribute must have type 'filestream, pkitem (or descendent). error on {method}");
                 }else if (p[1].ParameterType != typeof(PKItem))
                 {
-                    throw new Exception("saver attribute must have type 'filestream, pkitem (or descendent)");
+                    if(!p[1].ParameterType.IsSubclassOf(typeof(PKItem))){
+                        throw new Exception(
+                            $"saver attribute must have type 'filestream, pkitem (or descendent). error on {method}");
+                    }
                 }
                 
                 var s = new Saver()
