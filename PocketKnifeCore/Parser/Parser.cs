@@ -397,7 +397,7 @@ public class Parser
         {
             if (token.Type == TokenType.GroupEnd)
             {
-                Consume(TokenType.EndBranch);
+                Consume(TokenType.GroupEnd);
                 break;
             }
             else
@@ -407,7 +407,6 @@ public class Parser
 
             EatOptionalLinebreaks();
         }
-        Consume(TokenType.GroupEnd);
         EatOptionalLinebreaks();
         return new CommandGroupExpression(commands);
     }
@@ -452,7 +451,7 @@ public class Parser
         {
             if (!optional)
             {
-                throw new Exception($"Unexpected Token {tokenType}");
+                throw new Exception($"Unexpected Token {tokens.Peek().Type}. Expected {tokenType}");
             }
         }
     }

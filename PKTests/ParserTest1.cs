@@ -30,4 +30,17 @@ public class ParserTest1
 	    p.Parse(source);
         Debug.WriteLine("Parsed...");
     }
+    [Test]
+    public void CombinatorialTest()
+    {
+	    string source = """
+	                    ~not [
+	                    ~filter
+	                    ]
+	                    """;
+        
+	    var p = new Parser();
+	    p.Parse(source);
+	    
+    }
 }
