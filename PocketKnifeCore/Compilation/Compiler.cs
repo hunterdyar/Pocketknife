@@ -92,6 +92,38 @@ public class Compiler
                 break;
             case FilterCommandNode filterCommand:
                 Console.WriteLine($"~{filterCommand.Name}.");
+
+                FilterGroup fg;
+                switch (filterCommand.Name)
+                {
+                    case "not":
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.Not, filterCommand.Arguments, branch);
+                        branch.AddProcess(fg);
+                        return;
+                    case "any":
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.Any, filterCommand.Arguments, branch);
+                        branch.AddProcess(fg);
+                        return;
+                    case "all":
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.All, filterCommand.Arguments, branch);
+                        branch.AddProcess(fg);
+                        return;
+                    case "none":
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.None, filterCommand.Arguments, branch);
+                        branch.AddProcess(fg);
+                        return;
+                    case "not-all":
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.NotAll, filterCommand.Arguments, branch);
+                        branch.AddProcess(fg);
+                        return;
+                    case "only-one":
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.OnlyOne, filterCommand.Arguments, branch);
+                        branch.AddProcess(fg);
+                        return;
+                    default:
+                        break;
+                }
+                //its not a special filter, just a normal one.
                 var filterArgs = WalkArguments(filterCommand.Arguments,branch);
                 var filterOpts = WalkOptions(filterCommand.Options,branch);
                 var filter = _env.GetFilterCommand(filterCommand.Name, filterArgs, filterOpts);
@@ -107,6 +139,34 @@ public class Compiler
                 throw new Exception($"Unhandled node {node}");
                 break;
             
+        }
+    }
+
+    private FilterGroup GetFilterGroupFromArgument(FilterCombinatorialType type, ExpressionNode[] filterCommandArguments, ProcessCollection branch)
+    {
+        if (filterCommandArguments.Length != 1)
+        {
+            throw new Exception(
+                "Combinatorial Filters (not, all, any, etc) must have only one argument, the group: [] of filters.");
+            //i guess we can do 'count' eventually. //todo. make a new sublist of the remaining, then WalkExpressions and WalkArguments so it could be used.
+        }
+
+        var expr = filterCommandArguments.First();
+        if (expr is CommandGroupExpression group)
+        {
+            //todo: this FilterGroupTemporary thing doesn't need to exist if we can just make something implement AddProcess, then add an extension method to a list of filters.
+            var fg =  new FilterGroupTemporaryProcessCollection(branch);
+            foreach (var node in group.CommandNodes)
+            {
+                Walk(node, fg);
+            }
+            
+            FilterGroup f = new FilterGroup(fg.Filters, type, []);
+            return f;
+        }
+        else
+        {
+            throw new Exception($"Invalid Argument {expr}. Expected a filter group ([~a])");
         }
     }
 
@@ -152,14 +212,17 @@ public class Compiler
                     throw new Exception($"Unable to find label with name @{label.Name}");
                 }
                 break;
+            case CommandGroupExpression commandGroupExpression:
+                throw new Exception("this is a special case that should be handled by the filter node.");
+                
             default:
                 throw new Exception($"Unhandled node {expressionNode}");
         }
     }
 
-    private void WalkCommand(Command command)
+    private void WalkCommand(CommandNode commandNode)
     {
-        switch (command)
+        switch (commandNode)
         {
             
         }

@@ -27,4 +27,6 @@ public enum TokenType
     Output,
     LineBreak,
     Bang,
+    GroupStart,
+    GroupEnd
 }

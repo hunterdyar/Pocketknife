@@ -4,10 +4,16 @@ namespace PocketKnifeCore;
 
 public class FilterProcess : RuntimeProcess
 {
-	private Func<PKItem[], PKItem, bool> _filter;
+	public Func<PKItem[], PKItem, bool> Filter => _filter;
+	protected Func<PKItem[], PKItem, bool> _filter;
 	public FilterProcess(RuntimeExpression[] arguments, Func<PKItem[], PKItem, bool> filter) : base(arguments)
 	{
 		_filter = filter;
+	}
+
+	protected FilterProcess(RuntimeExpression[] arguments) : base(arguments)
+	{
+		//_filter still needs to get set by the child constructor!
 	}
 
 	public override void Execute(Context context)

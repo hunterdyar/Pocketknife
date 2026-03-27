@@ -41,32 +41,21 @@ public class Parser
         //todo: switch/case
         if (tokens.TryPeek(out var token))
         {
-            if (token.Type == TokenType.Input)
+            return token.Type switch
             {
-                return ParseInputToOutputBranch();
-            } else if (token.Type == TokenType.StartBranch)
-            {
-               return ParseBranch();
-            }else if (token.Type == TokenType.PipeOut)
-            {
-                return ParsePipeOut();
-            }else if (token.Type == TokenType.SignalOut)
-            {
-                return ParseSignalOut();
-            }
-            else if (token.Type == TokenType.PipeSetLabel)
-            {
-                return ParsePipeSetLabel();
-            }
-            else
-            {
-                return ParseCommand();
-            }
+                TokenType.Input => ParseInputToOutputBranch(),
+                TokenType.StartBranch => ParseBranch(),
+                TokenType.PipeOut => ParsePipeOut(),
+                TokenType.SignalOut => ParseSignalOut(),
+                TokenType.PipeSetLabel => ParsePipeSetLabel(),
+                _ => ParseCommand()
+            };
         }
         throw new  Exception($"Unexpected end of stream");
     }
 
-  
+
+
 
     private RootNode ParsePipeSetLabel()
     {
@@ -118,7 +107,7 @@ public class Parser
         }
     }
 
-    private Command ParseCommand()
+    private CommandNode ParseCommand()
     {
         var peek = tokens.Peek();
         switch (peek.Type)
@@ -228,7 +217,7 @@ public class Parser
         return new BranchNode(ident, branchCommands);
     }
 
-    private Command ParseFilterCommand()
+    private CommandNode ParseFilterCommand()
     {
         Consume(TokenType.Filter);
         var (name, args, opts) = ParseStandardCommand();
@@ -236,7 +225,7 @@ public class Parser
         return new FilterCommandNode(name, args, opts);
     }
 
-    private Command ParseSignalCommand()
+    private CommandNode ParseSignalCommand()
     {
         Consume(TokenType.Signal);
         var (name, args, opts) = ParseStandardCommand();
@@ -260,7 +249,7 @@ public class Parser
         return new PipelineCommandNode(name, args, opts);
     }
 
-    private Command ParsePipeIn()
+    private CommandNode ParsePipeIn()
     {
         Consume(TokenType.PipeIn);
         var (name, args, opts) = ParseStandardCommand();
@@ -379,6 +368,8 @@ public class Parser
                 case TokenType.String:
                      t = tokens.Dequeue();
                     return new StringLiteralNode(t.GetSource(Source));
+                case TokenType.GroupStart:
+                    return ParseCommandGroupExpression();
                 default:
                     throw new Exception($"Unexpected token {token.Type}");
             }
@@ -394,6 +385,31 @@ public class Parser
         Consume(TokenType.Label);
         var id = ConsumeIdent();
         return new LabelNode(id);
+    }
+
+    private ExpressionNode ParseCommandGroupExpression()
+    {
+        var commands = new List<CommandNode>();
+        Consume(TokenType.GroupStart);
+        EatOptionalLinebreaks();
+
+        while (tokens.TryPeek(out var token))
+        {
+            if (token.Type == TokenType.GroupEnd)
+            {
+                Consume(TokenType.EndBranch);
+                break;
+            }
+            else
+            {
+                commands.Add(ParseCommand());
+            }
+
+            EatOptionalLinebreaks();
+        }
+        Consume(TokenType.GroupEnd);
+        EatOptionalLinebreaks();
+        return new CommandGroupExpression(commands);
     }
 
     private string ConsumeIdent()

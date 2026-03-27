@@ -189,6 +189,12 @@ public class Lexer
             case '^':
                 ConsumeCurrentCharAsToken(TokenType.EndBranch);
                 return;
+            case '[':
+                ConsumeCurrentCharAsToken(TokenType.GroupStart);
+                return;
+            case ']':
+                ConsumeCurrentCharAsToken(TokenType.GroupEnd);
+                return;
             case '-':
                 if (PeekMatches('-'))
                 {

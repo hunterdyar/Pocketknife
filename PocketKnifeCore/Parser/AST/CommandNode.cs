@@ -1,6 +1,6 @@
 namespace PocketKnifeCore;
 
-public class Command : RootNode
+public class CommandNode : RootNode
 {
     public string Name => commandName; 
     private string commandName;
@@ -10,7 +10,7 @@ public class Command : RootNode
     public List<KeyValuePairNode>? Options => _options;
     private List<KeyValuePairNode>? _options;
     
-    public Command(string name, List<ExpressionNode> args, List<KeyValuePairNode>? opts)
+    public CommandNode(string name, List<ExpressionNode> args, List<KeyValuePairNode>? opts)
     {
         commandName = name;
         _arguments = args.ToArray();
@@ -20,7 +20,7 @@ public class Command : RootNode
 
 //x command arg1 arg2... (key=val key2=val2...)
 
-public class InputProviderNode : Command
+public class InputProviderNode : CommandNode
 {
     //>dir input
     public InputProviderNode(string name, List<ExpressionNode> args, List<KeyValuePairNode>? opts) : base(name, args, opts)
@@ -28,14 +28,14 @@ public class InputProviderNode : Command
     }
 }
 
-public class PipelineCommandNode : Command
+public class PipelineCommandNode : CommandNode
 {
     public PipelineCommandNode(string name, List<ExpressionNode> args, List<KeyValuePairNode>? opts) : base(name, args, opts)
     {
     }
 }
 
-public class FilterCommandNode : Command
+public class FilterCommandNode : CommandNode
 {
     //~do thing
     public FilterCommandNode(string name, List<ExpressionNode> args, List<KeyValuePairNode>? opts) : base(name, args, opts)
@@ -43,7 +43,7 @@ public class FilterCommandNode : Command
     }
 }
 
-public class SignalCommandNode : Command
+public class SignalCommandNode : CommandNode
 {
     //:start-row
     public SignalCommandNode(string name, List<ExpressionNode> args, List<KeyValuePairNode>? opts) : base(name, args, opts)
@@ -51,7 +51,7 @@ public class SignalCommandNode : Command
     }
 }
 
-public class PipeInCommandNode : Command
+public class PipeInCommandNode : CommandNode
 {
     public List<RootNode> Commands;
     //:start-row

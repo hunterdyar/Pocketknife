@@ -42,7 +42,7 @@ public class CompilerTests
 		string source = """
 		                >dir ./files
 		                |load blender
-		                |render-frame 20 (cycles-device=CUDA threads=12)
+		                |render-frame 20 (cycles-device=CUDA, threads=12)
 		                """;
 
 		var p = new Parser();

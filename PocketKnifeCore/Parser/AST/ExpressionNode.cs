@@ -49,3 +49,13 @@ public class KeyValuePairNode : ExpressionNode
         Value = expressionNode;
     }
 }
+
+public class CommandGroupExpression : ExpressionNode
+{
+    public List<CommandNode> CommandNodes;
+
+    public CommandGroupExpression(List<CommandNode> nodes)
+    {
+        CommandNodes = nodes;
+    }
+}

@@ -13,7 +13,7 @@ public abstract class ProcessCollection : RuntimeProcess
 		Parent = parent;
 	}
 
-	public void AddProcess(RuntimeProcess rp)
+	public virtual void AddProcess(RuntimeProcess rp)
 	{
 		Commands.Add(rp);
 	}
