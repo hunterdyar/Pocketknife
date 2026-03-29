@@ -36,4 +36,29 @@ public static class CSVBuiltins
 			yield return new PKTableCol(col);
 		}
 	}
+
+	[PipelineOperator("to-upper")]
+	public static PKTableRow RowToUpper(PKTableRow row, PKItem[] args)
+	{
+		row.Value.BeginEdit();
+		for (var i = 0; i < row.Value.ItemArray.Length; i++)
+		{
+			object? item = row.Value.ItemArray[i];
+			if (item is string s)
+			{
+				row.Value.ItemArray[i] = s.ToUpper();
+			}
+		}
+		row.Value.EndEdit();
+		row.Value.AcceptChanges();
+		return row;
+	}
+
+	[PipelineOperator("to-upper")]
+	public static PKTableCol ColToUpper(PKTableCol col, PKItem[] args)
+	{
+		col.Value.ColumnName = col.Value.ColumnName.ToUpper();
+		return col;
+	}
+	
 }

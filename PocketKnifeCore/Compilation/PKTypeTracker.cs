@@ -52,6 +52,15 @@ public class PKTypeTracker
 		_typeStack.Push(branchType);
 	}
 
+	public void StartBranch()
+	{
+		if (_typeStack.Count == 0)
+		{
+			throw new Exception();
+		}
+		_typeStack.Push(_typeStack.Peek());
+	}
+
 
 	public void EndBranch()
 	{

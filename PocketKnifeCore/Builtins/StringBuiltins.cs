@@ -21,14 +21,14 @@ public static class StringBuiltins
 	}
 
 	
-	[PipelineOperator("to-upper", typeof(PKString))]
+	[PipelineOperator("to-upper")]
 	public static PKString ToUpperCasePipe(PKString a, PKItem[] arguments)
 	{
 			a.Value = a.Value.ToUpperInvariant();
 			return a;
 	}
 
-	[PipelineOperator("to-lower", typeof(PKString))]
+	[PipelineOperator("to-lower")]
 	public static PKString ToLowerCasePipe(PKString a, PKItem[] arguments)
 	{
 		a.Value = a.Value.ToLowerInvariant();
@@ -55,7 +55,7 @@ public static class StringBuiltins
 		return (int)a.Value.Length == (int)length.Value;
 	}
 
-	[PipelineOperator("append", typeof(PKString))]
+	[PipelineOperator("append")]
 	public static PKString Append(PKString item, PKItem[] args)
 	{
 		if (args.Length == 0)

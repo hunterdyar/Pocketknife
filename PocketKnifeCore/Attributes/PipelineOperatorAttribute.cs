@@ -5,12 +5,9 @@ public class PipelineOperator : Attribute
 {
 	public string Name => _name;
 	private string _name;
-
-	public Type? OnlyValidOn => _onlyValidOn;
-	private Type? _onlyValidOn;
-	public PipelineOperator(string name, Type onlyValidOn)
+	
+	public PipelineOperator(string name)
 	{
 		_name = name;
-		_onlyValidOn = onlyValidOn;
 	}
 }

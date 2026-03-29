@@ -34,7 +34,6 @@ public class CompilerTests
 		p.Parse(source);
 		var compiler = new Compiler();
 		compiler.CompileScript(p.Program);
-		Debug.WriteLine("done");
 	}
 
 	[Test]
@@ -50,7 +49,6 @@ public class CompilerTests
 		p.Parse(source);
 		var compiler = new Compiler();
 		compiler.CompileScript(p.Program);
-		Debug.WriteLine("done");
 	}
 
 	

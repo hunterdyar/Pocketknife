@@ -186,37 +186,56 @@ public class PluginEnvironment
 
     private void RegisterPipelineMethod(PipelineOperator att, MethodInfo method)
     {
-        if (method.GetParameters()[0].ParameterType != att.OnlyValidOn)
+        var validType = method.GetParameters()[0].ParameterType;
+        if (!validType.IsSubclassOf(typeof(PKItem)) || validType == typeof(PKItem))
         {
-            throw new Exception(
-                $"unable to register pipeline operator {att.Name} ({method.Name}). Type does not match attribute valid type.");
+            throw new Exception($"unable to register pipeline method {method}. First argument, input type, must be child of PKItem.");
+        }
+
+        var retType = method.ReturnType;
+        if (!retType.IsSubclassOf(typeof(PKItem)) || retType == typeof(PKItem))
+        {
+            throw new Exception($"unable to register pipeline method {method}. Return type, must be child of PKItem.");
+        }
+
+        if (!method.IsStatic)
+        {
+            throw new Exception("Unable to register pipeline method. Methods must be static");
         }
 
         var pipeMethod = new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>(a =>
         {
-            return (args, item) =>
+            if (method.GetParameters().Length == 2)
             {
-                if (item.GetType() == att.OnlyValidOn)
+                return (args, item) =>
                 {
-                    return (PKItem)method.Invoke(null, [item, args]);
-                }
-                else
-                {
-                    throw new Exception(
-                        $"Cannot call {att.Name} on item of type {item.GetType()}. {att.Name} only operates on {att.OnlyValidOn}.");
-                }
-            };
+                    if (item.GetType() == validType)
+                    {
+                        return (PKItem)method.Invoke(null, [item, args]);
+                    }
+                    else
+                    {
+                        throw new Exception(
+                            $"Cannot call {att.Name} on item of type {item.GetType()}. {att.Name} only operates on {validType}.");
+                    }
+                };
+            }
+            else
+            {
+                //1 could be no args?
+                throw new Exception($"pipeline method '{method.Name}' ({method.DeclaringType}) does not have the correct number of arguments. Must have 2 (PKItem (subclass), PKItem[])");
+            }
         });
         
 
         if (PipelineMethods.ContainsKey(att.Name))
         {
-            PipelineMethods[att.Name].Add(att.OnlyValidOn, pipeMethod, method.ReturnType);
+            PipelineMethods[att.Name].Add(validType, pipeMethod, retType);
         }
         else
         {
             var pm = new PipelineMethodsProvider(att.Name);
-            pm.Add(att.OnlyValidOn, pipeMethod, method.ReturnType);
+            pm.Add(validType, pipeMethod, retType);
             PipelineMethods.Add(att.Name, pm);
         }
     }

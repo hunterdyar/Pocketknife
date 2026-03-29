@@ -28,7 +28,6 @@ public class Compiler
         switch (node)
         {
             case InputBranchNode inputBranch:
-
                 var n = inputBranch.Input;
                 var arguments = WalkArguments(n.Arguments, branch);
                 var options = WalkOptions(n.Options, branch);
@@ -55,16 +54,16 @@ public class Compiler
                     var label = subBranch.Label;
                     branch.RegisterNamedBranch(label, sb);
                 }
-                // typeTracker.StartBranch(input.givenType, input.providedType);
-
-                //add label to list?
+                //just a simple branch...
+                typeTracker.StartBranch();
+                
                 foreach (var nodes in subBranch.Commands.Commands)
                 {
                     Walk(nodes,sb, ref typeTracker);
                 }
                 branch.AddProcess(sb);
                 
-                // typeTracker.EndBranch();
+                typeTracker.EndBranch();
 
                 break;
             case PipeInCommandNode pipeInCommand:
@@ -77,12 +76,14 @@ public class Compiler
 
                 var pi = new PKPipeInputToOutputBranch(piArgs, branch);
                 pi.SetProvider(piInputProvider);
+                
                 typeTracker.StartBranch(givenType, piInputProvider.ProvidedType);
                 foreach (var command in pipeInCommand.Commands)
                 {
                     Walk(command, pi, ref typeTracker);
                 }
                 typeTracker.EndBranch();
+                
                 branch.AddProcess(pi);
                 
                 break;

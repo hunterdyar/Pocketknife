@@ -1,9 +1,9 @@
 ﻿namespace PocketKnifeCore;
 
-public class FileInfoBuiltins
+public static class FileInfoBuiltins
 {
-	[PipelineOperator("filename", typeof(PKFileInfo))]
-	public PKString Filename(PKFileInfo info)
+	[PipelineOperator("filename")]
+	public static PKString Filename(PKFileInfo info, PKItem[] args)
 	{
 		//todo: figure out the options thing.
 		bool ext = true;
@@ -20,7 +20,7 @@ public class FileInfoBuiltins
 	}
 
 	[FilterOperator("exists", typeof(PKFileInfo))]
-	public bool Exists(PKFileInfo fileInfo)
+	public static bool Exists(PKFileInfo fileInfo, PKItem[] args)
 	{
 		return fileInfo.Value.Exists;
 	}
