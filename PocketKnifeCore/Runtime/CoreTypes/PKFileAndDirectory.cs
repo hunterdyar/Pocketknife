@@ -41,6 +41,8 @@ public class PKDirectoryInfo : PKItem<DirectoryInfo>, IPKInputProvider
         TraversalOrder = order;
     }
 
+    public Type ProvidedType => typeof(PKFileInfo);
+
     public IEnumerable<PKItem> Enumerate()
     {
        

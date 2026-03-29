@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace PocketKnifeCore.Engine;
@@ -6,14 +7,19 @@ namespace PocketKnifeCore.Engine;
 public class PluginEnvironment
 {
     //todo: should this be static?
-    public static readonly Dictionary<string, Func<FileInfo, PKItem>> AllLoaders = new Dictionary<string, Func<FileInfo, PKItem>>();
+    public static readonly Dictionary<string, Loader> AllLoaders = new Dictionary<string, Loader>();//le sigh
+    public static readonly Dictionary<string, Saver> AllSavers = new Dictionary<string, Saver>();
 
-    public static readonly Dictionary<string,Saver> AllSavers = new Dictionary<string, Saver>();
-
+    public static readonly Dictionary<string, PipelineMethodsProvider> PipelineMethods = new Dictionary<string, PipelineMethodsProvider>();
+    public static readonly Dictionary<string, FilterMethodsWrapper> FilterMethods = new Dictionary<string, FilterMethodsWrapper>();
+    public static readonly Dictionary<string, PipeInputsMethodsWrapper> PipeInputMethods = new Dictionary<string, PipeInputsMethodsWrapper>();
+    public static readonly Dictionary<string, InputMethodsWrapper> InputMethods = new Dictionary<string, InputMethodsWrapper>();
+    
     public static readonly Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>> AllPipeInputProviders = new Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>>(); 
     public PluginEnvironment()
     {
         RegisterOperations(typeof(StringBuiltins));
+        RegisterOperations(typeof(FileInfoBuiltins));
         RegisterOperations(typeof(CSVBuiltins));
     }
 
@@ -32,15 +38,7 @@ public class PluginEnvironment
             if (latt != null)
             {
                 var method = classMethods[i];
-                AllLoaders.Add(latt.Name, fi =>
-                {
-                    if (!fi.Exists)
-                    {
-                        throw new Exception($"File {fi} does not exist. Can't |load");
-                    }
-                    
-                    return (PKItem)method.Invoke(null, [fi]);
-                });
+                AllLoaders.Add(latt.Name, Loader.GetLoader(method));
             }
 
             var satt = (SaverAttribute)Attribute.GetCustomAttribute(classMethods[i], typeof(SaverAttribute));
@@ -108,113 +106,118 @@ public class PluginEnvironment
         //i think figuring out the "input->output" types at compile-time and tracking the validity of it is going to have to be a v1.0 thing, but im happy to kick that (very annoying) can down the road.
     private void RegisterFilterMethod(FilterOperator att, MethodInfo method)
     {
-        if (att.OnlyValidOn != null)
+        if (method.GetParameters()[0].ParameterType != att.OnlyValidOn)
         {
-            if (method.GetParameters()[0].ParameterType != att.OnlyValidOn)
+            throw new Exception($"unable to register filter operator {att.Name} ({method.Name}). Type does not match attribute valid type.");
+        }
+        
+        var filter = new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, bool>>(a=>
+        {
+            return (args, item) =>
             {
-                throw new Exception($"unable to register filter operator {att.Name} ({method.Name}). Type does not match attribute valid type.");
-            }
-
-            BuiltinFilters.FilterProviders.Add(att.Name,
-                new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, bool>>(a =>
+                if (item.GetType() == att.OnlyValidOn)
                 {
-                    return (args, item) =>
-                    {
-                        if (item.GetType() == att.OnlyValidOn)
-                        {
-                            return (bool)method.Invoke(null, [item, args]);
-                        }
-                        else
-                        {
-                            throw new Exception(
-                                $"Cannot call {att.Name} on item of type {item.GetType()}. {att.Name} only operates on {att.OnlyValidOn}.");
-                        }
-                    };
-                }));
+                    return (bool)method.Invoke(null, [item, args]);
+                }
+                else
+                {
+                    throw new Exception($"Cannot call {att.Name} on item of type {item.GetType()}. {att.Name} only operates on {att.OnlyValidOn}.");
+                }
+            };
+        });
+        
+        if (FilterMethods.ContainsKey(att.Name))
+        {
+            FilterMethods[att.Name].Add(att.OnlyValidOn, filter, att.OnlyValidOn);
         }
         else
         {
-            BuiltinFilters.FilterProviders.Add(att.Name,
-                new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, bool>>(a =>
-                {
-                    return (args, item) => (bool)method.Invoke(null, [item, args]);
-                }));
+            var pm = new FilterMethodsWrapper(att.Name);
+            pm.Add(att.OnlyValidOn, filter, att.OnlyValidOn);
+            FilterMethods.Add(att.Name, pm);
         }
     }
 
     private void RegisterPipeInputMethod(PipeInputOperator att, MethodInfo method)
     {
-        if (att.OnlyValidOn != null)
+        if (method.GetParameters()[0].ParameterType != att.OnlyValidOn)
         {
-            if (method.GetParameters()[0].ParameterType != att.OnlyValidOn)
-            {
-                throw new Exception(
-                    $"unable to register pipein operator {att.Name} ({method.Name}). Type does not match attribute valid type.");
-            }
+            throw new Exception(
+                $"unable to register pipein operator {att.Name} ({method.Name}). Type does not match attribute valid type.");
+        }
 
-            AllPipeInputProviders.Add(att.Name,
-                new Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>((opts)=>
+        var pipeInMethod = new Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>((opts)=>
+            {
+                return (item, args) =>
                 {
-                    return (item, args) =>
+                    if (item.GetType() == att.OnlyValidOn)
                     {
-                        if (item.GetType() == att.OnlyValidOn)
-                        {
-                            return (IEnumerable<PKItem>)method.Invoke(null, [item, args]);
-                        }
-                        else
-                        {
-                            throw new Exception(
-                                $"Cannot call pipein |>{att.Name} on item of type {item.GetType()}. {att.Name} only operates on {att.OnlyValidOn}.");
-                        }
-                    };
-                }));
+                        return (IEnumerable<PKItem>)method.Invoke(null, [item, args]);
+                    }
+                    else
+                    {
+                        throw new Exception(
+                            $"Cannot call pipein |>{att.Name} on item of type {item.GetType()}. {att.Name} only operates on {att.OnlyValidOn}.");
+                    }
+                };
+            });
+
+        var genericArgs = method.ReturnType.GetGenericArguments();
+        if (genericArgs.Length != 1)
+        {
+            throw new Exception($"unable to register pipe input method {method.Name}");
+        }
+        //todo: check if it's IEnumerator more specifically
+
+        //IEnumerator<ProvidedType>
+        var providedType = genericArgs[0];
+
+        if (PipeInputMethods.ContainsKey(att.Name))
+        {
+            PipeInputMethods[att.Name].Add(att.OnlyValidOn, pipeInMethod, providedType);
         }
         else
         {
-            AllPipeInputProviders.Add(att.Name, new Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>((opts) =>
-            {
-                return (a, args)=>
-                {
-                    return (IEnumerable<PKItem>)method.Invoke(null, [a,args]);
-                };
-            }));
+            var pm = new PipeInputsMethodsWrapper(att.Name);
+            pm.Add(att.OnlyValidOn, pipeInMethod, providedType);
+            PipeInputMethods.Add(att.Name, pm);
         }
     }
 
     private void RegisterPipelineMethod(PipelineOperator att, MethodInfo method)
     {
-        if (att.OnlyValidOn != null)
+        if (method.GetParameters()[0].ParameterType != att.OnlyValidOn)
         {
-            if (method.GetParameters()[0].ParameterType != att.OnlyValidOn)
-            {
-                throw new Exception(
-                    $"unable to register pipeline operator {att.Name} ({method.Name}). Type does not match attribute valid type.");
-            }
+            throw new Exception(
+                $"unable to register pipeline operator {att.Name} ({method.Name}). Type does not match attribute valid type.");
+        }
 
-            NativePipes.PipelineProviders.Add(att.Name,
-                new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>(a =>
+        var pipeMethod = new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>(a =>
+        {
+            return (args, item) =>
+            {
+                if (item.GetType() == att.OnlyValidOn)
                 {
-                    return (args, item) =>
-                    {
-                        if (item.GetType() == att.OnlyValidOn)
-                        {
-                            return (PKItem)method.Invoke(null, [item, args]);
-                        }
-                        else
-                        {
-                            throw new Exception(
-                                $"Cannot call {att.Name} on item of type {item.GetType()}. {att.Name} only operates on {att.OnlyValidOn}.");
-                        }
-                    };
-                }));
+                    return (PKItem)method.Invoke(null, [item, args]);
+                }
+                else
+                {
+                    throw new Exception(
+                        $"Cannot call {att.Name} on item of type {item.GetType()}. {att.Name} only operates on {att.OnlyValidOn}.");
+                }
+            };
+        });
+        
+
+        if (PipelineMethods.ContainsKey(att.Name))
+        {
+            PipelineMethods[att.Name].Add(att.OnlyValidOn, pipeMethod, method.ReturnType);
         }
         else
         {
-            NativePipes.PipelineProviders.Add(att.Name,
-                new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>(a =>
-                {
-                    return (args, item) => { return (PKItem)method.Invoke(item, args); };
-                }));
+            var pm = new PipelineMethodsProvider(att.Name);
+            pm.Add(att.OnlyValidOn, pipeMethod, method.ReturnType);
+            PipelineMethods.Add(att.Name, pm);
         }
     }
 
@@ -223,9 +226,9 @@ public class PluginEnvironment
 
     //todo: split compile time (options) and runtime (arguments). we can get the input provider getter function, and then invoke that at runtime?
 
-    public IPKInputProvider GetPipeInputProvider(string callName, Dictionary<string, PKItem>? options = null)
+    public IPKInputProvider GetPipeInputProvider(string callName, Type givenType, Dictionary<string, PKItem>? options = null)
     {
-        if (AllPipeInputProviders.TryGetValue(callName, out var provider))
+        if (PipeInputMethods.TryGetValue(callName, out var pipeInputMethods))
         {
             TraversalOrder order = TraversalOrder.ItemByItem;
 
@@ -244,9 +247,16 @@ public class PluginEnvironment
                     order = TraversalOrder.CommandByCommand;
                 }
             }
-            
-            var result = provider.Invoke(options);
-            return new GenericPipelineInputProvider(result, order);
+
+            if (pipeInputMethods.TryGetMethod(givenType, out var func, out var provided))
+            {
+                var result = func.Invoke(options);
+                return new GenericPipelineInputProvider(result, order, provided);
+            }
+            else
+            {
+                throw new Exception($"Unable to use input provider {callName}. Wrong input type ({givenType} is invalid. Valid options: {pipeInputMethods.GetValidTypesStringList()}");
+            }
         }
 
         throw new Exception("Unknown Input Provider '" + callName + $"'. Supported names are: (todo)");
@@ -255,34 +265,112 @@ public class PluginEnvironment
     {
         if (BuiltinInputProviders.InputProviders.TryGetValue(callName, out var provider))
         {
+            //todo: load isn't showing us the transformation!
+            var t = provider.Method.ReturnType;
             return provider.Invoke(arguments, options);
         }
 
         throw new Exception("Unknown Input Provider '" + callName + $"'. Supported names are: (todo)");
     }
-    public FilterProcess GetFilterCommand(string filterName, RuntimeExpression[] arguments, Dictionary<string, PKItem> options)
+    public FilterProcess GetFilterCommand(string filterName, RuntimeExpression[] arguments, Dictionary<string, PKItem> options, ref PKTypeTracker typeTracker)
     {
         if (BuiltinFilters.FilterProviders.TryGetValue(filterName, out Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, bool>> filter))
         {
             return new FilterProcess(arguments, filter.Invoke(options));
+        }else if (FilterMethods.TryGetValue(filterName, out var fmethods))
+        {
+            var t = typeTracker.Current;
+            if (fmethods.TryGetMethod(t, out var func, out var ret))
+            {
+                typeTracker.Filter(t);
+                Debug.Assert(t == ret);//we know this is true, just from how we do registering.
+                return new FilterProcess(arguments, func.Invoke(options));
+            }
         }
 
         //i love extension methods, but WOOF it looks like i just wrote java? what the everloving fuck?
         throw new Exception("Unknown Filter '" + filterName + $"'. Supported names are: {BuiltinFilters.FilterProviders.KeyListString()}");
     }
 
-    public RuntimeProcess GetPipelineCommand(string pipeName, RuntimeExpression[] arguments, Dictionary<string, PKItem>? options)
+    public RuntimeProcess GetPipelineCommand(string pipeName, RuntimeExpression[] arguments, Dictionary<string, PKItem>? options, ref PKTypeTracker typeTracker)
     {
-        if (NativePipes.PipelineProviders.TryGetValue(pipeName, out Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>> pipeFunc))
+        var t = typeTracker.Current;
+
+        if (pipeName == "load")
         {
-            return new PipelineProcess(arguments, pipeFunc.Invoke(options));
-        }else if (NativePipes.OnContextPipelineProviders.TryGetValue(pipeName, out var contextPipeFunc))
+           return GetPipelineLoadCommand(arguments, options, ref typeTracker);
+           
+        }else if (PipelineMethods.TryGetValue(pipeName, out var methods))
+        {
+            if(methods.TryGetMethod(t, out var func, out var ret))
+            {
+                var process = func.Invoke(options);
+                typeTracker.Pipeline(t, ret);
+                return new PipelineProcess(arguments, process);
+            }//else, try on context below... but we want to throw the right error about 'this name exists but it's the wrong type...'
+            else
+            {
+                throw new Exception("Pipe '" + pipeName + $"' does not support type {typeTracker.Current}. Valid types for {pipeName} are {methods.GetValidTypesStringList()} ");
+                Debug.WriteLine($"found pipeline method {pipeName} but didn't find the registered? is the type wrong? we need better errors.");
+            }
+        }
+        
+        if (NativePipes.OnContextPipelineProviders.TryGetValue(pipeName, out var contextPipeFunc))
         {
             return new OnContextPipelineProcess(arguments, contextPipeFunc.Invoke(options));
         }
 
         //todo: replace all this with our poll-environment-for-supported in/out etc; the thing we will later use to write a gui...
-        throw new Exception("Unknown Pipe '" + pipeName + $"'. Supported pipe operations: {NativePipes.PipelineProviders.KeyListString()}");
+        throw new Exception("Unknown Pipe '" + pipeName + $"'. Supported pipe operations: ");
+    }
+
+    //literally just |load
+    private RuntimeProcess GetPipelineLoadCommand(RuntimeExpression[] arguments, Dictionary<string, PKItem>? options, ref PKTypeTracker typeTracker)
+    {
+        var t = typeTracker.Current;
+        string loadType = "";
+        if (arguments[0] is Constant constant)
+        {
+            if (!constant.GetValueCompileTime().TryGetString(out loadType))
+            {
+                throw new Exception("invalid type for |load loadtype. loadtype must be a string or an identifier.");
+            }
+        }
+        else
+        {
+            throw new Exception("LoadType property of |load loadtype must be a compile-time constant. (e.g. no @labels)");
+        }
+
+        if (string.IsNullOrEmpty(loadType))
+        {
+            throw new Exception("missing load type on |load");
+        }
+            
+        Type retType = null;
+        if (AllLoaders.TryGetValue(loadType, out var loader))
+        {
+            retType = loader.ProvidedType;
+        }
+        else
+        {
+            throw new Exception($"Invalid or unknown loader {loadType}");
+        }
+        
+        var loadProcess = new Func<PKItem[], PKItem, PKItem>((arguments, item) =>
+        {
+            //we checked arguments already at compile time.
+            if (item is PKFileInfo fileInfo)
+            {
+                return loader.DoLoad(fileInfo.Value);
+            }
+            else
+            {
+                throw new Exception("RUNTIME invalid input type. |load must take a fileInfo type. The type checker failed!");
+            }
+        });
+        
+        typeTracker.Pipeline(t, retType);
+        return new PipelineProcess(arguments, loadProcess);
     }
 
     #endregion

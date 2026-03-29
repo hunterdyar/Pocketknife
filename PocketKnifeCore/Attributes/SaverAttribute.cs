@@ -8,10 +8,10 @@ public class SaverAttribute : Attribute
 	public string DefaultExtension => _ext;
 	private string _ext;
 
-	public Type? OnlyValidOn => _onlyValidOn;
-	private Type? _onlyValidOn;
+	public Type OnlyValidOn => _onlyValidOn;
+	private Type _onlyValidOn;
 
-	public SaverAttribute(string name, string defaultExtension, Type? onlyValidOn)
+	public SaverAttribute(string name, string defaultExtension, Type onlyValidOn)
 	{
 		_name = name;
 		_ext = defaultExtension;

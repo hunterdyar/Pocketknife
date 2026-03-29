@@ -18,7 +18,8 @@ public class CompilerTests
 		                |filename no-ext
 		                |append ".csv" //string function
 		                ^
-		                |load xlsx
+		                //|load xlsx
+		                |load csv
 		                |save csv "./out1/" @fn
 		                
 		                //pipe-input turns one input into many, until an output (<).

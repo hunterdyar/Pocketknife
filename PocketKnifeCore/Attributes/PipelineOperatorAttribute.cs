@@ -8,7 +8,7 @@ public class PipelineOperator : Attribute
 
 	public Type? OnlyValidOn => _onlyValidOn;
 	private Type? _onlyValidOn;
-	public PipelineOperator(string name, Type? onlyValidOn = null)
+	public PipelineOperator(string name, Type onlyValidOn)
 	{
 		_name = name;
 		_onlyValidOn = onlyValidOn;

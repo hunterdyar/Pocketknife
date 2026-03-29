@@ -15,4 +15,9 @@ public class Constant :RuntimeExpression
 	{
 		return _item;
 	}
+
+	public PKItem GetValueCompileTime()
+	{
+		return _item;
+	}
 }

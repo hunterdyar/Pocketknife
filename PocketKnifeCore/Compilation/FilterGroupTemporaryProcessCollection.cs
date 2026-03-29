@@ -1,5 +1,6 @@
 ﻿namespace PocketKnifeCore.Engine;
 
+//todo: we can get rid of this hack, change ProcessCollection to an interface or something, but it's fine for now.
 public class FilterGroupTemporaryProcessCollection : ProcessCollection
 {
 	public List<FilterProcess> Filters = new List<FilterProcess>();

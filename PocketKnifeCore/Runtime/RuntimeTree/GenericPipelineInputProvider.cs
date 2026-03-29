@@ -8,10 +8,12 @@ public class GenericPipelineInputProvider : IPKInputProvider
 	private Func<PKItem, PKItem[], IEnumerable<PKItem>> InputEnumerator;
 	private PKItem[] _args;
 	private Context _context;
-	public GenericPipelineInputProvider(Func<PKItem, PKItem[], IEnumerable<PKItem>> inputEnumerator, TraversalOrder order)
+	public Type ProvidedType { get; }
+	public GenericPipelineInputProvider(Func<PKItem, PKItem[], IEnumerable<PKItem>> inputEnumerator, TraversalOrder order, Type providedType)
 	{
 		TraversalOrder = order;
 		InputEnumerator = inputEnumerator;
+		ProvidedType = providedType;
 	}
 	
 	public void SetArguments(bool asPipeline, Context context, PKItem[] args)

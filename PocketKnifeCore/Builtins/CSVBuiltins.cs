@@ -20,7 +20,7 @@ public static class CSVBuiltins
 	}
 
 	[PipeInputOperator("rows", typeof(PKTable))]
-	public static IEnumerable<PKItem> Rows(PKTable table, PKItem[] args)
+	public static IEnumerable<PKTableRow> Rows(PKTable table, PKItem[] args)
 	{
 		foreach (DataRow row in table.Value.Rows)
 		{
@@ -29,7 +29,7 @@ public static class CSVBuiltins
 	}
 
 	[PipeInputOperator("cols", typeof(PKTable))]
-	public static IEnumerable<PKItem> Cols(PKTable table, PKItem[] args)
+	public static IEnumerable<PKTableCol> Cols(PKTable table, PKItem[] args)
 	{
 		foreach (DataColumn col in table.Value.Columns)
 		{
