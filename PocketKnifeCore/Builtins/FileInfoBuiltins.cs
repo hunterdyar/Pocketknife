@@ -21,6 +21,7 @@ public static class FileInfoBuiltins
 			return new PKString(info.Value.Name.Replace(info.Value.Extension, ""));
 		}
 	}
+	
 
 	[FilterOperator("exists", typeof(PKFileInfo))]
 	public static bool Exists(PKFileInfo fileInfo, PKItem[] args)

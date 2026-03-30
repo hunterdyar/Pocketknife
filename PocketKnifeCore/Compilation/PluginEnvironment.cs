@@ -61,7 +61,7 @@ public class PluginEnvironment
                 var s = new Saver()
                 {
                     DefaultExtension = satt.DefaultExtension,
-                    OnlyValidOn = satt.OnlyValidOn,
+                    ValidOn = satt.OnlyValidOn,
                     Name = satt.Name,
                     Writer = (fs, item) => { method.Invoke(null, [fs, item]); }
                 };
@@ -329,11 +329,23 @@ public class PluginEnvironment
             }//else, try on context below... but we want to throw the right error about 'this name exists but it's the wrong type...'
             else
             {
+                //hacky (and slow) workaround for this if/else hell we're in, where we want to throw the correct error, and the error needs access to 'methods'?
+                //there's a better way to do this but i'm tired. just gotta... reset it all. 
+                //ffs context only has one function right now, 'save'. lol, i don't even have a way to register them attow.
+                
+                if (NativePipes.OnContextPipelineProviders.ContainsKey(pipeName))
+                {
+                    goto TryDoContextLoad;
+                }
+
                 throw new Exception("Pipe '" + pipeName + $"' does not support type {typeTracker.Current}. Valid types for {pipeName} are {methods.GetValidTypesStringList()} ");
+
                 Debug.WriteLine($"found pipeline method {pipeName} but didn't find the registered? is the type wrong? we need better errors.");
             }
         }
         
+        //this setup asserts that if we have a PipelineMethod of type 
+        TryDoContextLoad:
         if (NativePipes.OnContextPipelineProviders.TryGetValue(pipeName, out var contextPipeFunc))
         {
             return new OnContextPipelineProcess(arguments, contextPipeFunc.Invoke(options));
@@ -341,6 +353,8 @@ public class PluginEnvironment
 
         //todo: replace all this with our poll-environment-for-supported in/out etc; the thing we will later use to write a gui...
         throw new Exception("Unknown Pipe '" + pipeName + $"'. Supported pipe operations: ");
+
+
     }
 
     //literally just |load

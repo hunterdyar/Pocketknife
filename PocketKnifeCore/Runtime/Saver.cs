@@ -7,7 +7,7 @@ public class Saver
 	public bool Overwrite = true;
 	public Action<FileStream, PKItem> Writer;
 	public string DefaultExtension;
-	public Type? OnlyValidOn;
+	public Type ValidOn;
 	public string Name;
 
 	public void Execute(Context context, PKItem[] args)
@@ -16,6 +16,10 @@ public class Saver
 		//arg 0 will be the type of the saver (csv, text, etc)
 		//args 1....^1 should be a combined directory (optional)
 		//the last argument should be the file name to save as. Extension is optional, if not provided, will use defaultExtension.
+		if (item.GetType() != ValidOn)
+		{
+			throw new Exception("Unable to save, invalid type provided. This should have been caught by the type checker. oops!");
+		}
 		
 		FileInfo file = null;
 		if (args.Length >= 3)
@@ -59,8 +63,6 @@ public class Saver
 				// }
 			}
 			
-			
-		
 			file = new FileInfo(dir.FullName+filename);
 		}else if (args.Length == 2)
 		{
@@ -122,10 +124,8 @@ public class Saver
 			else
 			{
 				//!file.exists and !overwrite
-				throw new Exception($"cannot overwrite file {file} during save command.");
+				throw new Exception($"cannot overwrite file {file} during save command. (set argument '(overwrite=true)')");
 			}
-
-		
 		}
 		else
 		{
