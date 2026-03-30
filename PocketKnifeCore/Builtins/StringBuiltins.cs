@@ -82,22 +82,22 @@ public static class StringBuiltins
 		throw new Exception($"Cannot call |append on type {item.Type}");
 	}
 
-	[PipeInputOperator("lines", typeof(PKString))]
-	public static IEnumerable<PKString> Lines(PKString input, PKItem[] args)
-	{
-		if (args.Length > 0)
-		{
-			throw new Exception($"|>lines does not take any arguments.");
 
-			if (args.Length == 1)
-			{
-				//skip-empty is one of the arguments, i think? although that feels like an 'option'.
-			}
-		}
-
-		foreach (var line in input.Value.Split(Environment.NewLine))
-		{
-			yield return new PKString(line);
-		}
-	}
+	// [SignalOperator("echo")]
+	// public static void Echo(PKString input, PKItem[] args)
+	// {
+	// 	Console.WriteLine(input);
+	// 	if (args.Length > 0)
+	// 	{
+	// 		Console.Write(" ");
+	// 		foreach (var item in args)
+	// 		{
+	// 			if (item.TryGetString(out var s))
+	// 			{
+	// 				Console.Write(s);
+	// 				Console.Write(" ");
+	// 			}
+	// 		}
+	// 	}
+	// }
 }

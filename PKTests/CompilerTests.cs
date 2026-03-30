@@ -51,5 +51,22 @@ public class CompilerTests
 		compiler.CompileScript(p.Program);
 	}
 
+
+	[Test]
+	public void ParseExtractionExampleTest()
+	{
+		string source = """
+		                >dir "./"
+		                ~ext zip
+		                |extract
+		                <
+		                """;
+
+		var p = new Parser();
+		p.Parse(source);
+		var compiler = new Compiler();
+		compiler.CompileScript(p.Program);
+	}
+
 	
 }

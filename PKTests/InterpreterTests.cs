@@ -35,4 +35,29 @@ public class InterpreterTests
 		var i = new Interpreter();
 		i.Execute(compiler.Script, "");
 	}
+
+	[Test]
+	public void ExtractionExampleTest()
+	{
+		string source = """
+		                >dir "../../../testdata/input"
+		                ~ext zip
+		                |extract
+		                <
+		                """;
+
+		var p = new Parser();
+		p.Parse(source);
+		var compiler = new Compiler();
+		compiler.CompileScript(p.Program);
+		var i = new Interpreter();
+		i.Execute(compiler.Script, "");
+
+		var expectedOutput = new DirectoryInfo(Directory.GetCurrentDirectory() + "/../../../testdata/input/testzip/");
+		Assert.That(expectedOutput.Exists);
+		if (expectedOutput.Exists)
+		{
+			expectedOutput.Delete(true);
+		}
+	}
 }
