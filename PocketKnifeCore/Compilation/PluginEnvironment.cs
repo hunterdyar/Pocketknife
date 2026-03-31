@@ -6,18 +6,21 @@ namespace PocketKnifeCore.Engine;
 
 public class PluginEnvironment
 {
-    //todo: should this be static?
-    public static readonly Dictionary<string, Loader> AllLoaders = new Dictionary<string, Loader>();//le sigh
-    public static readonly Dictionary<string, Saver> AllSavers = new Dictionary<string, Saver>();
+    //todo: should this be static? nope, it's breaking multithreaded testing!
+        //okay, so we should figure out a way to not redo the plugin environment every script call. that's like, the whole point of this class.
+        //so... not static, and pass a static reference to PluginEnvironment around? that feels okay?
+    public readonly Dictionary<string, Loader> AllLoaders = new Dictionary<string, Loader>();//le sigh
+    public readonly Dictionary<string, Saver> AllSavers = new Dictionary<string, Saver>();
 
-    public static readonly Dictionary<string, PipelineMethodsProvider> PipelineMethods = new Dictionary<string, PipelineMethodsProvider>();
-    public static readonly Dictionary<string, FilterMethodsWrapper> FilterMethods = new Dictionary<string, FilterMethodsWrapper>();
-    public static readonly Dictionary<string, PipeInputsMethodsWrapper> PipeInputMethods = new Dictionary<string, PipeInputsMethodsWrapper>();
-    public static readonly Dictionary<string, InputMethodsWrapper> InputMethods = new Dictionary<string, InputMethodsWrapper>();
+    public readonly Dictionary<string, PipelineMethodsProvider> PipelineMethods = new Dictionary<string, PipelineMethodsProvider>();
+    public readonly Dictionary<string, FilterMethodsWrapper> FilterMethods = new Dictionary<string, FilterMethodsWrapper>();
+    public readonly Dictionary<string, PipeInputsMethodsWrapper> PipeInputMethods = new Dictionary<string, PipeInputsMethodsWrapper>();
+    public readonly Dictionary<string, InputMethodsWrapper> InputMethods = new Dictionary<string, InputMethodsWrapper>();
     
-    public static readonly Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>> AllPipeInputProviders = new Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>>(); 
+    public readonly Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>> AllPipeInputProviders = new Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>>(); 
     public PluginEnvironment()
     {
+        
         RegisterOperations(typeof(StringBuiltins));
         RegisterOperations(typeof(FileInfoBuiltins));
         RegisterOperations(typeof(CSVBuiltins));
@@ -348,7 +351,7 @@ public class PluginEnvironment
         TryDoContextLoad:
         if (NativePipes.OnContextPipelineProviders.TryGetValue(pipeName, out var contextPipeFunc))
         {
-            return new OnContextPipelineProcess(arguments, contextPipeFunc.Invoke(options));
+            return new OnContextPipelineProcess(arguments, contextPipeFunc.Invoke(options,this));
         }
 
         //todo: replace all this with our poll-environment-for-supported in/out etc; the thing we will later use to write a gui...

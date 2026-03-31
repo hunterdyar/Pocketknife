@@ -4,13 +4,18 @@ namespace PocketKnifeCore;
 
 class Program
 {
+    private static PluginEnvironment _environment;
     static void Main(string[] args)
     {
         if (args.Length == 0)
         {
             Console.WriteLine("PocketKnife (V0.0). Provide an input pocketknife script as the first argument. For any following arguments, the script will be run from the top with this starting string.");
             return;
-        } 
+        }
+
+        //load it up!
+        _environment = new PluginEnvironment();
+        
         FileInfo script = new FileInfo(args[0]);
         ExecuteScript(script, args);
     }
@@ -34,7 +39,7 @@ class Program
         {
             var p = new Parser.Parser();
             p.Parse(source);
-            var compiler = new Compiler();
+            var compiler = new Compiler(p, _environment);
             compiler.CompileScript(p.Program);
             var i = new Interpreter();
             i.Execute(compiler.Script, pkStrings);

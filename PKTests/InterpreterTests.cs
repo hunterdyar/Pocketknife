@@ -6,6 +6,14 @@ namespace PKTests;
 
 public class InterpreterTests
 {
+	private PluginEnvironment _environment;
+
+	[SetUp]
+	public void Setup()
+	{
+		_environment = new PluginEnvironment();
+	}
+
 	[Test]
 	public void GenericCSVTestOne()
 	{
@@ -30,7 +38,7 @@ public class InterpreterTests
 
 		var p = new Parser();
 		p.Parse(source);
-		var compiler = new Compiler();
+		var compiler = new Compiler(p, _environment);
 		compiler.CompileScript(p.Program);
 		var i = new Interpreter();
 		i.Execute(compiler.Script, "");
@@ -48,7 +56,7 @@ public class InterpreterTests
 
 		var p = new Parser();
 		p.Parse(source);
-		var compiler = new Compiler();
+		var compiler = new Compiler(p, _environment);
 		compiler.CompileScript(p.Program);
 		var i = new Interpreter();
 		i.Execute(compiler.Script, "");

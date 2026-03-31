@@ -291,11 +291,11 @@ public class Lexer
 
                 if (loc >= _source.Length)
                 {
-                    throw new Exception("Unexpected end of file");
+                    throw new LexerException(this, loc, "Unexpected end of file");
                 }
                 else
                 {
-                    throw new Exception($"Unexpected Token {Current}");
+                    throw new LexerException(this,loc, $"Unexpected Token {Current}");
                 }
                 break;
         }
@@ -334,7 +334,7 @@ public class Lexer
     {
         if (loc >= _source.Length)
         {
-            throw new Exception("Unexpected end of file");
+            throw new LexerException(this, loc, "Unexpected end of file");
         }
         if (_source[loc] == c)
         {
@@ -342,7 +342,7 @@ public class Lexer
         }
         else
         {
-            throw new Exception($"Unexpected Character {c}");
+            throw new LexerException(this, loc, $"Unexpected Character {c}");
         }
     }
 
@@ -398,5 +398,22 @@ public class Lexer
         }
     }
 
-    
+
+    public string PrettyLineCol(int position)
+    {
+        int line = 1;
+        int col = 0;
+        for (int i = 0; i < position; i++)
+        {
+            if (_source[i] == '\n')
+            {
+                line++;
+                col = 0;
+            }
+
+            col++;
+        }
+
+        return $"(line {line}, col {col})";
+    }
 }

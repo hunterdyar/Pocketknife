@@ -19,7 +19,7 @@ public class CommandMethodWrapper<T>
 	{
 		if (Methods.ContainsKey(type))
 		{
-			throw new Exception("Cannot add method, type already registered!");
+			throw new Exception($"Cannot add method, type {type} already registered!");
 		}
 		Methods.Add(type, (func, returnType));
 	}

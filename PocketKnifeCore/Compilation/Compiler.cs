@@ -4,14 +4,26 @@ namespace PocketKnifeCore.Engine;
 
 public class Compiler
 {
-    private PluginEnvironment _env;
+    private PluginEnvironment? _env;
     public PocketKnifeScript Script => _script;
     private PocketKnifeScript _script;
-    
+
+    //parser ref basically so we can grab data for the exceptons. todo: roll compileScript into the constructor? for parser too with lexer?
+    public Parser.Parser Parser => _parser;
+    private Parser.Parser _parser;
+    public Compiler(Parser.Parser parser, PluginEnvironment env)
+    {
+        _parser = parser;
+        _env = env;
+    }
     public PocketKnifeScript CompileScript(PKScriptNode scriptNode)
     {
-        _env = new PluginEnvironment(); //environment gets all of our loaded plugins, the current working directory, etc. We can reuse the script with/without the environment, and vise-versa.
-        //we can rerun a compiled script in a few folders, recreating environments. but for now, they are just made at the same time.
+        if (_env == null)
+        {
+            _env = new PluginEnvironment(); //environment gets all of our loaded plugins, the current working directory, etc. We can reuse the script with/without the environment, and vise-versa.
+            //we can rerun a compiled script in a few folders, recreating environments. but for now, they are just made at the same time.
+        }
+
         _script = new PocketKnifeScript(); 
         string input = "";
         PKTypeTracker tracker = new PKTypeTracker(typeof(PKString));
@@ -88,7 +100,7 @@ public class Compiler
                 
                 break;
             case InputProviderNode inputProvider:
-                throw new Exception("this should only get called from within InputToOutput Node");
+                throw new InternalException("'input provider' should only get called from within InputToOutput Node");
                 break;
             case PipeOutNode pipeOutCommand:
                 //todo pipeout compilation. is this just named branches now?
@@ -109,27 +121,27 @@ public class Compiler
                 {
                     //type checking happens inside of the GetCommand function, which is messy but whatever.
                     case "not":
-                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.Not, filterCommand.Arguments, branch,ref typeTracker);
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.Not, filterCommand, branch,ref typeTracker);
                         branch.AddProcess(fg);
                         return;
                     case "any":
-                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.Any, filterCommand.Arguments, branch,ref typeTracker);
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.Any, filterCommand, branch,ref typeTracker);
                         branch.AddProcess(fg);
                         return;
                     case "all":
-                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.All, filterCommand.Arguments, branch,ref typeTracker);
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.All, filterCommand, branch,ref typeTracker);
                         branch.AddProcess(fg);
                         return;
                     case "none":
-                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.None, filterCommand.Arguments, branch,ref typeTracker);
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.None, filterCommand, branch,ref typeTracker);
                         branch.AddProcess(fg);
                         return;
                     case "not-all":
-                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.NotAll, filterCommand.Arguments, branch,ref typeTracker);
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.NotAll, filterCommand, branch,ref typeTracker);
                         branch.AddProcess(fg);
                         return;
                     case "only-one":
-                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.OnlyOne, filterCommand.Arguments, branch,ref typeTracker);
+                        fg = GetFilterGroupFromArgument(FilterCombinatorialType.OnlyOne, filterCommand, branch,ref typeTracker);
                         branch.AddProcess(fg);
                         return;
                     default:
@@ -150,18 +162,18 @@ public class Compiler
                 throw new NotImplementedException();
                 break;
            default:
-                throw new Exception($"Unhandled node {node}");
+                throw new CompilerException(this, node, $"Unhandled node {node}");
                 break;
             
         }
     }
 
-    private FilterGroup GetFilterGroupFromArgument(FilterCombinatorialType type, ExpressionNode[] filterCommandArguments, ProcessCollection branch, ref PKTypeTracker tracker)
+    private FilterGroup GetFilterGroupFromArgument(FilterCombinatorialType type, FilterCommandNode filterNode, ProcessCollection branch, ref PKTypeTracker tracker)
     {
+        var filterCommandArguments = filterNode.Arguments;
         if (filterCommandArguments.Length != 1)
         {
-            throw new Exception(
-                "Combinatorial Filters (not, all, any, etc) must have only one argument, the group: [] of filters.");
+            throw new CompilerException(this, filterNode, "Combinatorial Filters (not, all, any, etc) must have only one argument, the group: [] of filters.");
             //i guess we can do 'count' eventually. //todo. make a new sublist of the remaining, then WalkExpressions and WalkArguments so it could be used.
         }
 
@@ -181,7 +193,7 @@ public class Compiler
         }
         else
         {
-            throw new Exception($"Invalid Argument {expr}. Expected a filter group ([~a])");
+            throw new CompilerException(this, expr, $"Invalid Argument {expr}. Expected a filter group ([~a])");
         }
     }
 
@@ -224,14 +236,14 @@ public class Compiler
                 }
                 else
                 {
-                    throw new Exception($"Unable to find label with name @{label.Name}");
+                    throw new CompilerException(this, expressionNode, $"Unable to find label with name @{label.Name}");
                 }
                 break;
             case CommandGroupExpression commandGroupExpression:
-                throw new Exception("this is a special case that should be handled by the filter node.");
+                throw new CompilerException(this, commandGroupExpression, "this is a special case that should be handled by the filter node.");
                 
             default:
-                throw new Exception($"Unhandled node {expressionNode}");
+                throw new CompilerException(this, expressionNode, $"Unhandled node {expressionNode}");
         }
     }
 

@@ -5,27 +5,28 @@ namespace PocketKnifeCore.Parser;
 
 public class Parser
 {
-    private string Source => lexer.Source;
-    private Lexer lexer;
-    private Queue<Token> tokens;
+    private string Source => _lexer.Source;
+    public Lexer Lexer => _lexer;
+    private Lexer _lexer;
+    private Queue<Token> _tokens;
     public PKScriptNode Program;
     public void Parse(string input)
     {
-        lexer = new Lexer(input);
-        Parse(lexer);
+        _lexer = new Lexer(input);
+        Parse(_lexer);
     }
     public void Parse(Lexer input)
     {
         //Reset/Initiate Command List.
-        lexer = input;
-        tokens = new Queue<Token>(input.Tokens);
+        _lexer = input;
+        _tokens = new Queue<Token>(input.Tokens);
         Program = ParseProgram();
     }
 
     private PKScriptNode ParseProgram()
     {
         List<RootNode> nodesList = new List<RootNode>();
-        while (tokens.TryPeek(out var token))
+        while (_tokens.TryPeek(out var token))
         {
             //on root level, linebreaks are extra and thats fine!
             //parseRootNodes, but there's only two right now so no need to extract method.
@@ -39,7 +40,7 @@ public class Parser
     {
         EatOptionalLinebreaks();
         //todo: switch/case
-        if (tokens.TryPeek(out var token))
+        if (_tokens.TryPeek(out var token))
         {
             return token.Type switch
             {
@@ -69,7 +70,7 @@ public class Parser
         var input = ParseInputCommand();
         List<RootNode> commands = new List<RootNode>();
 
-        while (tokens.TryPeek(out var token))
+        while (_tokens.TryPeek(out var token))
         {
             if (token.Type == TokenType.Output)
             {
@@ -94,11 +95,11 @@ public class Parser
 
     private void EatOptionalLinebreaks()
     {
-        while (tokens.TryPeek(out var token))
+        while (_tokens.TryPeek(out var token))
         {
             if (token.Type == TokenType.LineBreak)
             {
-                tokens.Dequeue();
+                _tokens.Dequeue();
             }
             else
             {
@@ -109,7 +110,7 @@ public class Parser
 
     private CommandNode ParseCommand()
     {
-        var peek = tokens.Peek();
+        var peek = _tokens.Peek();
         switch (peek.Type)
         {
             case TokenType.Pipe:
@@ -123,42 +124,41 @@ public class Parser
             case TokenType.PipeIn:
                 return ParsePipeIn();
             case TokenType.Output:
-                //<
-           
+            //<
+
             default:
-                throw new Exception("Unexpected token " + peek.Type);
+                throw new ParserException(this, "Unexpected token " + peek.Type);
         }
-        
     }
 
     private SignalOutNode ParseSignalOut()
     {
         Consume(TokenType.SignalOut);
-        if (tokens.Count == 0 || tokens.Peek().Type == TokenType.Break)
+        if (_tokens.Count == 0 || _tokens.Peek().Type == TokenType.Break)
         {
             ConsumeLinebreakOrEndOfFile();
             return new SignalOutNode();
-        }else if (tokens.Peek().Type == TokenType.Identifier)
+        }else if (_tokens.Peek().Type == TokenType.Identifier)
         {
             var name = ConsumeIdent();
             ConsumeLinebreakOrEndOfFile();
             return new SignalOutNode(name);
         }
 
-        throw new Exception($"Unexpected Token: {tokens.Peek()}");
+        throw new ParserException(this,$"Unexpected Token: {_tokens.Peek()}");
     }
     
     private PipeOutNode ParsePipeOut()
     {
         Consume(TokenType.PipeOut);
-        if (tokens.Count == 0 || tokens.Peek().Type == TokenType.Break)
+        if (_tokens.Count == 0 || _tokens.Peek().Type == TokenType.Break)
         {
             ConsumeLinebreakOrEndOfFile();
             return new PipeOutNode();
-        }else if (tokens.Peek().Type == TokenType.Label)
+        }else if (_tokens.Peek().Type == TokenType.Label)
         {
             var label = ParseLabel();
-            if (tokens.Peek().Type == TokenType.OpenParen)
+            if (_tokens.Peek().Type == TokenType.OpenParen)
             {
                 var opts = ParseParenOptionList();
                 ConsumeLinebreakOrEndOfFile();
@@ -168,7 +168,7 @@ public class Parser
             return new PipeOutNode(label);
         }
         
-        if (tokens.Peek().Type == TokenType.OpenParen)
+        if (_tokens.Peek().Type == TokenType.OpenParen)
         {
             var opts = ParseParenOptionList();
             ConsumeLinebreakOrEndOfFile();
@@ -177,7 +177,7 @@ public class Parser
         else
         {
             var name = ConsumeIdent();
-            if (tokens.Peek().Type == TokenType.OpenParen)
+            if (_tokens.Peek().Type == TokenType.OpenParen)
             {
                 var opts = ParseParenOptionList();
                 ConsumeLinebreakOrEndOfFile();
@@ -191,7 +191,7 @@ public class Parser
     {
         Consume(TokenType.StartBranch);
         string ident = "";
-        if (tokens.Peek().Type == TokenType.Identifier)
+        if (_tokens.Peek().Type == TokenType.Identifier)
         {
             ident = ConsumeIdent();
         }
@@ -199,7 +199,7 @@ public class Parser
         EatOptionalLinebreaks();
 
         List<RootNode> branchCommands = new List<RootNode>();
-        while (tokens.TryPeek(out var token))
+        while (_tokens.TryPeek(out var token))
         {
             if (token.Type == TokenType.EndBranch)
             {
@@ -256,7 +256,7 @@ public class Parser
         EatOptionalLinebreaks();
 
         List<RootNode> branchCommands = new List<RootNode>();
-        while (tokens.TryPeek(out var token))
+        while (_tokens.TryPeek(out var token))
         {
             if (token.Type == TokenType.Output)
             {
@@ -276,16 +276,16 @@ public class Parser
 
     private void ConsumeLinebreakOrEndOfFile()
     {
-        if (tokens.TryPeek(out var token))
+        if (_tokens.TryPeek(out var token))
         {
             if (token.Type == TokenType.LineBreak)
             {
-                tokens.Dequeue();
+                _tokens.Dequeue();
                 return;
             }
             else
             {
-                throw new Exception($"Unexpected token {token.Type}");
+                throw new ParserException(this, token, $"Unexpected token {token.Type}");
             }
         }
         else
@@ -299,9 +299,9 @@ public class Parser
         var name = ConsumeIdent();
         List<ExpressionNode> args = new List<ExpressionNode>();
         List<KeyValuePairNode>? opts = null;
-        while (tokens.Count > 0 && tokens.Peek().Type != TokenType.LineBreak)
+        while (_tokens.Count > 0 && _tokens.Peek().Type != TokenType.LineBreak)
         {
-            if (tokens.Peek().Type == TokenType.OpenParen)
+            if (_tokens.Peek().Type == TokenType.OpenParen)
             { 
                 opts = ParseParenOptionList();
             }
@@ -319,7 +319,7 @@ public class Parser
         List<KeyValuePairNode> props = new List<KeyValuePairNode>();
         Consume(TokenType.OpenParen);
 
-        while (tokens.TryPeek(out var token))
+        while (_tokens.TryPeek(out var token))
         {
             while (token.Type == TokenType.LineBreak)
             {
@@ -343,7 +343,7 @@ public class Parser
             }
             else
             {
-                throw new Exception($"Unexpected token {token.Type}");
+                throw new ParserException(this, token, $"Unexpected token {token.Type}");
             }
         }
 
@@ -353,30 +353,30 @@ public class Parser
 
     private ExpressionNode ParseExpression()
     {
-        if (tokens.TryPeek(out var token))
+        if (_tokens.TryPeek(out var token))
         {
             switch (token.Type)
             {
                 case TokenType.Identifier:
-                    var t = tokens.Dequeue();
+                    var t = _tokens.Dequeue();
                     return new IdentifierNode(t.GetSource(Source));
                 case TokenType.Number:
-                    t = tokens.Dequeue();
+                    t = _tokens.Dequeue();
                     return new NumberNode(t.GetSource(Source));
                 case TokenType.Label:
                     return ParseLabel();
                 case TokenType.String:
-                     t = tokens.Dequeue();
+                     t = _tokens.Dequeue();
                     return new StringLiteralNode(t.GetSource(Source));
                 case TokenType.GroupStart:
                     return ParseCommandGroupExpression();
                 default:
-                    throw new Exception($"Unexpected token {token.Type}");
+                    throw new ParserException(this, token,$"Unexpected token {token.Type}");
             }
         }
         else
         {
-            throw new Exception($"Unexpected end of stream. Expected expression.");
+            throw new ParserException(this,$"Unexpected end of stream. Expected expression.");
         }
     }
 
@@ -393,7 +393,7 @@ public class Parser
         Consume(TokenType.GroupStart);
         EatOptionalLinebreaks();
 
-        while (tokens.TryPeek(out var token))
+        while (_tokens.TryPeek(out var token))
         {
             if (token.Type == TokenType.GroupEnd)
             {
@@ -413,25 +413,25 @@ public class Parser
 
     private string ConsumeIdent()
     {
-        if (tokens.Count == 0)
+        if (_tokens.Count == 0)
         {
-            throw new Exception($"Unexpected End of Stream. Expected Identifier");
+            throw new ParserException(this, $"Unexpected End of Stream. Expected Identifier");
         }
 
-        if (tokens.Peek().Type == TokenType.Identifier)
+        if (_tokens.Peek().Type == TokenType.Identifier)
         {
-            var t = tokens.Dequeue();
+            var t = _tokens.Dequeue();
             return t.GetSource(Source);
         }
         else
         {
-            throw new Exception($"Unexpected token {tokens.Peek()}. Expected Identifier");
+            throw new ParserException(this, _tokens.Peek(),$"Unexpected token {_tokens.Peek()}. Expected Identifier");
         }
     }
 
     private void Consume(TokenType tokenType, bool optional = false)
     {
-        if (tokens.Count == 0)
+        if (_tokens.Count == 0)
         {
             if (optional)
             {
@@ -439,19 +439,19 @@ public class Parser
             }
             else
             {
-                throw new Exception($"Unexpected End of Stream. Expected {tokenType}");
+                throw new ParserException(this, "Unexpected End of Stream. Expected {tokenType}");
             }
         }
         
-        if (tokens.Peek().Type == tokenType)
+        if (_tokens.Peek().Type == tokenType)
         {
-            tokens.Dequeue();
+            _tokens.Dequeue();
         }
         else
         {
             if (!optional)
             {
-                throw new Exception($"Unexpected Token {tokens.Peek().Type}. Expected {tokenType}");
+                throw new ParserException(this, _tokens.Peek(),$"Unexpected Token {_tokens.Peek().Type}. Expected {tokenType}");
             }
         }
     }

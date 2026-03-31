@@ -4,17 +4,17 @@ namespace PocketKnifeCore;
 
 public class NativePipes
 {
-	public static Dictionary<string, Func<Dictionary<string, PKItem>, Func<Context, PKItem[], PKItem>>?> OnContextPipelineProviders =
-		new Dictionary<string, Func<Dictionary<string, PKItem>, Func<Context, PKItem[], PKItem>>?>()
+	public static Dictionary<string, Func<Dictionary<string, PKItem>,PluginEnvironment, Func<Context, PKItem[], PKItem>>?> OnContextPipelineProviders =
+		new Dictionary<string, Func<Dictionary<string, PKItem>,PluginEnvironment,  Func<Context, PKItem[], PKItem>>?>()
 		{
 			{
-			"save", (o) =>
+			"save", (o, pe) =>
 				{
 					//get 'overwrite' and 'use extension'
 					return new((c,a) =>
 					{
 						var saveType = a[0].ToString();
-						if (PluginEnvironment.AllSavers.TryGetValue(saveType, out var saver))
+						if (pe.AllSavers.TryGetValue(saveType, out var saver))
 						{
 							saver.Execute(c, a);
 							return c.Item;

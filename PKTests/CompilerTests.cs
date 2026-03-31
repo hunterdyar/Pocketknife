@@ -7,6 +7,13 @@ namespace PKTests;
 
 public class CompilerTests
 {
+	private PluginEnvironment _environment;
+	[SetUp]
+	public void Setup()
+	{
+		_environment = new PluginEnvironment();
+	}
+	
 	[Test]
 	public void GenericTest()
 	{
@@ -32,7 +39,7 @@ public class CompilerTests
 
 		var p = new Parser();
 		p.Parse(source);
-		var compiler = new Compiler();
+		var compiler = new Compiler(p, _environment);
 		compiler.CompileScript(p.Program);
 	}
 
@@ -47,7 +54,7 @@ public class CompilerTests
 
 		var p = new Parser();
 		p.Parse(source);
-		var compiler = new Compiler();
+		var compiler = new Compiler(p, _environment);
 		compiler.CompileScript(p.Program);
 	}
 
@@ -64,7 +71,7 @@ public class CompilerTests
 
 		var p = new Parser();
 		p.Parse(source);
-		var compiler = new Compiler();
+		var compiler = new Compiler(p, _environment);
 		compiler.CompileScript(p.Program);
 	}
 
