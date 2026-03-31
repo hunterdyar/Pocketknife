@@ -45,8 +45,8 @@ public class LexerTests
         Assert.That(l.Tokens[0].Type, Is.EqualTo(expected));
     }
 
-    [TestCase("|< 0.1", TokenType.PipeOut, TokenType.Number)]
-    [TestCase("|< @banana", TokenType.PipeOut, TokenType.Label, TokenType.Identifier)]
+    [TestCase("|< < 0.1", TokenType.PipeOut, TokenType.Number)]
+    [TestCase("|< && @banana", TokenType.PipeOut, TokenType.Label, TokenType.Identifier)]
     
     public void TestTokens(string source, params TokenType[] expected)
     {

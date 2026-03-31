@@ -399,21 +399,47 @@ public class Lexer
     }
 
 
-    public string PrettyLineCol(int position)
+    public string PrettyLineCol(int position, bool multiLine = true)
     {
+        int lineStart = 0;
+        int lineEnd = 0;
         int line = 1;
         int col = 0;
-        for (int i = 0; i < position; i++)
+        int i = 0;
+        for (; i < position; i++)
         {
             if (_source[i] == '\n')
             {
                 line++;
                 col = 0;
+                lineStart = i;
             }
-
             col++;
         }
 
-        return $"(line {line}, col {col})";
+        if (!multiLine)
+        {
+            return $"(line {line}, col {col})";
+        }
+
+        for (; i < _source.Length; i++)
+        {
+            if (_source[i] == '\n')
+            {
+                break;
+            }
+        }
+
+        lineEnd = i;
+        string lineNum = $"{line},{col}: ";
+        var lineOfError = Source.Substring(lineStart, lineEnd-lineStart);
+        string errorPoint = "";
+        for (int j = 0; j < col+lineNum.Length; j++)
+        {
+            errorPoint += "-";
+        }
+        
+        errorPoint += "^";
+        return $"{Environment.NewLine}{lineNum}{lineOfError}{Environment.NewLine}{errorPoint}{Environment.NewLine}";
     }
 }
