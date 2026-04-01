@@ -20,8 +20,19 @@ public class PKPipeInputToOutputBranch : ProcessCollection
 	public override void Execute(Context context)
 	{
 		_inputProvider.SetArguments(true, context, EvaluateArguments(context));
+
+		var traversal = _inputProvider.TraversalOrder;
+		if (traversal == TraversalOrder.Inherit)
+		{
+			// while (context.Parent != null)
+			// {
+			// 	if(context.Parent.)
+			// }	
+			//todo: i! need! some kind of ... thing for this.
+			traversal = TraversalOrder.ItemByItem;
+		}
 		
-		if (_inputProvider.TraversalOrder == TraversalOrder.ItemByItem)
+		if (traversal == TraversalOrder.ItemByItem)
 		{
 			foreach (var item in _inputProvider.Enumerate())
 			{
@@ -35,7 +46,7 @@ public class PKPipeInputToOutputBranch : ProcessCollection
 				}
 			}
 		}
-		else if (_inputProvider.TraversalOrder == TraversalOrder.CommandByCommand)
+		else if (traversal == TraversalOrder.CommandByCommand)
 		{
 			List<Context> contexts = new List<Context>();
 			foreach (var item in _inputProvider.Enumerate())

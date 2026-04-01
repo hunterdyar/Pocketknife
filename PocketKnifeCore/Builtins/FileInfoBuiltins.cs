@@ -89,14 +89,22 @@ public static class FileInfoBuiltins
 			Console.Error.WriteLine("Error during executing powershell cmdlet Extract-Archive.");
 			throw;
 		}
-	
-
-		var output = new PKDirectoryInfo(TraversalOrder.ItemByItem);
-		output.Value = outputDir;
-		return output;
+		
+		return new PKDirectoryInfo(outputDir);
 	}
 
 
+	[PipelineOperator("nav-up")]
+	public static PKDirectoryInfo NavigateUp(PKDirectoryInfo dirInfo, PKItem[] args)
+	{
+		if (dirInfo.Value.Parent != null)
+		{
+			//todo: clean this up? traversal order should get inheireted by what we are in.
+			return new PKDirectoryInfo(dirInfo.Value.Parent);
+		}
+
+		return dirInfo;
+	}
 	
 
 	#endregion

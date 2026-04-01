@@ -12,7 +12,8 @@ public class PKFileInfo : PKItem<FileInfo>
 public enum TraversalOrder
 {
     ItemByItem,
-    CommandByCommand
+    CommandByCommand,
+    Inherit,
 }
 public class PKDirectoryInfo : PKItem<DirectoryInfo>, IPKInputProvider
 {
@@ -36,6 +37,24 @@ public class PKDirectoryInfo : PKItem<DirectoryInfo>, IPKInputProvider
         }
     }
 
+    public PKDirectoryInfo()
+    {
+        TraversalOrder = TraversalOrder.Inherit;
+    }
+
+    public PKDirectoryInfo(DirectoryInfo info)
+    {
+        Value = info;
+        TraversalOrder = TraversalOrder.Inherit;
+    }
+
+    public PKDirectoryInfo(DirectoryInfo info, TraversalOrder order)
+    {
+        Value = info;
+        TraversalOrder = order;
+    }
+
+    
     public PKDirectoryInfo(TraversalOrder order)
     {
         TraversalOrder = order;
@@ -45,11 +64,11 @@ public class PKDirectoryInfo : PKItem<DirectoryInfo>, IPKInputProvider
 
     public IEnumerable<PKItem> Enumerate()
     {
-       
         if (!Value.Exists)
         {
             throw new Exception($"Cannot find path {Value.FullName}");
         }
+        
         foreach (var fileInfo in Value.EnumerateFiles())
         {
             yield return new PKFileInfo(fileInfo);
