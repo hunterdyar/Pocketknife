@@ -29,6 +29,24 @@ public static class FileInfoBuiltins
 		return fileInfo.Value.Exists;
 	}
 
+	#region DirectoryInfo
+
+	[FilterOperator("exists", typeof(PKDirectoryInfo))]
+	public static bool Exists(PKDirectoryInfo dirInfo, PKItem[] args)
+	{
+		return dirInfo.Value.Exists;
+	}
+
+	[PipelineOperator("create-if-needed")]
+	public static PKDirectoryInfo CreateIfNoExist(PKDirectoryInfo dirInfo, PKItem[] args)
+	{
+		if (!dirInfo.Value.Exists)
+		{
+			dirInfo.Value.Create();
+		}
+		return dirInfo;
+	}
+
 	[PipelineOperator("extract")]
 	public static PKDirectoryInfo ExpandArchive(PKFileInfo info, PKItem[] args)
 	{
@@ -77,4 +95,9 @@ public static class FileInfoBuiltins
 		output.Value = outputDir;
 		return output;
 	}
+
+
+	
+
+	#endregion
 }

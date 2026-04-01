@@ -20,10 +20,10 @@ public class PluginEnvironment
     public readonly Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>> AllPipeInputProviders = new Dictionary<string, Func<Dictionary<string, PKItem>, Func<PKItem, PKItem[], IEnumerable<PKItem>>>>(); 
     public PluginEnvironment()
     {
-        
         RegisterOperations(typeof(StringBuiltins));
         RegisterOperations(typeof(FileInfoBuiltins));
         RegisterOperations(typeof(CSVBuiltins));
+        RegisterOperations(typeof(DateTimeBuiltins));
     }
 
     public void RegisterOperations(Type type)
