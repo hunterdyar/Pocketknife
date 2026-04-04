@@ -1,8 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11626.88 stable
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PocketKnifeCore", "PocketKnifeCore\PocketKnifeCore.csproj", "{2AD3BE86-3A03-42FF-AFEA-0CCE231B57B2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PKTests", "PKTests\PKTests.csproj", "{C36310E9-D2BF-4E0B-8DF8-6C8ABF088035}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "PKInstaller", "PKInstaller\PKInstaller.vdproj", "{94D69C42-05B0-F3AE-19A6-75EDD5A880DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +23,13 @@ Global
 		{C36310E9-D2BF-4E0B-8DF8-6C8ABF088035}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C36310E9-D2BF-4E0B-8DF8-6C8ABF088035}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C36310E9-D2BF-4E0B-8DF8-6C8ABF088035}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94D69C42-05B0-F3AE-19A6-75EDD5A880DE}.Debug|Any CPU.ActiveCfg = Debug
+		{94D69C42-05B0-F3AE-19A6-75EDD5A880DE}.Release|Any CPU.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4EE1AC77-97C6-42C2-96F4-E12B534A759D}
 	EndGlobalSection
 EndGlobal
