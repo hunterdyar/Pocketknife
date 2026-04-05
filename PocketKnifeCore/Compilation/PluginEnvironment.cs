@@ -203,7 +203,7 @@ public class PluginEnvironment
 
         if (!method.IsStatic)
         {
-            throw new Exception("Unable to register pipeline method. Methods must be static");
+            throw new Exception($"Unable to register pipeline method {method}. Methods must be static");
         }
 
         var pipeMethod = new Func<Dictionary<string, PKItem>, Func<PKItem[], PKItem, PKItem>>(a =>

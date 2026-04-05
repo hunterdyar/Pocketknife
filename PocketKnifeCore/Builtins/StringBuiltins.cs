@@ -82,7 +82,14 @@ public static class StringBuiltins
 		throw new Exception($"Cannot call |append on type {item.Type}");
 	}
 
-
+	[PipelineOperator("append-line")]
+	public static PKString AppendLine(PKString item, PKItem[] args)
+	{
+		var x = Append(item, args);
+		x.Value = x.Value + Environment.NewLine;
+		return x;
+	}
+	
 	// [SignalOperator("echo")]
 	// public static void Echo(PKString input, PKItem[] args)
 	// {

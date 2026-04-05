@@ -29,6 +29,36 @@ public static class FileInfoBuiltins
 		return fileInfo.Value.Exists;
 	}
 
+	[PipelineOperator("full-name")]
+	public static PKString ToPKString(PKFileInfo info, PKItem[] args)
+	{
+		return new PKString(info.Value.FullName);
+	}
+
+	[PipelineOperator("extension")]
+	public static PKString Extension(PKFileInfo info, PKItem[] args)
+	{
+		return new PKString(info.Value.Extension);
+	}
+
+	[PipelineOperator("creation-time")]
+	public static PKDateTime CreationTime(PKFileInfo info, PKItem[] args)
+	{
+		return new PKDateTime(info.Value.CreationTime);
+	}
+
+	[PipelineOperator("last-access-time")]
+	public static PKDateTime LastAccessTime(PKFileInfo info, PKItem[] args)
+	{
+		return new PKDateTime(info.Value.LastAccessTime);
+	}
+
+	[PipelineOperator("last-write-time")]
+	public static PKDateTime LastWriteTime(PKFileInfo info, PKItem[] args)
+	{
+		return new PKDateTime(info.Value.LastWriteTime);
+	}
+
 	#region DirectoryInfo
 
 	[FilterOperator("exists", typeof(PKDirectoryInfo))]

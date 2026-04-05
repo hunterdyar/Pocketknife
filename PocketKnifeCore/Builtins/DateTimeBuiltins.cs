@@ -9,7 +9,7 @@ public class DateTimeBuiltins
 	//filter: same-day-of-week, etc.
 
 	[PipelineOperator("to-datetime")]
-	public PKDateTime PipelineOperator(PKString input, PKItem[] args)
+	public static PKDateTime PipelineOperator(PKString input, PKItem[] args)
 	{
 		if(DateTime.TryParse(input.Value, CultureInfo.CurrentCulture, out var time))
 		{
@@ -20,25 +20,25 @@ public class DateTimeBuiltins
 	}
 
 	[PipelineOperator("day-of-year")]
-	public PKNumber DayOfYear(PKDateTime dateTime, PKItem[] args)
+	public static PKNumber DayOfYear(PKDateTime dateTime, PKItem[] args)
 	{
 		return new PKNumber(dateTime.Value.DayOfYear);
 	}
 
 	[PipelineOperator("day")]
-	public PKNumber DayOfMonth(PKDateTime dateTime, PKItem[] args)
+	public static PKNumber DayOfMonth(PKDateTime dateTime, PKItem[] args)
 	{
 		return new PKNumber(dateTime.Value.Day);
 	}
 
 	[PipelineOperator("month")]
-	public PKNumber Month(PKDateTime dateTime, PKItem[] args)
+	public static PKNumber Month(PKDateTime dateTime, PKItem[] args)
 	{
 		return new PKNumber(dateTime.Value.Month);
 	}
 
 	[PipelineOperator("year")]
-	public PKNumber Year(PKDateTime dateTime, PKItem[] args)
+	public static PKNumber Year(PKDateTime dateTime, PKItem[] args)
 	{
 		return new PKNumber(dateTime.Value.Year);
 	}
