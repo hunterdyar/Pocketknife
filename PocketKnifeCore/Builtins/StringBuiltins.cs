@@ -89,6 +89,33 @@ public static class StringBuiltins
 		x.Value = x.Value + Environment.NewLine;
 		return x;
 	}
+
+	[PipelineOperator("trim")]
+	public static PKString Trim(PKString item, PKItem[] args)
+	{
+		item.Value = item.Value.Trim();
+		return item;
+	}
+
+	[PipelineOperator("trim-start")]
+	public static PKString TrimStart(PKString item, PKItem[] args)
+	{
+		item.Value = item.Value.TrimStart();
+		return item;
+	}
+
+	[PipelineOperator("trim-end")]
+	public static PKString TrimEnd(PKString item, PKItem[] args)
+	{
+		item.Value = item.Value.TrimEnd();
+		return item;
+	}
+
+	[PipelineOperator("length")]
+	public static PKNumber Length(PKString item, PKItem[] args)
+	{
+		return new PKNumber(item.Value.Length);
+	}
 	
 	// [SignalOperator("echo")]
 	// public static void Echo(PKString input, PKItem[] args)
