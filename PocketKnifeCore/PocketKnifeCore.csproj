@@ -12,6 +12,7 @@
 
     <PropertyGroup>
         <DebugType>embedded</DebugType>
+        <AssemblyName>PocketKnife</AssemblyName>
     </PropertyGroup>
     
     <ItemGroup>

@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+	<Package Name="PocketKnife"
+			 Version="0.1.0"
+			 Manufacturer="PocketKnife"
+			 UpgradeCode="67a7a342-4777-4b96-a176-c65df1801671">
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+		<MediaTemplate EmbedCab="yes" />
+
+		<Feature Id="ProductFeature" Title="PocketKnife" Level="1">
+			<ComponentRef Id="MainExecutable"/>
+		</Feature>
+
+		<StandardDirectory Id="ProgramFiles6432Folder">
+			<Directory Id="INSTALLFOLDER" Name="PocketKnife">
+				<Component Id="MainExecutable" Guid="67a7a342-4777-4b96-a176-c65df1801671">
+					<File Source="PocketKnife.exe" KeyPath="yes" />
+
+					<Environment Id="PATH"
+								 Name="PATH"
+								 Value="[INSTALLFOLDER]"
+								 Permanent="no"
+								 Part="last"
+								 Action="set"
+								 System="yes" />
+				</Component>
+			</Directory>
+		</StandardDirectory>
+
+	</Package>
+</Wix>
