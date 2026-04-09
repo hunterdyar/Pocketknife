@@ -8,16 +8,13 @@ public class Compiler
     public PocketKnifeScript Script => _script;
     private PocketKnifeScript _script;
 
-    //parser ref basically so we can grab data for the exceptons. todo: roll compileScript into the constructor? for parser too with lexer?
     public Parser.Parser Parser => _parser;
     private Parser.Parser _parser;
     public Compiler(Parser.Parser parser, PluginEnvironment env)
     {
         _parser = parser;
         _env = env;
-    }
-    public PocketKnifeScript CompileScript(PKScriptNode scriptNode)
-    {
+
         if (_env == null)
         {
             _env = new PluginEnvironment(); //environment gets all of our loaded plugins, the current working directory, etc. We can reuse the script with/without the environment, and vise-versa.
@@ -27,12 +24,11 @@ public class Compiler
         _script = new PocketKnifeScript(); 
         string input = "";
         PKTypeTracker tracker = new PKTypeTracker(typeof(PKString));
-        foreach (var rootNode in scriptNode.RootNodes)
+        foreach (var rootNode in parser.Program.RootNodes)
         {
             Walk(rootNode, _script, ref tracker);
         }
 
-        return _script;
     }
     
     private void Walk(RootNode node, ProcessCollection branch, ref PKTypeTracker typeTracker)

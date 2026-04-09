@@ -39,7 +39,6 @@ public class InterpreterTests
 		var p = new Parser();
 		p.Parse(source);
 		var compiler = new Compiler(p, _environment);
-		compiler.CompileScript(p.Program);
 		var i = new Interpreter();
 		i.Execute(compiler.Script, "");
 	}
@@ -57,7 +56,6 @@ public class InterpreterTests
 		var p = new Parser();
 		p.Parse(source);
 		var compiler = new Compiler(p, _environment);
-		compiler.CompileScript(p.Program);
 		var i = new Interpreter();
 		i.Execute(compiler.Script, "");
 

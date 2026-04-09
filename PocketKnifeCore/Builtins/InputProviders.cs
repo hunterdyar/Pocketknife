@@ -25,9 +25,6 @@ public static class BuiltinInputProviders
                             order = TraversalOrder.CommandByCommand;
                         }
                     }
-                    
-                    //todo: make my own asserts
-                   
                     return new PKDirectoryInfo(order);
                 }
             }

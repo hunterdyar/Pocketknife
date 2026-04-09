@@ -8,7 +8,6 @@ public class Context
 	public PKItem Item;
 	public bool KeepProcessing = true;
 	public Context? Parent;
-	//todo:string should be RuntimeLabel?
 	private Dictionary<string, Context> _namedBranches;
 	private Context()
 	{

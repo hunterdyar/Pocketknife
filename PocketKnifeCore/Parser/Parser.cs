@@ -39,7 +39,6 @@ public class Parser
     private RootNode ParseRootNode()
     {
         EatOptionalLinebreaks();
-        //todo: switch/case
         if (_tokens.TryPeek(out var token))
         {
             return token.Type switch

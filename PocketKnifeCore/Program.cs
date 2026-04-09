@@ -39,8 +39,7 @@ class Program
         {
             var p = new Parser.Parser();
             p.Parse(source);
-            var compiler = new Compiler(p, _environment);
-            compiler.CompileScript(p.Program);
+            var compiler = new Compiler(p, _environment); 
             var i = new Interpreter();
             i.Execute(compiler.Script, pkStrings);
         }

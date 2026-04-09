@@ -6,9 +6,6 @@ namespace PocketKnifeCore.Engine;
 
 public class PluginEnvironment
 {
-    //todo: should this be static? nope, it's breaking multithreaded testing!
-        //okay, so we should figure out a way to not redo the plugin environment every script call. that's like, the whole point of this class.
-        //so... not static, and pass a static reference to PluginEnvironment around? that feels okay?
     public readonly Dictionary<string, Loader> AllLoaders = new Dictionary<string, Loader>();//le sigh
     public readonly Dictionary<string, Saver> AllSavers = new Dictionary<string, Saver>();
 

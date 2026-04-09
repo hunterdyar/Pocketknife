@@ -59,6 +59,20 @@ public static class FileInfoBuiltins
 		return new PKDateTime(info.Value.LastWriteTime);
 	}
 
+	public static bool HasExtension(PKFileInfo info, PKItem[] args)
+	{
+		BuiltinHelpers.CheckArgumentCount(args, 1);
+		//todo: make my own asserts
+		var extension = BuiltinHelpers.GetArgument<PKString>(args[0], "file extension");
+		if (!extension.Value.StartsWith('.'))
+		{
+			extension.Value = "." + extension.Value;
+		}
+
+		extension.Value = extension.Value.ToLowerInvariant();
+		return info.Value.Extension.ToLowerInvariant() == extension.Value;
+	}
+
 	#region DirectoryInfo
 
 	[FilterOperator("exists", typeof(PKDirectoryInfo))]
@@ -129,7 +143,6 @@ public static class FileInfoBuiltins
 	{
 		if (dirInfo.Value.Parent != null)
 		{
-			//todo: clean this up? traversal order should get inheireted by what we are in.
 			return new PKDirectoryInfo(dirInfo.Value.Parent);
 		}
 

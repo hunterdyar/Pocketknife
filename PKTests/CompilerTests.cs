@@ -40,7 +40,6 @@ public class CompilerTests
 		var p = new Parser();
 		p.Parse(source);
 		var compiler = new Compiler(p, _environment);
-		compiler.CompileScript(p.Program);
 	}
 
 	[Test]
@@ -55,7 +54,6 @@ public class CompilerTests
 		var p = new Parser();
 		p.Parse(source);
 		var compiler = new Compiler(p, _environment);
-		compiler.CompileScript(p.Program);
 	}
 
 
@@ -72,7 +70,6 @@ public class CompilerTests
 		var p = new Parser();
 		p.Parse(source);
 		var compiler = new Compiler(p, _environment);
-		compiler.CompileScript(p.Program);
 	}
 
 	

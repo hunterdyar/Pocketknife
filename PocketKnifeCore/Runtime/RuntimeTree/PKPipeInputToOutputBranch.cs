@@ -9,6 +9,7 @@ namespace PocketKnifeCore;
 //but, conceptually, this is sound enough for now. It's halfway there with the input provider 'setArguments' now being more of a 'prepare'.
 public class PKPipeInputToOutputBranch : ProcessCollection
 {
+	private static TraversalOrder _lastUsedOrder = TraversalOrder.ItemByItem;
 	public PKPipeInputToOutputBranch(RuntimeExpression[] arguments, ProcessCollection? parent) : base(arguments, parent)
 	{
 		//
@@ -24,16 +25,13 @@ public class PKPipeInputToOutputBranch : ProcessCollection
 		var traversal = _inputProvider.TraversalOrder;
 		if (traversal == TraversalOrder.Inherit)
 		{
-			// while (context.Parent != null)
-			// {
-			// 	if(context.Parent.)
-			// }	
 			//todo: i! need! some kind of ... thing for this.
-			traversal = TraversalOrder.ItemByItem;
+			traversal = _lastUsedOrder;
 		}
 		
 		if (traversal == TraversalOrder.ItemByItem)
 		{
+			_lastUsedOrder = TraversalOrder.ItemByItem;
 			foreach (var item in _inputProvider.Enumerate())
 			{
 				Context c = new Context(item);
@@ -48,6 +46,7 @@ public class PKPipeInputToOutputBranch : ProcessCollection
 		}
 		else if (traversal == TraversalOrder.CommandByCommand)
 		{
+			_lastUsedOrder = TraversalOrder.CommandByCommand;
 			List<Context> contexts = new List<Context>();
 			foreach (var item in _inputProvider.Enumerate())
 			{
