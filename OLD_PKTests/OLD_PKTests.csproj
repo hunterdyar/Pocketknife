@@ -6,6 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
+        <RootNamespace>PKTests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,7 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\PocketKnifeCore\PocketKnifeCore.csproj" />
+      <ProjectReference Include="..\OLD_PocketKnifeCore\OLD_PocketKnifeCore.csproj" />
     </ItemGroup>
 
 </Project>

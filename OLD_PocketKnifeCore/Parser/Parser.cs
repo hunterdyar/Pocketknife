@@ -54,9 +54,6 @@ public class Parser
         throw new  Exception($"Unexpected end of stream");
     }
 
-
-
-
     private RootNode ParsePipeSetLabel()
     {
         Consume(TokenType.PipeSetLabel);
