@@ -18,11 +18,11 @@ public abstract class ASTNode
     }
 }
 
-public class PKScriptNode : ASTNode
+public class ScriptNode : ASTNode
 {
     public List<RootNode> RootNodes;
 
-    public PKScriptNode(List<RootNode> nodes)
+    public ScriptNode(List<RootNode> nodes)
     {
         RootNodes = nodes;
     }

@@ -6,7 +6,7 @@ public class Parser
     public Lexer Lexer => _lexer;
     private Lexer _lexer;
     private int _tokenIndex;
-    public PKScriptNode Program;
+    public ScriptNode Program;
     public void Parse(string input)
     {
         _lexer = new Lexer(input);
@@ -21,7 +21,7 @@ public class Parser
         Program = ParseProgram();
     }
 
-    private PKScriptNode ParseProgram()
+    private ScriptNode ParseProgram()
     {
         List<RootNode> nodesList = new List<RootNode>();
         while (_tokenIndex < _lexer.TokenCount)
@@ -31,7 +31,7 @@ public class Parser
            nodesList.Add(ParseRootNode());
         }
 
-        return new PKScriptNode(nodesList);
+        return new ScriptNode(nodesList);
     }
 
     private RootNode ParseRootNode()
