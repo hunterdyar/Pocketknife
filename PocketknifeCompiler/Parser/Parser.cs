@@ -45,11 +45,133 @@ public class Parser
                 TokenType.StartBranch => ParseBranch(),//.
                 TokenType.PackList => ParsePackList(),
                 TokenType.UnpackList => ParseUnpackList(),
+                TokenType.PatternStart => ParsePatternMatch(),
                 // TokenType.Signal => ParseSignalCommand(),//we overload : for things like "pretty-print-whatever" and "print-this-data, so i'm going to not allow this for now. 99% of time it wont be allowed.
                 _ => ParseCommand()
             };
         }
         throw new  Exception($"Unexpected end of stream");
+    }
+
+    private RootNode ParsePatternMatch()
+    {
+        Consume(TokenType.PatternStart);
+        if (_tokens.TryPeek(out var token))
+        {
+            if (token.Type == TokenType.Identifier)
+            {
+                var matchName = ConsumeIdent();
+                //?try, ?help
+                //or takes the same standard command as any filter?
+                //~contains could be ?contains and //+true, +false.
+                //these are edge cases, deal with it later.
+                throw new NotImplementedException();
+
+            }else if (token.Type == TokenType.LineBreak)
+            {
+                EatOptionalLinebreaks();
+                //?
+                //+branches...
+                //^
+                BranchType closer = default;
+                var arms = ParsePatternBranchArms();
+                if (arms.Count > 0)
+                {
+                    closer = arms[^1].CloseType;
+                    arms[^1].CloseType = BranchType.Unknown;//we take it's token!
+                }
+                else
+                {
+                    //no arms, but ?^ is allowed.
+                    if (!TryEndBranch(out closer, false))
+                    {
+                        throw new Exception("sometin broke with patterh match block i think.");
+                    }
+                }
+
+                return new NakedPatternMatch(arms, closer);
+            }
+            else
+            {
+                EatOptionalLinebreaks();
+                var e = ParseExpression();
+                //? expression is shorthand for if/else.
+                //+ true
+                //+ false
+                //^
+                var branches = ParsePatternBranchArms();
+                throw new NotImplementedException();
+            }
+        }
+        else
+        {
+            throw new ParserException(this, "Unexpected end of stream");
+        }
+
+    }
+
+    private List<PatternBranchArm> ParsePatternBranchArms()
+    {
+        BranchType branchType = default;
+        List<PatternBranchArm> arms = new List<PatternBranchArm>();
+        while (_tokens.TryPeek(out var token))
+        {
+            if (token.Type != TokenType.PatternBranch)
+            {
+                break;
+            }
+            
+            arms.Add(ParsePatternBranchArm());
+            EatOptionalLinebreaks();
+            //consume root nodes and add to list like elsewhere.
+            if (TryEndBranch(out branchType, false))
+            {
+                break;
+            }
+        }
+
+        if (arms.Count(x => x.IsDefault) > 1)
+        {
+            throw new ParserException(this, "Cannot have more than one default arm (~~) in a pattern expression");
+        }
+        
+        return arms;
+    }
+
+    private PatternBranchArm ParsePatternBranchArm()
+    {
+        Consume(TokenType.PatternBranch);//+
+        BranchType branchType = default;
+        FilterCommandNode? filter = null;
+        if (_tokens.TryPeek(out var t))
+        {
+            if (t.Type == TokenType.Filter)
+            {
+                filter = ParseFilterCommand();
+            }else if (t.Type == TokenType.PatternDefault)
+            {
+                Consume(TokenType.PatternDefault);
+                filter = new DefaultFilterCommandNode();
+            }
+            else
+            {
+                throw new ParserException(this, t, $"Unexpected token {t.Type}. Branches (+) should be followed by filters (~) or 'other/else' (~~)");
+            }
+        }
+        
+        List<RootNode> commands = new List<RootNode>();
+        while (_tokens.TryPeek(out var token))
+        {
+            //consume root nodes and add to list like elsewhere.
+            if (TryEndBranch(out branchType, true))
+            {
+                break;
+            }
+            //parse root nodes list.
+            commands.Add(ParseRootNode());
+            EatOptionalLinebreaks();
+        }
+        return new PatternBranchArm(filter, commands, branchType);
     }
 
     private PackListNode ParsePackList()
@@ -126,7 +248,7 @@ public class Parser
         }
     }
 
-    private bool TryEndBranch(out BranchType branchType)
+    private bool TryEndBranch(out BranchType branchType, bool allowPatternBranchAutoClose = false)
     {
         if (_tokens.TryPeek(out var t))
         {
@@ -144,6 +266,9 @@ public class Parser
                     Consume(TokenType.EndBranchReplace);
                     branchType = BranchType.Replace;
                     return true;
+                case TokenType.PatternBranch:
+                    branchType = BranchType.Unknown;
+                    return allowPatternBranchAutoClose;
             }
         }
         branchType = BranchType.Unknown;

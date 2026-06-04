@@ -88,6 +88,15 @@ public class FilterCommandNode : CommandNode
     }
 }
 
+public class DefaultFilterCommandNode : FilterCommandNode
+{
+    override public string sigil => "~~";
+    public DefaultFilterCommandNode() : base("", [], null)
+    {
+    }
+    
+}
+
 public class AbortCommandNode : CommandNode
 {
     public override string sigil => "!";

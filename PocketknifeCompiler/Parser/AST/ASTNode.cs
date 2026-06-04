@@ -5,6 +5,17 @@ namespace PocketKnife.Compiler;
 public abstract class ASTNode
 {
     public SourceSlice Start;
+
+    public static string BranchTypeToString(BranchType type)
+    {
+        switch (type)
+        {
+            case BranchType.SideEffect: return "^";
+            case BranchType.ListAppend: return "&";
+            case BranchType.Replace: return "<";
+            default: return "";
+        }
+    }
 }
 
 public class PKScriptNode : ASTNode
@@ -124,19 +135,8 @@ public class BranchNode : RootNode
         {
             sb.AppendLine(command.ToString());
         }
-
-        switch (Type)
-        {
-            case BranchType.SideEffect:
-                sb.AppendLine("^");
-                break;
-            case BranchType.ListAppend:
-                sb.AppendLine("&");
-                break;
-            case BranchType.Replace:
-                sb.AppendLine("<");
-                break;
-        }
+        
+        sb.AppendLine(ASTNode.BranchTypeToString(Type));
         return sb.ToString();
     }
 }
@@ -154,5 +154,76 @@ public class UnpackListNode : RootNode
     override public string ToString()
     {
         return "><";
+    }
+}
+
+public abstract class PatternMatch : RootNode
+{
+    public List<PatternBranchArm> Arms;
+    public BranchType CloseType;
+    public PatternMatch(List<PatternBranchArm> arms, BranchType closeType)
+    {
+        Arms = arms;
+        CloseType = closeType;
+    }
+
+    public override string ToString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("?");
+        foreach (var arm in Arms)
+        {
+            sb.AppendLine(arm.ToString());
+        }
+        sb.AppendLine(ASTNode.BranchTypeToString(CloseType));
+        return sb.ToString();
+    }
+}
+
+public class NakedPatternMatch : PatternMatch
+{
+    public NakedPatternMatch(List<PatternBranchArm> arms, BranchType closeType) : base(arms, closeType)
+    {
+    }
+}
+
+public class PatternExpressionMatch : PatternMatch
+{
+    public ExpressionNode Expression;
+
+    public PatternExpressionMatch(ExpressionNode expr, List<PatternBranchArm> arms, BranchType closeType) : base(arms, closeType)
+    {
+        Expression = expr;
+    }
+}
+
+public class PatternBranchArm : RootNode
+{
+    public List<RootNode> Commands;
+    public BranchType CloseType;
+    public bool IsDefault = false;
+    public FilterCommandNode? FilterToMatch;
+    public PatternBranchArm(FilterCommandNode? filterCommandNode, List<RootNode>? commands, BranchType closeType)
+    {
+        Commands = commands;
+        CloseType = closeType;
+        FilterToMatch = filterCommandNode;
+        IsDefault = filterCommandNode == null;
+    }
+
+    override public string ToString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.Append("+ ");
+        sb.AppendLine(FilterToMatch?.ToString() ?? "~~");
+        foreach (var command in Commands)
+        {
+            sb.AppendLine(command.ToString());
+        }
+        if(CloseType != BranchType.Unknown)
+        {
+            sb.AppendLine(ASTNode.BranchTypeToString(CloseType));
+        }
+        return sb.ToString();
     }
 }
