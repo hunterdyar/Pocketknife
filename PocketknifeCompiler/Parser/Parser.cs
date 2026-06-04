@@ -515,6 +515,7 @@ public class Parser
                     _tokenIndex++;
                     return new StringLiteralNode(token.GetSource(Source));
                 case TokenType.GroupStart:
+                    //[] is empty-list literal. maybe it shouldn't be?
                     return ParseCommandGroupExpression();
                 default:
                     throw new ParserException(this, token,$"Unexpected token {token.Type}");

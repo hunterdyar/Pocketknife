@@ -58,6 +58,41 @@ public class Tests
 	          :print
 	          //comment at end of file
 	          """)]
+	[TestCase("""
+	          >[]
+	          .@sizes
+	            >[]
+	            .@group
+	              >echo "a"
+	              .@x1
+	                |to-upper
+	              &
+	              >echo "b"
+	              .@x2
+	                |to-upper
+	              &
+	            ^
+	            >@group
+	            |count
+	            .@sz
+	              |add 0
+	            &
+	          ^
+	          >@sizes
+	          |sum
+	          |to-string
+	          :print
+	          """)]
+	[TestCase("""
+	          >range -3 3
+	          <>
+	          |sort-by [
+	            |abs
+	          ]
+	          ><
+	          |to-string
+	          :print
+	          """)]
 	public void ParseTest(string source)
 	{
 		var p = new Parser();
