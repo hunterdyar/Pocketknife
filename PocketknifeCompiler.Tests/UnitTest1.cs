@@ -93,6 +93,49 @@ public class Tests
 	          |to-string
 	          :print
 	          """)]
+	[TestCase("""
+	          // 1. Natural string sort (no bracket) — list<string>, ordinal ascending.
+	          >"banana,apple,cherry"
+	          |split ","
+	          <>
+	          |sort
+	          ><
+	          :print
+	          
+	          // 2. Sort strings by a computed int key (length) — the key's kind (int) differs
+	          //    from the element's kind (string). Stable on equal length (banana/cherry).
+	          >"banana,fig,apple,cherry"
+	          |split ","
+	          <>
+	          |sort [
+	            |length
+	          ]
+	          ><
+	          :print
+	          
+	          // 3. |sort-desc over strings — natural order, descending.
+	          >"banana,apple,cherry"
+	          |split ","
+	          <>
+	          |sort-desc
+	          ><
+	          :print
+	          
+	          // 4. Polymorphic |max / |min over strings — return the ordinal extreme.
+	          >"banana,apple,cherry"
+	          |split ","
+	          <>
+	          |max
+	          |prepend "max: "
+	          :print
+	          
+	          >"banana,apple,cherry"
+	          |split ","
+	          <>
+	          |min
+	          |prepend "min: "
+	          :print
+	          """)]
 	public void ParseTest(string source)
 	{
 		var p = new Parser();

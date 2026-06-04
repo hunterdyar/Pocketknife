@@ -225,5 +225,6 @@ public class PatternBranchArm : RootNode
             sb.AppendLine(ASTNode.BranchTypeToString(CloseType));
         }
         return sb.ToString();
+        
     }
 }

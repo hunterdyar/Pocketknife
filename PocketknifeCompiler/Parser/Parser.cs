@@ -310,7 +310,10 @@ public class Parser
             EatOptionalLinebreaks();
         }
 
-        if (branchType == BranchType.Unknown)
+        if (_tokenIndex >= _lexer.TokenCount)
+        {
+            //the branch ended with the end of the file, which is allowed
+        }else if (branchType == BranchType.Unknown)
         {
             throw new ParserException(this, _lexer.Tokens[_tokenIndex],$"Unexpected token {_lexer.Tokens[_tokenIndex]}. Expected ^, <, or & to end a branch.");
         }
@@ -516,6 +519,13 @@ public class Parser
                     return new StringLiteralNode(token.GetSource(Source));
                 case TokenType.GroupStart:
                     //[] is empty-list literal. maybe it shouldn't be?
+                    if(_tokenIndex + 1 < _lexer.TokenCount && _lexer.Tokens[_tokenIndex + 1].Type == TokenType.GroupEnd)
+                    {
+                        //todo: we'll need to save our source span always when parsing.
+                        _tokenIndex += 2;
+                        return new EmptyListLiteralExpression();
+                    }
+                    //else:
                     return ParseCommandGroupExpression();
                 default:
                     throw new ParserException(this, token,$"Unexpected token {token.Type}");
@@ -561,7 +571,7 @@ public class Parser
 
             EatOptionalLinebreaks();
         }
-        EatOptionalLinebreaks();
+      
         return new CommandGroupExpression(commands);
     }
 

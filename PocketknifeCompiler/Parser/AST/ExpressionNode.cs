@@ -102,3 +102,12 @@ public class CommandGroupExpression : ExpressionNode
         return sb.ToString();
     }
 }
+
+public class EmptyListLiteralExpression : ExpressionNode
+{
+    public EmptyListLiteralExpression()
+    {
+    }
+
+    public override string ToString() => "[]";
+}
