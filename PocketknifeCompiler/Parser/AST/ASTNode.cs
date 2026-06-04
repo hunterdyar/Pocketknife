@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace PocketKnife.Compiler;
 
 public abstract class ASTNode
@@ -12,6 +14,16 @@ public class PKScriptNode : ASTNode
     public PKScriptNode(List<RootNode> nodes)
     {
         RootNodes = nodes;
+    }
+
+    override public string ToString()
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (var node in RootNodes)
+        {
+            sb.AppendLine(node.ToString());
+        }
+        return sb.ToString();
     }
 }
 
@@ -34,11 +46,36 @@ public class InputBranchNode : RootNode
 {
     public InputProviderNode Input;
     public CommandSetNode CommandSet;
-
-    public InputBranchNode(InputProviderNode input, List<RootNode> commands)
+    public BranchType Type;
+    public InputBranchNode(InputProviderNode input, BranchType type, List<RootNode> commands)
     {
+        this.Type = type;
         Input = input;
         CommandSet = new CommandSetNode(commands);
+    }
+
+    public override string ToString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine(Input.ToString());
+        foreach (var command in CommandSet.Commands)
+        {
+            sb.AppendLine(command.ToString());
+        }
+
+        switch (Type)
+        {
+            case BranchType.SideEffect:
+                sb.AppendLine("^");
+                break;
+            case BranchType.ListAppend:
+                sb.AppendLine("&");
+                break;
+            case BranchType.Replace:
+                sb.AppendLine("<");
+                break;
+        }
+        return sb.ToString();
     }
 }
 
@@ -55,23 +92,67 @@ public class BranchNode : RootNode
     public CommandSetNode Commands;
     public bool HasLabel = false;
     public string Label = "";
-    public BranchNode(string label, BranchType type,List<RootNode> commands)
+    public BranchNode(LabelNode? label, BranchType type,List<RootNode> commands)
     {
         this.Type = type;
-        Label = label;
-        HasLabel = !string.IsNullOrEmpty(label);
+        if (label == null)
+        {
+            Label = "";
+            HasLabel = false;
+        }
+        else
+        {
+            //if name is empty, it's still not a label then. like a naked @ maybe? that should err i guess.
+            Label = label.Name;
+            HasLabel = !string.IsNullOrEmpty(label.Name);
+        }
         Commands = new CommandSetNode(commands);
+    }
+
+    override public string ToString()
+    {
+        StringBuilder sb = new StringBuilder();
+        if (HasLabel)
+        {
+            sb.AppendLine(".@"+Label);
+        }
+        else
+        {
+            sb.AppendLine(".");
+        }
+        foreach (var command in Commands.Commands)
+        {
+            sb.AppendLine(command.ToString());
+        }
+
+        switch (Type)
+        {
+            case BranchType.SideEffect:
+                sb.AppendLine("^");
+                break;
+            case BranchType.ListAppend:
+                sb.AppendLine("&");
+                break;
+            case BranchType.Replace:
+                sb.AppendLine("<");
+                break;
+        }
+        return sb.ToString();
     }
 }
 
-
-public class PipeSetLabelNode : RootNode
+public class PackListNode : RootNode
 {
-    public LabelNode LabelNode => _labelNode;
-    private LabelNode _labelNode;
-
-    public PipeSetLabelNode(LabelNode labelNode)
+    public override string ToString()
     {
-        _labelNode = labelNode;
+        return "<>";
+    }
+}
+
+public class UnpackListNode : RootNode
+{
+    override public string ToString()
+    {
+        return "><";
     }
 }

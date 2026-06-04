@@ -43,6 +43,11 @@ public class Lexer
                     while (Current != '\n')
                     {
                         Consume();
+                        if (loc >= _source.Length)
+                        {
+                            //we can end a file with a comment.
+                            return;
+                        }
                     }
                 }
                 else
@@ -50,7 +55,7 @@ public class Lexer
                     // /can be part of a directory identifier without needing " around them.
                     goto default;
                 }
-                break;
+                return;
             case '|':
                 if (PeekMatches('>'))
                 {
@@ -81,6 +86,7 @@ public class Lexer
                     AddToken(TokenType.PackList,loc,2);
                     Consume('<');
                     Consume('>');
+                    return;
                 }
                
                 ConsumeCurrentCharAsToken(TokenType.EndBranchReplace);
@@ -102,6 +108,13 @@ public class Lexer
                 ConsumeCurrentCharAsToken(TokenType.Equals);
                 return;
             case '~':
+                if (PeekMatches('~'))
+                {
+                    AddToken(TokenType.PatternDefault, loc, 2);
+                    Consume('~');
+                    Consume('~');
+                    return;
+                }
                 ConsumeCurrentCharAsToken(TokenType.Filter);
                 return;
             case '@':
@@ -109,6 +122,12 @@ public class Lexer
                 return;
             case ',':
                 ConsumeCurrentCharAsToken(TokenType.Comma);
+                return;
+            case '+':
+                ConsumeCurrentCharAsToken(TokenType.PatternBranch);
+                return;
+            case '?':
+                ConsumeCurrentCharAsToken(TokenType.PatternStart);
                 return;
             case '*':
                 ConsumeCurrentCharAsToken(TokenType.Command);

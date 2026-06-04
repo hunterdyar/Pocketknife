@@ -43,22 +43,36 @@ public class Parser
             {
                 TokenType.Input => ParseInputToOutputBranch(),
                 TokenType.StartBranch => ParseBranch(),//.
+                TokenType.PackList => ParsePackList(),
+                TokenType.UnpackList => ParseUnpackList(),
+                // TokenType.Signal => ParseSignalCommand(),//we overload : for things like "pretty-print-whatever" and "print-this-data, so i'm going to not allow this for now. 99% of time it wont be allowed.
                 _ => ParseCommand()
             };
         }
         throw new  Exception($"Unexpected end of stream");
     }
 
+    private PackListNode ParsePackList()
+    {
+        Consume(TokenType.PackList);
+        return new PackListNode();
+    }
+
+    private UnpackListNode ParseUnpackList()
+    {
+        Consume(TokenType.UnpackList);
+        return new UnpackListNode();
+    }
+
     private InputBranchNode ParseInputToOutputBranch()
     {
         var input = ParseInputCommand();
         List<RootNode> commands = new List<RootNode>();
-
+        BranchType btype = default;
         while (_tokens.TryPeek(out var token))
         {
-            if (token.Type == TokenType.EndBranchReplace)
+            if (TryEndBranch(out btype))
             {
-                Consume(TokenType.EndBranchReplace);
                 break;
             }
             else
@@ -69,7 +83,7 @@ public class Parser
             EatOptionalLinebreaks();
         }
         
-        var b = new InputBranchNode(input, commands);
+        var b = new InputBranchNode(input, btype, commands);
         return b;
     }
 
@@ -101,48 +115,65 @@ public class Parser
                 return ParseSignalCommand();
             case TokenType.Filter:
                 return ParseFilterCommand();
+            case TokenType.Bang:
+                return ParseAbortCommand();
             case TokenType.PipeIn:
                 return ParsePipeIn();
+            case TokenType.PatternStart:
+                throw new NotImplementedException();
             default:
                 throw new ParserException(this, "Unexpected token " + peek.Type);
         }
     }
-    
+
+    private bool TryEndBranch(out BranchType branchType)
+    {
+        if (_tokens.TryPeek(out var t))
+        {
+            switch (t.Type)
+            {
+                case TokenType.EndBranchStop:
+                    Consume(TokenType.EndBranchStop);
+                    branchType = BranchType.SideEffect;
+                    return true;
+                case TokenType.EndBranchAppend:
+                    Consume(TokenType.EndBranchAppend);
+                    branchType = BranchType.ListAppend;
+                    return true;
+                case TokenType.EndBranchReplace:
+                    Consume(TokenType.EndBranchReplace);
+                    branchType = BranchType.Replace;
+                    return true;
+            }
+        }
+        branchType = BranchType.Unknown;
+        return false;
+    }
     
     private BranchNode ParseBranch()
     {
         Consume(TokenType.StartBranch);
-        string ident = "";
-        if (_tokens.Peek().Type == TokenType.Identifier)
+        LabelNode? label;
+        if (_tokens.Peek().Type == TokenType.Label)
         {
-            ident = ConsumeIdent();
+            label = ParseLabel();
         }
-
+        else
+        {
+            label = null;
+        }
         EatOptionalLinebreaks();
 
         List<RootNode> branchCommands = new List<RootNode>();
         BranchType branchType = BranchType.Unknown;
-        while (_tokens.TryPeek(out var token))
+        while (_tokens.Count > 0)
         {
-            if (token.Type == TokenType.EndBranchStop)
+            if (TryEndBranch(out branchType))
             {
-                Consume(TokenType.EndBranchStop);
-                branchType = BranchType.SideEffect;
-                break;
-            }else if (token.Type == TokenType.EndBranchAppend)
-            {
-                Consume(TokenType.EndBranchAppend);
-                branchType = BranchType.ListAppend;
-                break;
-            }else if (token.Type == TokenType.EndBranchReplace)
-            {
-                Consume(TokenType.EndBranchStop);
-                branchType = BranchType.Replace;
                 break;
             }
             else
             {
-                
                 branchCommands.Add(ParseRootNode());
             }
             
@@ -154,7 +185,7 @@ public class Parser
             throw new ParserException(this, _tokens.Peek(),$"Unexpected token {_tokens.Peek()}. Expected ^, <, or & to end a branch.");
         }
         
-        return new BranchNode(ident, branchType, branchCommands);
+        return new BranchNode(label, branchType, branchCommands);
     }
 
     private FilterCommandNode ParseFilterCommand()
@@ -163,6 +194,14 @@ public class Parser
         var (name, args, opts) = ParseStandardCommand();
         ConsumeLinebreakOrEndOfFile();
         return new FilterCommandNode(name, args, opts);
+    }
+
+    private AbortCommandNode ParseAbortCommand()
+    {
+        Consume(TokenType.Bang);
+        var (name, args, opts) = ParseStandardCommand();
+        ConsumeLinebreakOrEndOfFile();
+        return new AbortCommandNode(name, args, opts);
     }
 
     private SignalCommandNode ParseSignalCommand()
@@ -176,9 +215,20 @@ public class Parser
     private InputProviderNode ParseInputCommand()
     {
         Consume(TokenType.Input);
-        var (name, args, opts) = ParseStandardCommand();
-        ConsumeLinebreakOrEndOfFile();
-        return new InputProviderNode(name, args, opts);
+        //we now have either a literal or an identifier.
+        if (_tokens.Peek().Type == TokenType.Identifier)
+        {
+            var (name, args, opts) = ParseStandardCommand();
+            ConsumeLinebreakOrEndOfFile();
+            return new InputProviderNode(name, args, opts);
+        }
+        else
+        {
+            var (args, opts) = ParseNakedCommand();
+            
+            ConsumeLinebreakOrEndOfFile();
+            return new InputLiteralProviderNode(args, opts);
+        }
     }
 
     private PipelineCommandNode ParsePipeCommand()
@@ -234,7 +284,7 @@ public class Parser
         }
     }
 
-    private (string name, List<ExpressionNode> args, List<KeyValuePairNode>? opts) ParseStandardCommand()
+    private (string name, List<ExpressionNode> args, Options? opts) ParseStandardCommand()
     {
         var name = ConsumeIdent();
         List<ExpressionNode> args = new List<ExpressionNode>();
@@ -251,7 +301,27 @@ public class Parser
                 args.Add(e);
             }
         }
-        return (name, args, opts);
+        return (name, args, new Options(opts));
+    }
+
+    private (List<ExpressionNode> args, Options? opts) ParseNakedCommand()
+    {
+        List<ExpressionNode> args = new List<ExpressionNode>();
+        List<KeyValuePairNode>? opts = null;
+        while (_tokens.Count > 0 && _tokens.Peek().Type != TokenType.LineBreak)
+        {
+            if (_tokens.Peek().Type == TokenType.OpenParen)
+            {
+                opts = ParseParenOptionList();
+            }
+            else
+            {
+                var e = ParseExpression();
+                args.Add(e);
+            }
+        }
+
+        return (args, new Options(opts));
     }
 
     private List<KeyValuePairNode> ParseParenOptionList()
@@ -323,8 +393,14 @@ public class Parser
     private LabelNode ParseLabel()
     {
         Consume(TokenType.Label);
+        int reachOutCount = 0;
+        while (_tokens.TryPeek(out var token) && token.Type == TokenType.EndBranchStop)
+        {
+            reachOutCount++;
+            Consume(TokenType.EndBranchStop);
+        }
         var id = ConsumeIdent();
-        return new LabelNode(id);
+        return new LabelNode(id, reachOutCount);
     }
 
     private ExpressionNode ParseCommandGroupExpression()

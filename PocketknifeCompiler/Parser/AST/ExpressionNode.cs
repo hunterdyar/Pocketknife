@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace PocketKnife.Compiler;
 
 public class ExpressionNode : ASTNode
@@ -8,6 +11,7 @@ public class ExpressionNode : ASTNode
 public class IdentifierNode(string source) : ExpressionNode
 {
     public string Name = source;
+    override public string ToString() => Name;
 }
 
 public class NumberNode : ExpressionNode
@@ -18,6 +22,11 @@ public class NumberNode : ExpressionNode
     {
         Value = Convert.ToDouble(source);
     }
+
+    public override string ToString()
+    {
+        return Value.ToString(CultureInfo.InvariantCulture);
+    }
 }
 
 public class StringLiteralNode : ExpressionNode
@@ -27,14 +36,34 @@ public class StringLiteralNode : ExpressionNode
     {
         Value = source;
     }
+
+    public override string ToString()
+    {
+        return '"'+Value+'"';
+    }
 }
 
 public class LabelNode : ExpressionNode
 {
     public string Name;
-    public LabelNode(string source)
+    public int ReachOut => _reachOut;
+    int _reachOut;
+    public LabelNode(string source, int reachOut = 0)
     {
         Name = source;
+        _reachOut = reachOut;
+    }
+
+    override public string ToString()
+    {
+        if (_reachOut == 0)
+        {
+            return '@'+Name;
+        }
+        else
+        {
+            return "@" + new string('^', _reachOut) + Name;
+        }
     }
 }
 
@@ -49,6 +78,7 @@ public class KeyValuePairNode : ExpressionNode
         Key = key;
         Value = expressionNode;
     }
+    override public string ToString() => $"{Key}={Value}";
 }
 
 public class CommandGroupExpression : ExpressionNode
@@ -58,5 +88,17 @@ public class CommandGroupExpression : ExpressionNode
     public CommandGroupExpression(List<CommandNode> nodes)
     {
         CommandNodes = nodes;
+    }
+
+    public override string ToString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("[");
+        foreach (var command in CommandNodes)
+        {
+            sb.AppendLine(command.ToString());
+        }
+        sb.AppendLine("]");
+        return sb.ToString();
     }
 }

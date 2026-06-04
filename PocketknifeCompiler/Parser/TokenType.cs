@@ -13,6 +13,7 @@ public enum TokenType
     EndBranchReplace,//<
     Signal,//:
     Filter,//~
+    PatternDefault,//~~
     PackList,//<>
     UnpackList,//><
     Command,//
@@ -21,6 +22,8 @@ public enum TokenType
     Equals,//=
     Comma,//,
     Input,//>
+    PatternStart,//?
+    PatternBranch,//+
     LineBreak,//\n
     Bang,//!
     GroupStart,//[
