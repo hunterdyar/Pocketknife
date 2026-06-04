@@ -5,7 +5,7 @@ public class Parser
     private string Source => _lexer.Source;
     public Lexer Lexer => _lexer;
     private Lexer _lexer;
-    private Queue<Token> _tokens;
+    private int _tokenIndex;
     public PKScriptNode Program;
     public void Parse(string input)
     {
@@ -17,14 +17,14 @@ public class Parser
     {
         //Reset/Initiate Command List.
         _lexer = input;
-        _tokens = new Queue<Token>(input.Tokens);
+        _tokenIndex = 0;
         Program = ParseProgram();
     }
 
     private PKScriptNode ParseProgram()
     {
         List<RootNode> nodesList = new List<RootNode>();
-        while (_tokens.TryPeek(out var token))
+        while (_tokenIndex < _lexer.TokenCount)
         {
             //on root level, linebreaks are extra and thats fine!
             //parseRootNodes, but there's only two right now so no need to extract method.
@@ -37,8 +37,9 @@ public class Parser
     private RootNode ParseRootNode()
     {
         EatOptionalLinebreaks();
-        if (_tokens.TryPeek(out var token))
+        if (_tokenIndex < _lexer.TokenCount)
         {
+            var token = _lexer.Tokens[_tokenIndex];
             return token.Type switch
             {
                 TokenType.Input => ParseInputToOutputBranch(),
@@ -56,8 +57,9 @@ public class Parser
     private RootNode ParsePatternMatch()
     {
         Consume(TokenType.PatternStart);
-        if (_tokens.TryPeek(out var token))
+        if (_tokenIndex < _lexer.TokenCount)
         {
+            var token = _lexer.Tokens[_tokenIndex];
             if (token.Type == TokenType.Identifier)
             {
                 var matchName = ConsumeIdent();
@@ -114,8 +116,9 @@ public class Parser
     {
         BranchType branchType = default;
         List<PatternBranchArm> arms = new List<PatternBranchArm>();
-        while (_tokens.TryPeek(out var token))
+        while (_tokenIndex < _lexer.TokenCount)
         {
+            var token = _lexer.Tokens[_tokenIndex];
             if (token.Type != TokenType.PatternBranch)
             {
                 break;
@@ -143,8 +146,9 @@ public class Parser
         Consume(TokenType.PatternBranch);//+
         BranchType branchType = default;
         FilterCommandNode? filter = null;
-        if (_tokens.TryPeek(out var t))
+        if (_tokenIndex < _lexer.TokenCount)
         {
+            var t = _lexer.Tokens[_tokenIndex];
             if (t.Type == TokenType.Filter)
             {
                 filter = ParseFilterCommand();
@@ -160,7 +164,7 @@ public class Parser
         }
         
         List<RootNode> commands = new List<RootNode>();
-        while (_tokens.TryPeek(out var token))
+        while (_tokenIndex < _lexer.TokenCount)
         {
             //consume root nodes and add to list like elsewhere.
             if (TryEndBranch(out branchType, true))
@@ -191,7 +195,7 @@ public class Parser
         var input = ParseInputCommand();
         List<RootNode> commands = new List<RootNode>();
         BranchType btype = default;
-        while (_tokens.TryPeek(out var token))
+        while (_tokenIndex < _lexer.TokenCount)
         {
             if (TryEndBranch(out btype))
             {
@@ -211,11 +215,11 @@ public class Parser
 
     private void EatOptionalLinebreaks()
     {
-        while (_tokens.TryPeek(out var token))
+        while (_tokenIndex < _lexer.TokenCount)
         {
-            if (token.Type == TokenType.LineBreak)
+            if (_lexer.Tokens[_tokenIndex].Type == TokenType.LineBreak)
             {
-                _tokens.Dequeue();
+                _tokenIndex++;
             }
             else
             {
@@ -226,7 +230,7 @@ public class Parser
 
     private CommandNode ParseCommand()
     {
-        var peek = _tokens.Peek();
+        var peek = _lexer.Tokens[_tokenIndex];
         switch (peek.Type)
         {
             case TokenType.Pipe:
@@ -250,8 +254,9 @@ public class Parser
 
     private bool TryEndBranch(out BranchType branchType, bool allowPatternBranchAutoClose = false)
     {
-        if (_tokens.TryPeek(out var t))
+        if (_tokenIndex < _lexer.TokenCount)
         {
+            var t = _lexer.Tokens[_tokenIndex];
             switch (t.Type)
             {
                 case TokenType.EndBranchStop:
@@ -279,7 +284,7 @@ public class Parser
     {
         Consume(TokenType.StartBranch);
         LabelNode? label;
-        if (_tokens.Peek().Type == TokenType.Label)
+        if (_lexer.Tokens[_tokenIndex].Type == TokenType.Label)
         {
             label = ParseLabel();
         }
@@ -291,7 +296,7 @@ public class Parser
 
         List<RootNode> branchCommands = new List<RootNode>();
         BranchType branchType = BranchType.Unknown;
-        while (_tokens.Count > 0)
+        while (_tokenIndex < _lexer.TokenCount)
         {
             if (TryEndBranch(out branchType))
             {
@@ -307,7 +312,7 @@ public class Parser
 
         if (branchType == BranchType.Unknown)
         {
-            throw new ParserException(this, _tokens.Peek(),$"Unexpected token {_tokens.Peek()}. Expected ^, <, or & to end a branch.");
+            throw new ParserException(this, _lexer.Tokens[_tokenIndex],$"Unexpected token {_lexer.Tokens[_tokenIndex]}. Expected ^, <, or & to end a branch.");
         }
         
         return new BranchNode(label, branchType, branchCommands);
@@ -341,7 +346,7 @@ public class Parser
     {
         Consume(TokenType.Input);
         //we now have either a literal or an identifier.
-        if (_tokens.Peek().Type == TokenType.Identifier)
+        if (_lexer.Tokens[_tokenIndex].Type == TokenType.Identifier)
         {
             var (name, args, opts) = ParseStandardCommand();
             ConsumeLinebreakOrEndOfFile();
@@ -371,8 +376,9 @@ public class Parser
         EatOptionalLinebreaks();
 
         List<RootNode> branchCommands = new List<RootNode>();
-        while (_tokens.TryPeek(out var token))
+        while (_tokenIndex < _lexer.TokenCount)
         {
+            var token = _lexer.Tokens[_tokenIndex];
             if (token.Type == TokenType.EndBranchReplace)
             {
                 Consume(TokenType.EndBranchReplace);
@@ -391,11 +397,12 @@ public class Parser
 
     private void ConsumeLinebreakOrEndOfFile()
     {
-        if (_tokens.TryPeek(out var token))
+        if (_tokenIndex < _lexer.TokenCount)
         {
+            var token = _lexer.Tokens[_tokenIndex];
             if (token.Type == TokenType.LineBreak)
             {
-                _tokens.Dequeue();
+                _tokenIndex++;
                 return;
             }
             else
@@ -414,9 +421,9 @@ public class Parser
         var name = ConsumeIdent();
         List<ExpressionNode> args = new List<ExpressionNode>();
         List<KeyValuePairNode>? opts = null;
-        while (_tokens.Count > 0 && _tokens.Peek().Type != TokenType.LineBreak)
+        while (_tokenIndex < _lexer.TokenCount && _lexer.Tokens[_tokenIndex].Type != TokenType.LineBreak)
         {
-            if (_tokens.Peek().Type == TokenType.OpenParen)
+            if (_lexer.Tokens[_tokenIndex].Type == TokenType.OpenParen)
             { 
                 opts = ParseParenOptionList();
             }
@@ -433,9 +440,9 @@ public class Parser
     {
         List<ExpressionNode> args = new List<ExpressionNode>();
         List<KeyValuePairNode>? opts = null;
-        while (_tokens.Count > 0 && _tokens.Peek().Type != TokenType.LineBreak)
+        while (_tokenIndex < _lexer.TokenCount && _lexer.Tokens[_tokenIndex].Type != TokenType.LineBreak)
         {
-            if (_tokens.Peek().Type == TokenType.OpenParen)
+            if (_lexer.Tokens[_tokenIndex].Type == TokenType.OpenParen)
             {
                 opts = ParseParenOptionList();
             }
@@ -454,15 +461,18 @@ public class Parser
         List<KeyValuePairNode> props = new List<KeyValuePairNode>();
         Consume(TokenType.OpenParen);
 
-        while (_tokens.TryPeek(out var token))
+        while (_tokenIndex < _lexer.TokenCount)
         {
+            var token = _lexer.Tokens[_tokenIndex];
             while (token.Type == TokenType.LineBreak)
             {
                 Consume(TokenType.LineBreak);
+                if (_tokenIndex >= _lexer.TokenCount) break;
+                token = _lexer.Tokens[_tokenIndex];
                 continue;
             }
             
-            if (token.Type == TokenType.CloseParen)
+            if (_tokenIndex >= _lexer.TokenCount || token.Type == TokenType.CloseParen)
             {
                 break;
             }
@@ -488,21 +498,22 @@ public class Parser
 
     private ExpressionNode ParseExpression()
     {
-        if (_tokens.TryPeek(out var token))
+        if (_tokenIndex < _lexer.TokenCount)
         {
+            var token = _lexer.Tokens[_tokenIndex];
             switch (token.Type)
             {
                 case TokenType.Identifier:
-                    var t = _tokens.Dequeue();
-                    return new IdentifierNode(t.GetSource(Source));
+                    _tokenIndex++;
+                    return new IdentifierNode(token.GetSource(Source));
                 case TokenType.Number:
-                    t = _tokens.Dequeue();
-                    return new NumberNode(t.GetSource(Source));
+                    _tokenIndex++;
+                    return new NumberNode(token.GetSource(Source));
                 case TokenType.Label:
                     return ParseLabel();
                 case TokenType.String:
-                     t = _tokens.Dequeue();
-                    return new StringLiteralNode(t.GetSource(Source));
+                    _tokenIndex++;
+                    return new StringLiteralNode(token.GetSource(Source));
                 case TokenType.GroupStart:
                     return ParseCommandGroupExpression();
                 default:
@@ -519,7 +530,7 @@ public class Parser
     {
         Consume(TokenType.Label);
         int reachOutCount = 0;
-        while (_tokens.TryPeek(out var token) && token.Type == TokenType.EndBranchStop)
+        while (_tokenIndex < _lexer.TokenCount && _lexer.Tokens[_tokenIndex].Type == TokenType.EndBranchStop)
         {
             reachOutCount++;
             Consume(TokenType.EndBranchStop);
@@ -534,8 +545,9 @@ public class Parser
         Consume(TokenType.GroupStart);
         EatOptionalLinebreaks();
 
-        while (_tokens.TryPeek(out var token))
+        while (_tokenIndex < _lexer.TokenCount)
         {
+            var token = _lexer.Tokens[_tokenIndex];
             if (token.Type == TokenType.GroupEnd)
             {
                 Consume(TokenType.GroupEnd);
@@ -554,25 +566,26 @@ public class Parser
 
     private string ConsumeIdent()
     {
-        if (_tokens.Count == 0)
+        if (_tokenIndex >= _lexer.TokenCount)
         {
             throw new ParserException(this, $"Unexpected End of Stream. Expected Identifier");
         }
 
-        if (_tokens.Peek().Type == TokenType.Identifier)
+        var t = _lexer.Tokens[_tokenIndex];
+        if (t.Type == TokenType.Identifier)
         {
-            var t = _tokens.Dequeue();
+            _tokenIndex++;
             return t.GetSource(Source);
         }
         else
         {
-            throw new ParserException(this, _tokens.Peek(),$"Unexpected token {_tokens.Peek()}. Expected Identifier");
+            throw new ParserException(this, t,$"Unexpected token {t}. Expected Identifier");
         }
     }
 
     private void Consume(TokenType tokenType, bool optional = false)
     {
-        if (_tokens.Count == 0)
+        if (_tokenIndex >= _lexer.TokenCount)
         {
             if (optional)
             {
@@ -584,15 +597,15 @@ public class Parser
             }
         }
         
-        if (_tokens.Peek().Type == tokenType)
+        if (_lexer.Tokens[_tokenIndex].Type == tokenType)
         {
-            _tokens.Dequeue();
+            _tokenIndex++;
         }
         else
         {
             if (!optional)
             {
-                throw new ParserException(this, _tokens.Peek(),$"Unexpected Token {_tokens.Peek().Type}. Expected {tokenType}");
+                throw new ParserException(this, _lexer.Tokens[_tokenIndex],$"Unexpected Token {_lexer.Tokens[_tokenIndex].Type}. Expected {tokenType}");
             }
         }
     }

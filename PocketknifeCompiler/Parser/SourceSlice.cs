@@ -1,9 +1,9 @@
 namespace PocketKnife.Compiler;
 
-public class SourceSlice
+public readonly struct SourceSlice(int startLoc, int length)
 {
-    public int StartLoc;
-    public int Length;
+    public readonly int StartLoc = startLoc;
+    public readonly int Length = length;
 
     public string GetString(string source)
     {

@@ -8,13 +8,13 @@ public class Lexer
     public int TokenCount => _tokens.Count;
     // ReSharper disable once InconsistentNaming
     private int loc;
-    private char Current => _source[loc];
+    private char Current => loc < _source.Length ? _source[loc] : '\0';
     public string Source => _source;
 
     public Lexer(string source)
     {
         _source = source;
-        _tokens = [];
+        _tokens = new List<Token>(source.Length / 3); // Guessing average token length
         LexTokens();
     }
 
@@ -214,8 +214,7 @@ public class Lexer
 
                 if (identLength > 0)
                 {
-                    string number = _source.Substring(identStart, identLength);
-                    if (double.TryParse(number, out _))
+                    if (double.TryParse(_source.AsSpan(identStart, identLength), System.Globalization.CultureInfo.InvariantCulture, out _))
                     {
                         AddToken(TokenType.Number, identStart, identLength);
                         return;
@@ -252,13 +251,8 @@ public class Lexer
     //use a string if there are spaces.
     private bool IsValidIdentifier(char current)
     {
-        return char.IsAsciiLetter(current)
-               || char.IsDigit(current)
-               || current == '_'
-               || current == '-'
-               || current == '/'
-               || current == '\\'
-               || current == '.';
+        return char.IsAsciiLetterOrDigit(current)
+               || current is '_' or '-' or '/' or '\\' or '.';
     }
 
     private bool TryPeek(out char peek)
@@ -304,32 +298,12 @@ public class Lexer
 
     private void AddToken(TokenType type, int start, int length)
     {
-        _tokens.Add(new Token
-        {
-            Type = type,
-            Source = new SourceSlice
-            {
-                StartLoc = start,
-                Length = length
-            },
-            Lexer = this
-        });
+        _tokens.Add(new Token(this, new SourceSlice(start, length), type));
     }
 
     private void ConsumeCurrentCharAsToken(TokenType type)
     {
-        var t = new Token
-        {
-            Type = type,
-            Source = new SourceSlice
-            {
-                Length = 1,
-                StartLoc = loc
-            },
-            Lexer = this,
-        };
-        _tokens.Add(t);
-        
+        _tokens.Add(new Token(this, new SourceSlice(loc, 1), type));
         loc++;//consume
     }
 

@@ -1,10 +1,10 @@
 namespace PocketKnife.Compiler;
 
-public struct Token
+public readonly struct Token(Lexer lexer, SourceSlice source, TokenType type)
 {
-    public Lexer Lexer;
-    public SourceSlice Source;
-    public TokenType Type;
+    public readonly Lexer Lexer = lexer;
+    public readonly SourceSlice Source = source;
+    public readonly TokenType Type = type;
 
     public string GetSource(string source)
     {
