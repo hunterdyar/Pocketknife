@@ -9,4 +9,9 @@ public class PKInputProvider : PKNode
 		_name = opName;
 		_invoker = invoker;
 	}
+
+	public override string ToString()
+	{
+		return $"PKInputProvider({_name})";
+	}
 }

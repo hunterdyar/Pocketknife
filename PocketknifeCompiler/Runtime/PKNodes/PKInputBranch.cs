@@ -3,11 +3,16 @@
 public class PKInputBranch : PKNode
 {
 	private readonly PKInputProvider _input;
-	private readonly List<PKNode> _body;
+	private readonly PKNodeGroup _body;
 
-	public PKInputBranch(PKInputProvider input, List<PKNode> body)
+	public PKInputBranch(PKInputProvider input, PKNodeGroup body)
 	{
 		_input = input;
 		_body = body;
+	}
+
+	override public string ToString()
+	{
+		return $"PKInputBranch({_input.ToString()}, {_body.ToString()})";
 	}
 }

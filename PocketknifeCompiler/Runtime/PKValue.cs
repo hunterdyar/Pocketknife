@@ -53,4 +53,15 @@ public readonly struct PKValue
 	{
 		return new PKValue(kind: PKKind.Double, scalar: (long)d);
 	}
+
+	override public string ToString()
+	{
+		switch (_kind)
+		{
+			case PKKind.None:
+				return "PKNone";
+			default:
+				return _ref?.ToString() ?? _scalar.ToString();
+		}
+	}
 }

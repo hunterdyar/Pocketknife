@@ -43,7 +43,7 @@ public class RootNode : ASTNode
     
 }
 
-public class CommandSetNode
+public class CommandSetNode : ASTNode
 {
     public List<RootNode> Commands;
     public List<string> BranchNames = new List<string>();

@@ -4,12 +4,17 @@ public class PKNode
 {
 	
 }
-public class PKGroupNode : PKNode
+public class PKNodeGroup : PKNode
 {
 	private List<PKNode> Nodes;
 
-	public PKGroupNode(List<PKNode> nodes)
+	public PKNodeGroup(List<PKNode> nodes)
 	{
 		Nodes = nodes;
+	}
+
+	override public string ToString()
+	{
+		return $"PKNodeGroup({string.Join(", ", Nodes.Select(n => n.ToString()))})";
 	}
 }

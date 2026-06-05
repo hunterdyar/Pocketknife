@@ -34,18 +34,14 @@ public class Compiler
 					nodes.Add(n);
 				}
 
-				return new PKGroupNode(nodes);
+				return new PKNodeGroup(nodes);
+			case CommandSetNode commandSetNode:
+				return new PKNodeGroup(commandSetNode.Commands.Select(n => Compile(n, ctx)).ToList());
 			case InputBranchNode inputBranchNode:
-				List<PKNode> inputBranchCommands = new();
 				var inputCommand = (PKInputProvider)Compile(inputBranchNode.Input, ctx);
 				Debug.Assert(ctx.StackTop != PKKind.None);
-				foreach (var rootNode in inputBranchNode.CommandSet.Commands)
-				{
-					var n = Compile(rootNode, ctx);
-					inputBranchCommands.Add(n);
-				}
-				//pop the current type?
-				return new PKInputBranch(inputCommand, inputBranchCommands);
+				var body = (PKNodeGroup)Compile(inputBranchNode.CommandSet, ctx);
+				return new PKInputBranch(inputCommand, body);
 			case InputLiteralProviderNode inputLiteralProviderNode:
 				//
 				if (inputLiteralProviderNode.Arguments.Length == 0)
