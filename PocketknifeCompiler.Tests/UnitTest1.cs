@@ -2,6 +2,7 @@
 using PocketKnife.Compiler;
 using PocketknifeCore;
 using PocketknifeCore.Compiler;
+using PocketknifeCore.SimpleEvaluator;
 
 namespace PocketknifeCompiler.Tests;
 
@@ -174,6 +175,34 @@ public class Tests
 		TestContext.WriteLine(compiled.ToString());
 	}
 
+
+	// is just a stable place to step through Compile() while it's being written.
+	[TestCase("""
+	          >"Hello"
+	          |to-upper
+	          :print
+	          """)]
+	[TestCase("""
+	          >"Hello" "Hi" "ahOYYYY!" "yo"
+	          |to-upper
+	          |to-lower
+	          :print
+	          """)]
+	public void SimpleEvalTest(string source)
+	{
+		var p = new Parser();
+		p.Parse(source);
+
+		var catalog = OpCatalog.GetDefaultOpCatalog();
+		var compiler = new Compiler(catalog);
+
+		var compiled = compiler.StartCompile(p.Program);
+
+		var context = new Context();
+		SimpleEvaluator.Evaluate(compiled, context);
+	}
+	
+	
 	private void EachLineEqualIgnoringIndents(string got, string source)
 	{
 		var gots = got.Trim().Split(Environment.NewLine).Where(x=>x.Trim()!="").ToArray();

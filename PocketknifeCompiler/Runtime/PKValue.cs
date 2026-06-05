@@ -2,11 +2,13 @@
 
 public readonly struct PKValue
 {
+	//need a "isListOf" property, and it's reference to List<Kind>... (for after <>, etc)
+	//but that would mess up all the asstrings and stuff, so maybe a child of PKValue?
 	public readonly PKKind Kind => _kind;
 	private readonly PKKind _kind;
 	private readonly long _scalar;
 	private readonly object? _ref;
-
+	
 	public PKValue(PKKind kind, long scalar) : this()
 	{
 		_kind = kind;

@@ -2,7 +2,9 @@
 
 public class PKInputBranch : PKNode
 {
+	public PKInputProvider Input => _input;
 	private readonly PKInputProvider _input;
+	public PKNodeGroup Body => _body;
 	private readonly PKNodeGroup _body;
 
 	public PKInputBranch(PKInputProvider input, PKNodeGroup body)

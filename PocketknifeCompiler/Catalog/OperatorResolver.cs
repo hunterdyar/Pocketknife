@@ -74,6 +74,31 @@ public class OperatorResolver
 		}
 	}
 
+	private Dictionary<OperatorDescription, GenInvoker> _generators = new Dictionary<OperatorDescription, GenInvoker>();
+
+	public GenInvoker GetOrBuildGenerator(out OperatorDescription overload)
+	{
+		overload = _overloads.FirstOrDefault(x => x.InType == PKKind.None);
+
+		if (overload != null)
+		{
+			//get
+			if (_generators.TryGetValue(overload, out var invoker))
+			{
+				return invoker;
+			}
+
+			//or build
+			var builtInvoker = BuildGenerator(overload);
+			_generators.Add(overload, builtInvoker);
+			return builtInvoker;
+		}
+		else
+		{
+			throw new Exception($"Operator {Name} does not exist or is not a generator (>)");
+		}
+	}
+
 	static OpInvoker BuildInvoker(OperatorDescription description)
 	{
 		var target = description.Method;
@@ -117,7 +142,6 @@ public class OperatorResolver
 			throw new NotImplementedException();
 		}
 		
-
 		var result = Expression.Lambda<OpInvoker>(body, pInput, pArgs, pCtx).Compile();
 
 		Debug.WriteLine($"Built invoker for {target.Name}:");
@@ -148,7 +172,6 @@ public class OperatorResolver
 
 		return Expression.Call(pkValueExpr, method);
 	}
-
 	static readonly PropertyInfo SpanIndexer = typeof(ReadOnlySpan<PKValue>).GetProperty("Item")!;
 	static readonly PropertyInfo SpanLength = typeof(ReadOnlySpan<PKValue>).GetProperty(nameof(ReadOnlySpan<PKValue>.Length))!;
 
@@ -171,7 +194,6 @@ public class OperatorResolver
 
 		return Expression.Condition(hasIt, converted, defaultExpr);
 	}
-
 	//wrap result just changes the functions return types so the lambda body always matches the delegate.
 	private static Expression WrapResult(Expression callExpr, Type returnType)
 	{
@@ -210,5 +232,48 @@ public class OperatorResolver
 	public bool HasOp(PKKind top)
 	{
 		return _overloads.Any(x => x.InType == top);
+	}
+
+	private GenInvoker BuildGenerator(OperatorDescription description)
+	{
+		var target = description.Method;
+
+		var pArgs = Expression.Parameter(typeof(ReadOnlySpan<PKValue>), "args");
+		var pCtx = Expression.Parameter(typeof(Context), "ctx");
+
+		var parameters = target.GetParameters();
+		var callArgs = new Expression[parameters.Length];
+
+		int argIndex = 0;
+		for (int i = 0; i < parameters.Length; i++)
+		{
+			var pType = parameters[i].ParameterType;
+
+			if (pType == typeof(Context))
+			{
+				callArgs[i] = pCtx;
+				continue;
+			}
+
+			callArgs[i] = ReadArg(pArgs, argIndex++, pType, parameters[i]);
+		}
+
+		Expression body;
+		if (target.IsStatic)
+		{
+			body = Expression.Call(target, callArgs);
+			body = WrapResult(body, target.ReturnType);
+		}
+		else
+		{
+			throw new NotImplementedException();
+		}
+
+
+		var result = Expression.Lambda<GenInvoker>(body, pArgs, pCtx).Compile();
+
+		Debug.WriteLine($"Built invoker for {target.Name}:");
+		Debug.WriteLine(Expression.Lambda<GenInvoker>(body, pArgs, pCtx).ToString());
+		return result;
 	}
 }

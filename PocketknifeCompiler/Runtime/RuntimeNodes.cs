@@ -6,15 +6,16 @@ public class PKNode
 }
 public class PKNodeGroup : PKNode
 {
-	private List<PKNode> Nodes;
+	public List<PKNode> Nodes => _nodes;
+	private List<PKNode> _nodes;
 
 	public PKNodeGroup(List<PKNode> nodes)
 	{
-		Nodes = nodes;
+		_nodes = nodes;
 	}
 
-	override public string ToString()
+	public override string ToString()
 	{
-		return $"PKNodeGroup({string.Join(", ", Nodes.Select(n => n.ToString()))})";
+		return $"PKNodeGroup({string.Join(", ", _nodes.Select(n => n.ToString()))})";
 	}
 }

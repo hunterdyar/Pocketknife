@@ -2,12 +2,16 @@
 
 public class PKInputProvider : PKNode
 {
-	private OpInvoker _invoker;
+	public PKKind Kind => _kind;
+	private PKKind _kind;
+	public GenInvoker Generator => _generator;
+	private GenInvoker _generator;
+	public string Name => _name;
 	private string _name;
-	public PKInputProvider(string opName, OpInvoker invoker)
+	public PKInputProvider(PKKind kind, string opName, GenInvoker generator)
 	{
 		_name = opName;
-		_invoker = invoker;
+		_generator = generator;
 	}
 
 	public override string ToString()

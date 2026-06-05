@@ -48,17 +48,36 @@ public class Compiler
 				{
 					throw new NotImplementedException();
 				}
-				else if(inputLiteralProviderNode.Arguments.Length == 1)
-				{
-					//get an opInvoker that just returns the literal value.
-					var literal = inputLiteralProviderNode.Arguments[0];
-					var compileTimeValue = EvaluateExpression(literal, ctx);
-					ctx.PushType(compileTimeValue.Kind);
-					return new PKInputProvider(literal.ToString(), (input, args, context) => { return compileTimeValue; });
-				}
 				else
 				{
-					//put a list with each arg as the member on the stack.
+					List<PKValue> literals = new List<PKValue>(inputLiteralProviderNode.Arguments.Length);
+					PKKind argKind = PKKind.None;
+					for (var i = 0; i < inputLiteralProviderNode.Arguments.Length; i++)
+					{
+						var arg = inputLiteralProviderNode.Arguments[i];
+						var resArg = EvaluateExpression(arg, ctx);
+						if (i == 0)
+						{
+							argKind = resArg.Kind;
+							literals.Add(resArg);
+						}
+						else
+						{
+							if (resArg.Kind == argKind)
+							{
+								literals.Add(resArg);
+							}
+							else
+							{
+								throw new Exception($"all arguments must be of the same type. {argKind} != {resArg.Kind}");
+							}
+						}
+
+					}
+
+					ctx.PushType(argKind);
+					return new PKInputProvider(argKind, inputLiteralProviderNode.Name, (args, context) => literals);
+
 				}
 				break;
 			case InputProviderNode inputProviderNode:
@@ -66,9 +85,10 @@ public class Compiler
 				if (_catalog.TryGetOp(inputProviderNode.Name, out var iopr))
 				{
 					// Build (or fetch a cached) OpInvoker for this overload.
-					OpInvoker invoker = iopr.GetOrBuildInvoker(PKKind.None, out var call);
+					GenInvoker genInvoker = iopr.GetOrBuildGenerator(out var call);
+
 					ctx.PushType(call.OutType);
-					return new PKInputProvider(iopr.Name, invoker);
+					return new PKInputProvider(call.OutType, iopr.Name, genInvoker);
 				}
 				else
 				{
@@ -80,7 +100,7 @@ public class Compiler
 				{
 					OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
 					ctx.PushType(call.OutType);
-					return new PKInputProvider(popr.Name, invoker);
+					return new InlineOperatorNode(popr.Name, invoker);
 				}
 				else
 				{
@@ -94,11 +114,11 @@ public class Compiler
 					if (sopr.HasOp(ctx.StackTop))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(ctx.StackTop, out var call);
-						return new PKInputProvider(sopr.Name, invoker);
+						return new InlineOperatorNode(sopr.Name, invoker);
 					}else if (sopr.HasOp(PKKind.None))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(PKKind.None, out var call);
-						return new PKInputProvider(sopr.Name, invoker);
+						return new InlineOperatorNode(sopr.Name, invoker);
 					}
 				}
 				else
