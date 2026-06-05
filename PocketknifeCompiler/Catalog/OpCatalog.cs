@@ -23,84 +23,44 @@ public class OpCatalog
 		return Operators.TryGetValue(name, out resolver);
 	}
 	
+	public static string ToLower(string s) => s.ToLower();
+	public static string ToUpper(string s) => s.ToUpper();
+
 	public static OpCatalog GetDefaultOpCatalog()
 	{
 		var oc =  new OpCatalog();
 		//testing here.
 		oc.AddOp("to-lower", new OperatorDescription()
 		{
-			InType = typeof(string),
-			OutType = typeof(string),
-			Method = (MethodInfo)typeof(string).GetMethod("ToLower", BindingFlags.Static | BindingFlags.Public)
+			InType = PKKind.String,
+			OutType = PKKind.String,
+			Method = typeof(OpCatalog).GetMethod("ToLower", BindingFlags.Static | BindingFlags.Public, binder: null, types: new Type[] { typeof(string) }, modifiers: null)
+
 		});
 		oc.AddOp("to-upper", new OperatorDescription()
 		{
-			InType = typeof(string),
-			OutType = typeof(string),
-			Method = (MethodInfo)typeof(string).GetMethod("ToUpper", BindingFlags.Static | BindingFlags.Public)
+			InType = PKKind.String,
+			OutType = PKKind.String,
+			Method = typeof(OpCatalog).GetMethod("ToUpper", BindingFlags.Static | BindingFlags.Public)!
 		});
 		oc.AddOp("print", new OperatorDescription()
 		{
-			InType = typeof(string),
-			OutType = null,
-			Method = (MethodInfo)typeof(Console).GetMethod("WriteLine", BindingFlags.Static | BindingFlags.Public)
+			InType = PKKind.String,
+			OutType = PKKind.None,
+			Method = (MethodInfo)typeof(Console).GetMethod("WriteLine", BindingFlags.Static | BindingFlags.Public, binder: null, types: new Type[] { typeof(string) }, modifiers:null)
 		});
+		
+		// pipein (generator from input) |> types aren't defined by the InType or OutType. guess we need a struct to hold kind/isstream? 
+		// oc.AddOp("lines", new OperatorDescription()
+		// {
+		// 	
+		// 	InType = PKKind.String,
+		// 	OutType = PKKind.String,
+		// 	Method = typeof(string).GetMethod("Split", new[] { typeof(string), typeof(StringSplitOptions) })
+		// });
 		
 		return oc;
 	}
 }
 
-//handles overloads
-public class OperatorResolver
-{
-	public string Name;
-	private List<OperatorDescription> Overloads = new List<OperatorDescription>(1);
-
-	public OperatorResolver(string name)
-	{
-		Name = name;
-	}
-
-	public void AddOp(OperatorDescription description)
-	{
-		if (GetTypes().Contains((description.InType, description.OutType)))
-		{
-			throw new ArgumentException($"Overload already exists for {description.InType} -> {description.OutType}");
-		}
-
-		if (description.InType == null)
-		{
-			if(Overloads.Any(x => x.InType == null))
-			{
-				throw new Exception($"Operator {Name} has multiple generator overloads, which is not supported");
-			}
-		}
-		Overloads.Add(description);
-	}
-	public List<(Type? input, Type? output)> GetTypes()
-	{
-		return Overloads.Select(x => (x.InType, x.OutType)).ToList()!;
-	}
-
-	public OperatorDescription GetGenerator()
-	{
-		var gen = Overloads.FirstOrDefault(x => x.InType == null);
-		if (gen == null)
-		{
-			throw new Exception($"Operator {Name} is not a generator (or has no generator overloads)");
-		}
-		else
-		{
-			return gen;
-		}
-	}
-}
-
 //a single function
-public class OperatorDescription
-{
-	public Type? InType;
-	public Type? OutType;
-	public required MethodInfo Method;
-	//isList, isGenerator, etc.
-}

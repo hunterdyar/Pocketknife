@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using PocketKnife.Compiler;
+using PocketknifeCore;
+using PocketknifeCore.Compiler;
 
 namespace PocketknifeCompiler.Tests;
 
@@ -142,6 +144,34 @@ public class Tests
 		p.Parse(source);
 		var got = p.Program.ToString();
 		EachLineEqualIgnoringIndents(got, source);
+	}
+
+	// Scaffolding entry point: parse a sample program, then hand the AST to the
+	// Compiler with the default op catalog. Not asserting structure yet — this
+	// is just a stable place to step through Compile() while it's being written.
+	[TestCase("""
+	          >"Hello"
+	          |to-upper
+	          :print
+	          """)]
+	[TestCase("""
+	          >"Hello"
+	          |to-upper
+	          |to-lower
+	          :print
+	          """)]
+	public void CompileTest(string source)
+	{
+		var p = new Parser();
+		p.Parse(source);
+
+		var catalog = OpCatalog.GetDefaultOpCatalog();
+		var compiler = new Compiler(catalog);
+
+		var compiled = compiler.StartCompile(p.Program);
+
+		Assert.That(compiled, Is.Not.Null);
+		TestContext.WriteLine(compiled.ToString());
 	}
 
 	private void EachLineEqualIgnoringIndents(string got, string source)

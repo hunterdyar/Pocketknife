@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using PocketknifeCore;
 
 namespace PocketKnife.Compiler;
 
@@ -14,32 +15,28 @@ public class IdentifierNode(string source) : ExpressionNode
     override public string ToString() => Name;
 }
 
-public class NumberNode : ExpressionNode
+public class NumberNode : LiteralExpressionNode
 {
-    public double Value;
 
-    public NumberNode(string source)
+    public NumberNode(string source) : base(PKValue.FromDouble(Convert.ToDouble(source)))
     {
-        Value = Convert.ToDouble(source);
     }
 
     public override string ToString()
     {
-        return Value.ToString(CultureInfo.InvariantCulture);
+        return Value.ToString();
     }
 }
 
-public class StringLiteralNode : ExpressionNode
+public class StringLiteralNode : LiteralExpressionNode
 {
-    public string Value;
-    public StringLiteralNode(string source)
+    public StringLiteralNode(string source) : base(PKValue.FromString(source))
     {
-        Value = source;
     }
 
     public override string ToString()
     {
-        return '"'+Value+'"';
+        return '"'+ Value.ToString() +'"';
     }
 }
 
@@ -102,10 +99,22 @@ public class CommandGroupExpression : ExpressionNode
         return sb.ToString();
     }
 }
-
-public class EmptyListLiteralExpression : ExpressionNode
+public abstract class LiteralExpressionNode : ExpressionNode
 {
-    public EmptyListLiteralExpression()
+    public PKValue Value => _value;
+    private PKValue _value;
+
+    protected LiteralExpressionNode(PKValue value)
+    {
+        _value = value;
+    }
+
+   
+}
+public class EmptyListLiteralExpression : LiteralExpressionNode
+{
+    //FromList<PKValue>
+    public EmptyListLiteralExpression() : base(PKValue.FromBool(false))
     {
     }
 
