@@ -1,9 +1,12 @@
-﻿namespace PocketknifeCore;
+﻿using System.Buffers;
+
+namespace PocketknifeCore;
 
 public class Context
 {
 	public Stack<PKFrame> Frames = new Stack<PKFrame>();
-	private PKValue[] _argsBuffer = new PKValue[10];
+	private PKValue[] _argsBuffer = new PKValue[10];//todo: pick a bigger number, make a const, then do a max-arg check
+	private ArrayPool<PKValue> _args = ArrayPool<PKValue>.Shared;
 	private int argCount;
 	public void PushStream(PKType type, List<PKValue> list)
 	{
@@ -20,7 +23,9 @@ public class Context
 	public void OperateOnEach(OpInvoker invoker)
 	{
 		var top = Frames.Peek();
-		ReadOnlySpan<PKValue> args = _argsBuffer.AsSpan(0, argCount);
+		var args = _args.Rent(argCount);//todo: no, wait; rent provides the buffer. we need to populate it.
+		//todo: check if any of the args are per-iteration. If so, mark them somehow and move to inside that for loop.
+		//todo: compile the args...
 		for (var i = 0; i < top.Values.Count; i++)
 		{
 			var value = Frames.Peek().Values[i];
@@ -32,7 +37,8 @@ public class Context
 	public void FilterOnEach(OpInvoker foprInvoker)
 	{
 		var top = Frames.Peek();
-		ReadOnlySpan<PKValue> args = _argsBuffer.AsSpan(0, argCount);
+		var args = _argsBuffer;
+		//todo: same arg stuff as OperateOnEach
 		var result = new List<PKValue>(top.Values.Count);
 		for (var i = 0; i < top.Values.Count; i++)
 		{

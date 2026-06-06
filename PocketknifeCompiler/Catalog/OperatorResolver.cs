@@ -112,7 +112,7 @@ public class OperatorResolver
 		var target = description.Method;
 		
 		var pInput = Expression.Parameter(typeof(PKValue), "input");
-		var pArgs = Expression.Parameter(typeof(ReadOnlySpan<PKValue>), "args");
+		var pArgs = Expression.Parameter(typeof(PKValue[]), "args");
 		var pCtx = Expression.Parameter(typeof(Context), "ctx");
 		
 		var parameters = target.GetParameters();
@@ -233,15 +233,11 @@ public class OperatorResolver
 
 		throw new ArgumentOutOfRangeException(nameof(targetType), $"No PKValue accessor for target type {targetType}");
 	}
-	static readonly PropertyInfo SpanIndexer = typeof(ReadOnlySpan<PKValue>).GetProperty("Item")!;
-	static readonly PropertyInfo SpanLength = typeof(ReadOnlySpan<PKValue>).GetProperty(nameof(ReadOnlySpan<PKValue>.Length))!;
-
 	//get an expression that returns arg[i] for compiling.
 	private static Expression ReadArg(ParameterExpression pArgs, int index, Type targetType, ParameterInfo paramInfo)
 	{
-		//args[index]: indexer returns 'ref readonly PKValue', but for our purposes
-		//it materializes as a PKValue value in the expression tree.
-		var indexed = Expression.Property(pArgs, SpanIndexer, Expression.Constant(index));
+		//args[index]: array element access; the JIT inlines the bounds check.
+		var indexed = Expression.ArrayIndex(pArgs, Expression.Constant(index));
 		var converted = ConvertPKValue(indexed, targetType);
 
 		//no default? just read and convert; out-of-range will throw at runtime.
@@ -251,7 +247,7 @@ public class OperatorResolver
 		}
 
 		//has a default: emit args.Length > index ? Convert(args[index]) : <default>
-		var hasIt = Expression.GreaterThan(Expression.Property(pArgs, SpanLength), Expression.Constant(index));
+		var hasIt = Expression.GreaterThan(Expression.ArrayLength(pArgs), Expression.Constant(index));
 		var defaultExpr = Expression.Constant(paramInfo.DefaultValue, targetType);
 
 		return Expression.Condition(hasIt, converted, defaultExpr);
@@ -348,7 +344,7 @@ public class OperatorResolver
 	{
 		var target = description.Method;
 
-		var pArgs = Expression.Parameter(typeof(ReadOnlySpan<PKValue>), "args");
+		var pArgs = Expression.Parameter(typeof(PKValue[]), "args");
 		var pCtx = Expression.Parameter(typeof(Context), "ctx");
 
 		var parameters = target.GetParameters();

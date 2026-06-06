@@ -36,7 +36,7 @@ public static class SimpleEvaluator
 				foreach (var evalState in Evaluate(branch.Body, ctx)) yield return evalState;
 				break;
 			case PKInputProvider input:
-				var value = input.Generator.Invoke(new ReadOnlySpan<PKValue>(), ctx);
+				var value = input.Generator.Invoke(Array.Empty<PKValue>(), ctx);
 				ctx.PushStream(input.Type,value);
 				yield return EvalState.Good();
 				break;
