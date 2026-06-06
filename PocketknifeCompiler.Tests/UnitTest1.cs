@@ -195,6 +195,15 @@ public class Tests
 	          |count
 	          :print
 	          """)]
+	[TestCase("""
+	          >"Hello" "Hi" "ahOYYYY!" "yo"
+	          |to-upper
+	          .
+	          <>
+	          |count
+	          ^
+	          :print
+	          """)]
 	public void SimpleEvalTest(string source)
 	{
 		var p = new Parser();
@@ -207,6 +216,7 @@ public class Tests
 
 		var context = new Context();
 		SimpleEvaluator.Evaluate(compiled, context);
+		//todo: add stream out to runtime context.
 	}
 	
 	

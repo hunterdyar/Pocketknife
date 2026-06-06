@@ -35,6 +35,16 @@ public static class SimpleEvaluator
 			case PKUnpack:
 				ctx.Unpack();
 				break;
+			case PKNamedBranch namedBranch:
+				ctx.NewNamedFrame(namedBranch.Label);
+				Evaluate(namedBranch.Body, ctx);
+				ctx.PopFrame(namedBranch.Type);
+				break;
+			case PKBranch branch:
+				ctx.NewFrame();
+				Evaluate(branch.Body, ctx);
+				ctx.PopFrame(branch.Type);
+				break;
 			// default:
 			// 	throw new NotImplementedException($"{node.GetType()} not yet compilable");
 		}

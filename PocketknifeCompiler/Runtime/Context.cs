@@ -86,4 +86,57 @@ public class Context
 	}
 
 
+	//copy the previous frame up.
+	public void NewFrame()
+	{
+		var top = Frames.Peek();
+		
+		var clonedValues = new List<PKValue>(top.Values.Count);
+		clonedValues.AddRange(top.Values);
+		Frames.Push(new PKFrame()
+		{
+			Type = top.Type,
+			Values = clonedValues,
+		});
+	}
+	
+	public void NewNamedFrame(string? name = null)
+	{
+		var top = Frames.Peek();
+		var clonedValues = new List<PKValue>(top.Values.Count);
+		clonedValues.AddRange(top.Values);
+		Frames.Push(new PKFrame(name)
+		{
+			Type = top.Type,
+			Values = clonedValues,
+		});
+	}
+
+	public void PopFrame(BranchType frameType)
+	{
+		if (Frames.Peek().Name != null)
+		{
+			throw new NotImplementedException();
+		}
+		
+		switch (frameType)
+		{
+			case BranchType.SideEffect:
+				//assign value.
+				Frames.Pop();
+				break;
+			case BranchType.ListAppend:
+				var branchFrame = Frames.Pop();
+				foreach (var value in branchFrame.Values)
+				{
+					Frames.Peek().Values.Add(value);
+				}
+				break;
+			case BranchType.Replace:
+				var replaceFrame = Frames.Pop();
+				Frames.Peek().Values = replaceFrame.Values;
+				Frames.Peek().Type = replaceFrame.Type;
+				break;
+		}
+	}
 }

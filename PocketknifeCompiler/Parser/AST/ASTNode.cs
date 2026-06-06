@@ -1,4 +1,5 @@
 using System.Text;
+using PocketknifeCore;
 
 namespace PocketKnife.Compiler;
 
@@ -90,13 +91,6 @@ public class InputBranchNode : RootNode
     }
 }
 
-public enum BranchType
-{
-    Unknown,
-    SideEffect,
-    ListAppend,
-    Replace,
-}
 public class BranchNode : RootNode
 {
     public BranchType Type;

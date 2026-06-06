@@ -134,6 +134,22 @@ public class Compiler
 				{
 					throw new Exception($"unknown operator {inputProviderNode.Name}");
 				}
+			case BranchNode branchNode:
+				if (branchNode.Type == BranchType.Unknown)
+				{
+					throw new NotImplementedException();
+				}
+				
+				if (string.IsNullOrEmpty(branchNode.Label))
+				{
+					var subbranch = (PKNodeGroup)Compile(branchNode.Commands, ctx);
+					return new PKBranch(subbranch, branchNode.Type);
+				}
+				else
+				{
+					var subbranch = (PKNodeGroup)Compile(branchNode.Commands, ctx);
+					return new PKNamedBranch(branchNode.Label, subbranch, branchNode.Type);
+				}
 			case PipelineCommandNode pipelineNode:
 				Debug.Assert(pipelineNode.sigil == "|");
 				if (_catalog.TryGetOp(pipelineNode.Name, out var popr))
@@ -215,7 +231,15 @@ public class Compiler
 			case UnpackListNode:
 				ctx.Unpack();
 				return new PKUnpack();
-
+			case NakedPatternMatch nakedPatternMatch:
+				throw new NotImplementedException();
+			case PatternExpressionMatch patternExpressionMatchNode:
+				throw new NotImplementedException();
+			case PatternMatch patternMatchNode:
+				throw new NotImplementedException();
+			case PatternBranchArm patternNode:
+				throw new NotImplementedException();
+			
 			default:
 				throw new NotImplementedException($"{node.GetType()} not yet compilable");
 		}
