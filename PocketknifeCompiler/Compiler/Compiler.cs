@@ -138,9 +138,22 @@ public class Compiler
 				Debug.Assert(pipelineNode.sigil == "|");
 				if (_catalog.TryGetOp(pipelineNode.Name, out var popr))
 				{
-					OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
-					ctx.PushType(call.OutType);
-					return new PKInlineOperatorNode(popr.Name, invoker);
+					if (popr.HasOp(ctx.StackTop))
+					{
+						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						ctx.PushType(call.OutType);
+						return new PKInlineOperatorNode(popr.Name, invoker);
+					}else if (popr.HasOp(PKType.Any))
+					{
+						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						ctx.PushType(call.OutType);
+						return new PKInlineOperatorNode(popr.Name, invoker);
+					}
+					else
+					{
+						throw new Exception($"operator {popr.Name} does not have an overload for incoming type {ctx.StackTop}");
+					}
+					
 				}
 				else
 				{
@@ -155,10 +168,19 @@ public class Compiler
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(ctx.StackTop, out var call);
 						return new PKInlineOperatorNode(sopr.Name, invoker);
-					}else if (sopr.HasOp(PKType.None))
+					}else if (sopr.HasOp(PKType.Any))
+					{
+						OpInvoker invoker = sopr.GetOrBuildInvoker(PKType.Any, out var call);
+						return new PKInlineOperatorNode(sopr.Name, invoker);
+					}
+					else if (sopr.HasOp(PKType.None))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(PKType.None, out var call);
 						return new PKInlineOperatorNode(sopr.Name, invoker);
+					}
+					else
+					{
+						throw new Exception($"operator {sopr.Name} does not have an overload for incoming type {ctx.StackTop}");
 					}
 				}
 				throw new Exception($"unknown operator {pipelineNode.Name}");

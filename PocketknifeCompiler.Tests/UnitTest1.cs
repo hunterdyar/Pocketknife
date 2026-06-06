@@ -188,6 +188,13 @@ public class Tests
 	          |to-lower
 	          :print
 	          """)]
+	[TestCase("""
+	          >"Hello" "Hi" "ahOYYYY!" "yo"
+	          |to-upper
+	          <>
+	          |count
+	          :print
+	          """)]
 	public void SimpleEvalTest(string source)
 	{
 		var p = new Parser();

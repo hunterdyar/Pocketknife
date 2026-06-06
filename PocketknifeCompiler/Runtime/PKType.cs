@@ -3,6 +3,7 @@
 public enum PKKind
 {
 	None,
+	Any,
 	String,
 	Int,
 	Long,
@@ -22,7 +23,8 @@ public readonly struct PKType : IEquatable<PKType>
 	public static readonly PKType Double = new(PKKind.Double, false);
 	public static readonly PKType File = new(PKKind.File, false);
 	public static readonly PKType Table = new(PKKind.Table, false);
-	
+	public static readonly PKType Any = new(PKKind.Any, false);
+
 	public readonly PKKind Kind;
 	public readonly bool IsStream;//isEnumerable
 

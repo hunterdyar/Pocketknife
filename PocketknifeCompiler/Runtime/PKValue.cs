@@ -28,33 +28,46 @@ public readonly struct PKValue
 	public string AsString() => (string)_ref;
 	public T RefAs<T>() => (T)_ref ?? throw new InvalidOperationException();
 	// public T ScalarAs<T>() => (T)_scalar ?? throw new InvalidOperationException();
-	public int AsInt => (int)_scalar;
-	public long AsLong => (long)_scalar;
-	public double AsDouble => (double)_scalar;
-	public bool AsBool => _scalar != 0;
+	public int AsInt() => (int)_scalar;
+	public long AsLong() => _scalar;
+	public double AsDouble() => (double)_scalar;
+	public bool AsBool() => _scalar != 0;
+	public List<PKValue> AsList()
+	{
+		if (_type.IsStream)
+		{
+			return _ref as List<PKValue> ?? throw new InvalidOperationException();
+		}
+		throw new InvalidOperationException();
+	}
+
+	public static PKValue FromList(List<PKValue> items, PKType elementType)
+	{
+		return new PKValue(new PKType(elementType.Kind, true), items);
+	}
 
 	public static PKValue FromString(string s)
 	{
-		return new PKValue(new PKType(PKKind.String), s);
+		return new PKValue(PKType.String, s);
 	}
 
 	public static PKValue FromInt(int i)
 	{
-		return new PKValue(new PKType(PKKind.Int), i);
+		return new PKValue(PKType.Int, i);
 	}
 	
 	public static PKValue FromLong(long l)
 	{
-		return new PKValue(new PKType(PKKind.Long), l);
+		return new PKValue(PKType.Long, l);
 	}
 	
 	public static PKValue FromBool(bool b)
 	{
-		return new PKValue(new PKType(PKKind.Bool), b ? 1 : 0);
+		return new PKValue(PKType.Bool, b ? 1 : 0);
 	}
 	public static PKValue FromDouble(double d)
 	{
-		return new PKValue(new PKType(PKKind.Double), (long)d);
+		return new PKValue(PKType.Double, (long)d);
 	}
 
 	public static PKType GetPKType(Type type)
@@ -64,7 +77,12 @@ public readonly struct PKValue
 		{
 			return PKType.None;
 		}
-
+		
+		if (type == typeof(PKValue))
+		{
+			return new PKType(PKKind.Any);
+		}
+		
 		switch (System.Type.GetTypeCode(type))
 		{
 			case TypeCode.Empty:
@@ -105,4 +123,5 @@ public readonly struct PKValue
 	{
 		return _ref?.ToString() ?? _scalar.ToString();
 	}
+
 }

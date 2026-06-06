@@ -55,6 +55,12 @@ public class OperatorResolver
 	{
 		overload = _overloads.FirstOrDefault(x => x.InType.Equals(input));
 		
+		//is generic?
+		if (overload == null)
+		{
+			overload = _overloads.FirstOrDefault(x => x.InType.Equals(new PKType(PKKind.Any, input.IsStream)));
+		}
+		
 		if (overload != null)
 		{
 			//get
@@ -152,25 +158,78 @@ public class OperatorResolver
 	//expression that returns expression from value, cast.
 	private static Expression ConvertPKValue(Expression pkValueExpr, Type targetType)
 	{
-		// Already a PKValue? Pass through.
+		//already a PKValue? pass through.
 		if (targetType == typeof(PKValue))
-			return pkValueExpr;
-
-		// Map CLR type -> the PKValue accessor method name.
-		string accessor = targetType switch
 		{
-			_ when targetType == typeof(string) => nameof(PKValue.AsString),
-			_ when targetType == typeof(int) => nameof(PKValue.AsInt),
-			_ when targetType == typeof(long) => nameof(PKValue.AsLong),
-			_ when targetType == typeof(bool) => nameof(PKValue.AsBool),
-			_ when targetType == typeof(double) => nameof(PKValue.AsDouble),
-			// ...
-			_ => throw new NotSupportedException($"No PKValue accessor for target type {targetType}")
-		};
+			return pkValueExpr;
+		}
 
-		var method = typeof(PKValue).GetMethod(accessor, Type.EmptyTypes) ?? throw new InvalidOperationException($"PKValue.{accessor} missing");
+		//map CLR type -> the PKValue accessor method name.
+		string accessor = null;
+		switch (targetType)
+		{
+			case var _ when targetType == typeof(string):
+				accessor = nameof(PKValue.AsString);
+				break;
+			case var _ when targetType == typeof(int):
+				accessor = nameof(PKValue.AsInt);
+				break;
+			case var _ when targetType == typeof(long):
+				accessor = nameof(PKValue.AsLong);
+				break;
+			case var _ when targetType == typeof(bool):
+				accessor = nameof(PKValue.AsBool);
+				break;
+			case var _ when targetType == typeof(double):
+				accessor = nameof(PKValue.AsDouble);
+				break;
+			
+		}
 
-		return Expression.Call(pkValueExpr, method);
+		if (accessor != null)
+		{
+			var method = typeof(PKValue).GetMethod(accessor, Type.EmptyTypes) ?? throw new InvalidOperationException($"PKValue.{accessor} missing");
+			return Expression.Call(pkValueExpr, method);
+		}
+
+		//generic collection target: List<T> / IEnumerable<T>
+		if (targetType.GenericTypeArguments.Length > 0)
+		{
+			var oftd = targetType.GetGenericTypeDefinition();
+			var elementType = targetType.GenericTypeArguments[0];
+			var oft = PKValue.GetPKType(elementType);
+			if (oft != PKType.None && (oftd == typeof(List<>) || oftd == typeof(IEnumerable<>)))
+			{
+				//pkValueExpr.AsList() -> List<PKValue>
+				var asListMethod = typeof(PKValue).GetMethod(nameof(PKValue.AsList), Type.EmptyTypes)
+					?? throw new InvalidOperationException("PKValue.AsList missing");
+				Expression listExpr = Expression.Call(pkValueExpr, asListMethod);
+
+				//list.Select(v => ConvertPKValue(v, elementType))
+				var vParam = Expression.Parameter(typeof(PKValue), "v");
+				var convertedElement = ConvertPKValue(vParam, elementType);
+				var selectorType = typeof(Func<,>).MakeGenericType(typeof(PKValue), elementType);
+				var selectorLambda = Expression.Lambda(selectorType, convertedElement, vParam);
+
+				var selectMethod = typeof(Enumerable).GetMethods()
+					.First(m => m.Name == nameof(Enumerable.Select)
+								&& m.GetParameters().Length == 2
+								&& m.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(Func<,>))
+					.MakeGenericMethod(typeof(PKValue), elementType);
+				Expression projected = Expression.Call(selectMethod, listExpr, selectorLambda);
+
+				if (oftd == typeof(List<>))
+				{
+					var toListMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!
+						.MakeGenericMethod(elementType);
+					return Expression.Call(toListMethod, projected);
+				}
+				//IEnumerable<T>: Select already returns IEnumerable<T>
+				return projected;
+			}
+		}
+
+		throw new ArgumentOutOfRangeException(nameof(targetType), $"No PKValue accessor for target type {targetType}");
 	}
 	static readonly PropertyInfo SpanIndexer = typeof(ReadOnlySpan<PKValue>).GetProperty("Item")!;
 	static readonly PropertyInfo SpanLength = typeof(ReadOnlySpan<PKValue>).GetProperty(nameof(ReadOnlySpan<PKValue>.Length))!;
@@ -178,17 +237,18 @@ public class OperatorResolver
 	//get an expression that returns arg[i] for compiling.
 	private static Expression ReadArg(ParameterExpression pArgs, int index, Type targetType, ParameterInfo paramInfo)
 	{
-		// args[index]  — note: indexer returns 'ref readonly PKValue', but for our
-		// purposes it materializes as a PKValue value in the expression tree.
+		//args[index]: indexer returns 'ref readonly PKValue', but for our purposes
+		//it materializes as a PKValue value in the expression tree.
 		var indexed = Expression.Property(pArgs, SpanIndexer, Expression.Constant(index));
 		var converted = ConvertPKValue(indexed, targetType);
 
-		// No default? Just read and convert; out-of-range will throw at runtime.
-		if (!paramInfo.HasDefaultValue){
+		//no default? just read and convert; out-of-range will throw at runtime.
+		if (!paramInfo.HasDefaultValue)
+		{
 			return converted;
 		}
 
-		// Has a default: emit args.Length > index ? Convert(args[index]) : <default>
+		//has a default: emit args.Length > index ? Convert(args[index]) : <default>
 		var hasIt = Expression.GreaterThan(Expression.Property(pArgs, SpanLength), Expression.Constant(index));
 		var defaultExpr = Expression.Constant(paramInfo.DefaultValue, targetType);
 
@@ -197,21 +257,68 @@ public class OperatorResolver
 	//wrap result just changes the functions return types so the lambda body always matches the delegate.
 	private static Expression WrapResult(Expression callExpr, Type returnType)
 	{
-		// Already a PKValue — nothing to do.
+		//already a PKValue, nothing to do.
 		if (returnType == typeof(PKValue))
 		{
 			return callExpr;
 		}
 
-		// 2. void — execute the call, then value is PKValue.None.
+		//void: execute the call, then value is PKValue.None.
 		if (returnType == typeof(void))
 		{
 			var noneField = typeof(PKValue).GetField(nameof(PKValue.None), BindingFlags.Public | BindingFlags.Static)!;
-			//runt the call first, then return PKValue.None
-			return Expression.Block(callExpr, Expression.Field(null, noneField)); // value of the block = PKValue.None
+			//run the call first, then return PKValue.None
+			return Expression.Block(callExpr, Expression.Field(null, noneField));
 		}
 
-		// 3) Some other CLR type — wrap via a PKValue.From(T) factory. this will probably need to be rewritten i think?
+		//generic stream return: List<T> / IEnumerable<T> -> PKValue holding List<PKValue>
+		if (returnType.IsGenericType)
+		{
+			var rtd = returnType.GetGenericTypeDefinition();
+			if (rtd == typeof(List<>) || rtd == typeof(IEnumerable<>))
+			{
+				var elementType = returnType.GenericTypeArguments[0];
+				var elementPKType = PKValue.GetPKType(elementType);
+				if (elementPKType != PKType.None)
+				{
+					var fromListMethod = typeof(PKValue).GetMethod(nameof(PKValue.FromList), new[] { typeof(List<PKValue>), typeof(PKType) })
+						?? throw new InvalidOperationException("PKValue.FromList missing");
+
+					//micro-opt: element is already PKValue, skip the per-element projection
+					if (elementType == typeof(PKValue))
+					{
+						Expression asListDirect = rtd == typeof(List<>)
+							? callExpr
+							: Expression.Call(typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!.MakeGenericMethod(typeof(PKValue)), callExpr);
+						return Expression.Call(fromListMethod, asListDirect, Expression.Constant(elementPKType, typeof(PKType)));
+					}
+
+					//for each element t: WrapResult(t, elementType) -> PKValue
+					var tParam = Expression.Parameter(elementType, "t");
+					var wrappedElement = WrapResult(tParam, elementType);
+					var selectorType = typeof(Func<,>).MakeGenericType(elementType, typeof(PKValue));
+					var selectorLambda = Expression.Lambda(selectorType, wrappedElement, tParam);
+
+					//src.Select(t => WrapResult(t))
+					var selectMethod = typeof(Enumerable).GetMethods()
+						.First(m => m.Name == nameof(Enumerable.Select)
+									&& m.GetParameters().Length == 2
+									&& m.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(Func<,>))
+						.MakeGenericMethod(elementType, typeof(PKValue));
+					Expression projected = Expression.Call(selectMethod, callExpr, selectorLambda);
+
+					//.ToList() so we have a concrete List<PKValue> to stash in PKValue._ref
+					var toListMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!
+						.MakeGenericMethod(typeof(PKValue));
+					Expression asList = Expression.Call(toListMethod, projected);
+
+					//PKValue.FromList(list, elementPKType)
+					return Expression.Call(fromListMethod, asList, Expression.Constant(elementPKType, typeof(PKType)));
+				}
+			}
+		}
+
+		//some other CLR type, wrap via a PKValue.From(T) factory. this will probably need to be rewritten i think?
 		//or we can do a better job enforcing the values we want return a PKValue type, and this will never matter.
 		//it's basically sugar so that the library functions can be lazily written.
 		string factory = returnType switch
@@ -226,12 +333,12 @@ public class OperatorResolver
 
 		var method = typeof(PKValue).GetMethod(factory, new[] { returnType }) ?? throw new InvalidOperationException($"PKValue.{factory}({returnType}) missing");
 
-		return Expression.Call(method, callExpr); // PKValue.FromX(<call>)
+		return Expression.Call(method, callExpr);
 	}
 
 	public bool HasOp(PKType top)
 	{
-		return _overloads.Any(x => x.InType.Equals(top));
+		return _overloads.Any(x => x.InType.Equals(top) || x.InType.Equals(new PKType(PKKind.Any, top.IsStream)));
 	}
 
 	private GenInvoker BuildGenerator(OperatorDescription description)
