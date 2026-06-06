@@ -103,6 +103,6 @@ public readonly struct PKValue
 
 	override public string ToString()
 	{
-		return "pktype("+_ref?.ToString() ?? _scalar.ToString()+")";
+		return _ref?.ToString() ?? _scalar.ToString();
 	}
 }

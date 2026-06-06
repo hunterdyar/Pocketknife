@@ -38,6 +38,8 @@ public readonly struct PKType : IEquatable<PKType>
 	public PKType AsStream() => new PKType(Kind, true);
 	public PKType AsSingle() => new PKType(Kind, false);
 
+	override public string ToString() => IsStream ? $"<{Kind.ToString()}>" : Kind.ToString();
+	
 	#region IDE Generated Equality Members
 	
 	public bool Equals(PKType other)
