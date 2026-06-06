@@ -2,6 +2,6 @@
 
 public class PKStream
 {
-	public PKKind Kind;
+	public PKType Type;
 	public List<PKValue> Values;
 }

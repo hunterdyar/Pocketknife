@@ -23,23 +23,23 @@ public class OperatorResolver
 			throw new ArgumentException($"Overload already exists for {description.InType} -> {description.OutType}");
 		}
 
-		if (description.InType == PKKind.None)
+		if (PKType.IsNone(description.InType))
 		{
-			if(_overloads.Any(x => x.InType == PKKind.None))
+			if(_overloads.Any(x => PKType.IsNone(x.InType)))
 			{
 				throw new Exception($"Operator {Name} has multiple generator overloads, which is not supported");
 			}
 		}
 		_overloads.Add(description);
 	}
-	public List<(PKKind input, PKKind output)> GetTypes()
+	public List<(PKType input, PKType output)> GetTypes()
 	{
 		return _overloads.Select(x => (x.InType, x.OutType)).ToList()!;
 	}
 
 	public OperatorDescription GetGenerator()
 	{
-		var gen = _overloads.FirstOrDefault(x => x.InType == null);
+		var gen = _overloads.FirstOrDefault(x => PKType.IsNone(x.InType));
 		if (gen == null)
 		{
 			throw new Exception($"Operator {Name} is not a generator (or has no generator overloads)");
@@ -51,9 +51,9 @@ public class OperatorResolver
 	}
 	
 	private Dictionary<OperatorDescription, OpInvoker> Invokers = new Dictionary<OperatorDescription, OpInvoker>();
-	public OpInvoker GetOrBuildInvoker(PKKind input, out OperatorDescription overload)
+	public OpInvoker GetOrBuildInvoker(PKType input, out OperatorDescription overload)
 	{
-		overload = _overloads.FirstOrDefault(x => x.InType == input);
+		overload = _overloads.FirstOrDefault(x => x.InType.Equals(input));
 		
 		if (overload != null)
 		{
@@ -78,7 +78,7 @@ public class OperatorResolver
 
 	public GenInvoker GetOrBuildGenerator(out OperatorDescription overload)
 	{
-		overload = _overloads.FirstOrDefault(x => x.InType == PKKind.None);
+		overload = _overloads.FirstOrDefault(x => PKType.IsNone(x.InType));
 
 		if (overload != null)
 		{
@@ -122,7 +122,7 @@ public class OperatorResolver
 			}
 
 			//if it's a generator, we don't have an input parameter; 
-			if (i == 0 && description.InType != PKKind.None)
+			if (i == 0 && !PKType.IsNone(description.InType))
 			{
 				callArgs[i] = ConvertPKValue(pInput, pType);
 				continue;
@@ -229,9 +229,9 @@ public class OperatorResolver
 		return Expression.Call(method, callExpr); // PKValue.FromX(<call>)
 	}
 
-	public bool HasOp(PKKind top)
+	public bool HasOp(PKType top)
 	{
-		return _overloads.Any(x => x.InType == top);
+		return _overloads.Any(x => x.InType.Equals(top));
 	}
 
 	private GenInvoker BuildGenerator(OperatorDescription description)

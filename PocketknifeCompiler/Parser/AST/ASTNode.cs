@@ -5,6 +5,7 @@ namespace PocketKnife.Compiler;
 public abstract class ASTNode
 {
     public SourceSlice Start;
+    public virtual bool IsBoundary => false;
 
     public static string BranchTypeToString(BranchType type)
     {
@@ -40,7 +41,6 @@ public class ScriptNode : ASTNode
 
 public class RootNode : ASTNode
 {
-    
 }
 
 public class CommandSetNode : ASTNode
@@ -143,6 +143,8 @@ public class BranchNode : RootNode
 
 public class PackListNode : RootNode
 {
+    public override bool IsBoundary => false;
+
     public override string ToString()
     {
         return "<>";
@@ -151,6 +153,7 @@ public class PackListNode : RootNode
 
 public class UnpackListNode : RootNode
 {
+    public override bool IsBoundary => false;
     override public string ToString()
     {
         return "><";

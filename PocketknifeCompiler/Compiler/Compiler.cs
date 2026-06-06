@@ -36,10 +36,50 @@ public class Compiler
 
 				return new PKNodeGroup(nodes);
 			case CommandSetNode commandSetNode:
-				return new PKNodeGroup(commandSetNode.Commands.Select(n => Compile(n, ctx)).ToList());
+			{
+				var commands = commandSetNode.Commands;
+
+				// Fast path: scan once, bail out cheaply if no boundaries.
+				List<int>? boundaries = null;
+				for (int i = 0; i < commands.Count; i++)
+				{
+					if (commands[i].IsBoundary)
+					{
+						boundaries ??= new List<int>(4);
+						boundaries.Add(i);
+					}
+				}
+
+				if (boundaries is null)
+				{
+					var compiled = new List<PKNode>(commands.Count);
+					foreach (var c in commands)
+					{
+						compiled.Add(Compile(c, ctx));
+					}
+					return new PKNodeGroup(compiled);
+				}
+
+				//split into segments around boundaries.
+				var groups = new List<PKNode>(boundaries.Count + 1);
+				int start = 0;
+				for (int b = 0; b <= boundaries.Count; b++)
+				{
+					int end = b < boundaries.Count ? boundaries[b] : commands.Count;
+					var segment = new List<PKNode>(end - start);
+					for (int k = start; k < end; k++)
+					{
+						segment.Add(Compile(commands[k], ctx));
+					}
+					groups.Add(new PKNodeGroup(segment));
+					start = end;
+				}
+
+				return new PKNodeGroup(groups);
+			}
 			case InputBranchNode inputBranchNode:
 				var inputCommand = (PKInputProvider)Compile(inputBranchNode.Input, ctx);
-				Debug.Assert(ctx.StackTop != PKKind.None);
+				Debug.Assert(!PKType.IsNone(ctx.StackTop));
 				var body = (PKNodeGroup)Compile(inputBranchNode.CommandSet, ctx);
 				return new PKInputBranch(inputCommand, body);
 			case InputLiteralProviderNode inputLiteralProviderNode:
@@ -51,25 +91,25 @@ public class Compiler
 				else
 				{
 					List<PKValue> literals = new List<PKValue>(inputLiteralProviderNode.Arguments.Length);
-					PKKind argKind = PKKind.None;
+					PKType argKind = PKType.None;
 					for (var i = 0; i < inputLiteralProviderNode.Arguments.Length; i++)
 					{
 						var arg = inputLiteralProviderNode.Arguments[i];
 						var resArg = EvaluateExpression(arg, ctx);
 						if (i == 0)
 						{
-							argKind = resArg.Kind;
+							argKind = resArg.Type;
 							literals.Add(resArg);
 						}
 						else
 						{
-							if (resArg.Kind == argKind)
+							if (resArg.Type == argKind)
 							{
 								literals.Add(resArg);
 							}
 							else
 							{
-								throw new Exception($"all arguments must be of the same type. {argKind} != {resArg.Kind}");
+								throw new Exception($"all arguments must be of the same type. {argKind} != {resArg.Type}");
 							}
 						}
 
@@ -100,7 +140,7 @@ public class Compiler
 				{
 					OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
 					ctx.PushType(call.OutType);
-					return new InlineOperatorNode(popr.Name, invoker);
+					return new PKInlineOperatorNode(popr.Name, invoker);
 				}
 				else
 				{
@@ -114,23 +154,23 @@ public class Compiler
 					if (sopr.HasOp(ctx.StackTop))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(ctx.StackTop, out var call);
-						return new InlineOperatorNode(sopr.Name, invoker);
-					}else if (sopr.HasOp(PKKind.None))
+						return new PKInlineOperatorNode(sopr.Name, invoker);
+					}else if (sopr.HasOp(PKType.None))
 					{
-						OpInvoker invoker = sopr.GetOrBuildInvoker(PKKind.None, out var call);
-						return new InlineOperatorNode(sopr.Name, invoker);
+						OpInvoker invoker = sopr.GetOrBuildInvoker(PKType.None, out var call);
+						return new PKInlineOperatorNode(sopr.Name, invoker);
 					}
 				}
-				else
-				{
-					throw new Exception($"unknown operator {pipelineNode.Name}");
-				}
-				break;
+				throw new Exception($"unknown operator {pipelineNode.Name}");
+			case PackListNode:
+				ctx.Pack();
+				return new PKPack();
+			case UnpackListNode:
+				ctx.Unpack();
+				return new PKUnpack();
 			default:
 				throw new NotImplementedException($"{node.GetType()} not yet compilable");
 		}
-		
-		throw new NotImplementedException();
 	}
 
 	private PKValue EvaluateExpression(ExpressionNode literal, CompileContext ctx)

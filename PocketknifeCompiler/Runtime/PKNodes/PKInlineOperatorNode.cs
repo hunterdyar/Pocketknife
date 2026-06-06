@@ -1,6 +1,6 @@
 ﻿namespace PocketknifeCore;
 
-public class InlineOperatorNode : PKNode
+public class PKInlineOperatorNode : PKNode
 {
 	public OpInvoker Invoker => _invoker;
 	private OpInvoker _invoker;
@@ -8,7 +8,7 @@ public class InlineOperatorNode : PKNode
 	public string Name => _name;
 	private string _name;
 
-	public InlineOperatorNode(string name, OpInvoker invoker)
+	public PKInlineOperatorNode(string name, OpInvoker invoker)
 	{
 		_name = name;
 		_invoker = invoker;

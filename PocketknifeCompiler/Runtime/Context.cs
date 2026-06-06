@@ -4,9 +4,9 @@ public class Context
 {
 	public Stack<PKStream> Streams = new Stack<PKStream>();
 
-	public void PushStream(PKKind kind, List<PKValue> list)
+	public void PushStream(PKType type, List<PKValue> list)
 	{
-		Streams.Push(new PKStream() { Kind = kind, Values = list });
+		Streams.Push(new PKStream() { Type = type, Values = list });
 	}
 	public void PopStream()
 	{
@@ -22,5 +22,17 @@ public class Context
 			var result = invoker(value, new ReadOnlySpan<PKValue>(), this);
 			top.Values[i] = result;
 		}
+	}
+	
+	public void Pack()
+	{
+		var top = Streams.Peek();
+		//type => list of type.
+		
+	}
+
+	public void Unpack()
+	{
+		
 	}
 }

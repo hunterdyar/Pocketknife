@@ -15,19 +15,25 @@ public static class SimpleEvaluator
 			case PKInputBranch branch:
 				//push the input stream onto the stack.
 				Evaluate(branch.Input, ctx);
-				
 				//take that and operate on it
 				Evaluate(branch.Body, ctx);
-				
 				break;
 			case PKInputProvider input:
 				var value = input.Generator.Invoke(new ReadOnlySpan<PKValue>(), ctx);
 				
-				ctx.PushStream(input.Kind,value);
+				ctx.PushStream(input.Type,value);
 				break;
-			case InlineOperatorNode iopr:
+			case PKInlineOperatorNode iopr:
 				ctx.OperateOnEach(iopr.Invoker);
 				break;
+			case PKPack:
+				ctx.Pack();
+				break;
+			case PKUnpack:
+				ctx.Unpack();
+				break;
+			// default:
+			// 	throw new NotImplementedException($"{node.GetType()} not yet compilable");
 		}
 	}
 }
