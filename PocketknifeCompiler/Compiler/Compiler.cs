@@ -142,14 +142,19 @@ public class Compiler
 				
 				if (string.IsNullOrEmpty(branchNode.Label))
 				{
+					ctx.PushFrame();
 					var subbranch = (PKNodeGroup)Compile(branchNode.Commands, ctx);
+					ctx.PopFrame(branchNode.Type);
 					return new PKBranch(subbranch, branchNode.Type);
 				}
 				else
 				{
+					ctx.PushFrame();
 					var subbranch = (PKNodeGroup)Compile(branchNode.Commands, ctx);
+					ctx.PopFrame(branchNode.Type);
 					return new PKNamedBranch(branchNode.Label, subbranch, branchNode.Type);
 				}
+			
 			case PipelineCommandNode pipelineNode:
 				Debug.Assert(pipelineNode.sigil == "|");
 				if (_catalog.TryGetOp(pipelineNode.Name, out var popr))
@@ -157,11 +162,13 @@ public class Compiler
 					if (popr.HasOp(ctx.StackTop))
 					{
 						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						ctx.PopType();
 						ctx.PushType(call.OutType);
 						return new PKInlineOperatorNode(popr.Name, invoker);
 					}else if (popr.HasOp(PKType.Any))
 					{
 						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						ctx.PopType();
 						ctx.PushType(call.OutType);
 						return new PKInlineOperatorNode(popr.Name, invoker);
 					}
@@ -207,13 +214,11 @@ public class Compiler
 					if (fopr.HasOp(ctx.StackTop))
 					{
 						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, out var call);
-						ctx.PushType(call.OutType);
 						return new PKFilterOperatorNode(fopr.Name, invoker);
 					}
 					else if (fopr.HasOp(PKType.Any))
 					{
 						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, out var call);
-						ctx.PushType(call.OutType);
 						return new PKFilterOperatorNode(fopr.Name, invoker);
 					}
 					else

@@ -41,4 +41,32 @@ public class CompileContext
 
 		Stack.Push(top.Lowered());
 	}
+	
+	public void PopFrame(BranchType frameType)
+	{
+		//nothing currently pops more than a single frame.
+		switch (frameType)
+		{
+			case BranchType.SideEffect:
+				//branch result is discarded; restore outer stack unchanged.
+				Stack.Pop();
+				break;
+			case BranchType.ListAppend:
+				//outer frame's type is preserved; branch contributes values but not type.
+				Stack.Pop();
+				break;
+			case BranchType.Replace:
+				//branch's resulting top type replaces outer top: drop the cloned outer underneath.
+				var branchTop = Stack.Pop();
+				Stack.Pop();
+				Stack.Push(branchTop);
+				break;
+		}
+	}
+
+	public void PushFrame()
+	{
+		var top = Stack.Peek();
+		Stack.Push(top);
+	}
 }

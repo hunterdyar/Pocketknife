@@ -197,7 +197,7 @@ public class Tests
 	          """,$"4")]
 	[TestCase("""
 	          >"Hello" "Hi" "ahOYYYY!" "yo"
-	          |to-upper
+	          |to-lower
 	          .
 	          <>
 	          |count
@@ -205,6 +205,16 @@ public class Tests
 	          ^
 	          :print
 	          ""","4","hello","hi","ahoyyyy!","yo")]
+	[TestCase("""
+	          >0 1 2 3 4
+	          .
+	          .
+	          .
+	          :print
+	          ^
+	          ^
+	          ^
+	          """, "0", "1", "2", "3", "4")]
 	public void SimpleEvalTest(string source, params string[] expectedOutput)
 	{
 		using var sw = new StringWriter();
