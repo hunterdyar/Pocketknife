@@ -23,6 +23,9 @@ public static class SimpleEvaluator
 				
 				ctx.PushStream(input.Type,value);
 				break;
+			case PKFilterOperatorNode fopr:
+				ctx.FilterOnEach(fopr.Invoker);
+				break;
 			case PKInlineOperatorNode iopr:
 				ctx.OperateOnEach(iopr.Invoker);
 				break;

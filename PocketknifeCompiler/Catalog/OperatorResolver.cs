@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -58,7 +59,7 @@ public class OperatorResolver
 		//is generic?
 		if (overload == null)
 		{
-			overload = _overloads.FirstOrDefault(x => x.InType.Equals(new PKType(PKKind.Any, input.IsStream)));
+			overload = _overloads.FirstOrDefault(x => x.InType.Equals(new PKType(PKKind.Any, input.LiftLevel)));
 		}
 		
 		if (overload != null)
@@ -338,7 +339,8 @@ public class OperatorResolver
 
 	public bool HasOp(PKType top)
 	{
-		return _overloads.Any(x => x.InType.Equals(top) || x.InType.Equals(new PKType(PKKind.Any, top.IsStream)));
+		//todo: if we have list<list<int>>... that won't work?
+		return _overloads.Any(x => x.InType.Equals(top) || x.InType.Equals(new PKType(PKKind.Any, top.LiftLevel)));
 	}
 
 	private GenInvoker BuildGenerator(OperatorDescription description)

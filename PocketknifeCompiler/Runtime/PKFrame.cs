@@ -1,6 +1,6 @@
 ﻿namespace PocketknifeCore;
 
-public class PKStream
+public class PKFrame
 {
 	public PKType Type;
 	public List<PKValue> Values;

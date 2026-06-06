@@ -157,7 +157,7 @@ public class Compiler
 				}
 				else
 				{
-					throw new Exception($"unknown operator {pipelineNode.Name}");
+					throw new Exception($"unknown | operator {pipelineNode.Name}");
 				}
 			case SignalCommandNode pipelineNode:
 				Debug.Assert(pipelineNode.sigil == ":");
@@ -183,13 +183,39 @@ public class Compiler
 						throw new Exception($"operator {sopr.Name} does not have an overload for incoming type {ctx.StackTop}");
 					}
 				}
-				throw new Exception($"unknown operator {pipelineNode.Name}");
+				throw new Exception($"unknown : operator {pipelineNode.Name}");
+			case FilterCommandNode filterNode:
+				Debug.Assert(filterNode.sigil == "~");
+				if(_catalog.TryGetOp(filterNode.Name, out var fopr))
+				{
+					if (fopr.HasOp(ctx.StackTop))
+					{
+						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						ctx.PushType(call.OutType);
+						return new PKFilterOperatorNode(fopr.Name, invoker);
+					}
+					else if (fopr.HasOp(PKType.Any))
+					{
+						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						ctx.PushType(call.OutType);
+						return new PKFilterOperatorNode(fopr.Name, invoker);
+					}
+					else
+					{
+						throw new Exception($"operator {fopr.Name} does not have an overload for incoming type {ctx.StackTop}");
+					}
+					
+				}
+
+				throw new Exception($"unknown ~ operator {filterNode.Name}");
+
 			case PackListNode:
 				ctx.Pack();
 				return new PKPack();
 			case UnpackListNode:
 				ctx.Unpack();
 				return new PKUnpack();
+
 			default:
 				throw new NotImplementedException($"{node.GetType()} not yet compilable");
 		}

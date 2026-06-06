@@ -41,9 +41,9 @@ public readonly struct PKValue
 		throw new InvalidOperationException();
 	}
 
-	public static PKValue FromList(List<PKValue> items, PKType elementType)
+	public static PKValue FromList(List<PKValue> items, PKType itemType)
 	{
-		return new PKValue(new PKType(elementType.Kind, true), items);
+		return new PKValue(itemType.Lifted(), items);
 	}
 
 	public static PKValue FromString(string s)
@@ -108,10 +108,13 @@ public readonly struct PKValue
 				//is this IEnumerable?
 				if (oftd == typeof(IEnumerable<>))
 				{
-					return new PKType(oft.Kind, true);
+					return oft.Lifted();
 				}else if (oftd == typeof(List<>))
 				{
-					return new PKType(oft.Kind, true);
+					return oft.Lifted();
+				}else if(oftd == typeof(Array))//todo: untested.
+				{
+					return oft.Lifted();
 				}
 			}
 		}

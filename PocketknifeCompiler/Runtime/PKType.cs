@@ -15,30 +15,30 @@ public enum PKKind
 
 public readonly struct PKType : IEquatable<PKType>
 {
-	public static readonly PKType None = new(PKKind.None,false);
-	public static readonly PKType String = new(PKKind.String, false);
-	public static readonly PKType Int = new(PKKind.Int, false);
-	public static readonly PKType Long = new(PKKind.Long, false);
-	public static readonly PKType Bool = new(PKKind.Bool, false);
-	public static readonly PKType Double = new(PKKind.Double, false);
-	public static readonly PKType File = new(PKKind.File, false);
-	public static readonly PKType Table = new(PKKind.Table, false);
-	public static readonly PKType Any = new(PKKind.Any, false);
+	public static readonly PKType None = new(PKKind.None);
+	public static readonly PKType String = new(PKKind.String);
+	public static readonly PKType Int = new(PKKind.Int);
+	public static readonly PKType Long = new(PKKind.Long);
+	public static readonly PKType Bool = new(PKKind.Bool);
+	public static readonly PKType Double = new(PKKind.Double);
+	public static readonly PKType File = new(PKKind.File);
+	public static readonly PKType Table = new(PKKind.Table);
+	public static readonly PKType Any = new(PKKind.Any);
 
 	public readonly PKKind Kind;
-	public readonly bool IsStream;//isEnumerable
-
-	public PKType(PKKind kind, bool isStream = false)
+	public readonly bool IsStream => LiftLevel>0;//isEnumerable
+	public readonly byte LiftLevel = 0;
+	public PKType(PKKind kind, byte liftLevel = 0)
 	{
 		Kind = kind;
-		IsStream = isStream;
+		LiftLevel = liftLevel;
 	}
 
 	public static bool IsNone(PKType type) => type.Kind == PKKind.None;
 	public bool IsNone() => Kind == PKKind.None;
 	
-	public PKType AsStream() => new PKType(Kind, true);
-	public PKType AsSingle() => new PKType(Kind, false);
+	public PKType Lifted() => new PKType(Kind, (byte)(LiftLevel+1));
+	public PKType Lowered() => new PKType(Kind, LiftLevel > 0 ? (byte)(LiftLevel-1) : (byte)0);
 
 	override public string ToString() => IsStream ? $"<{Kind.ToString()}>" : Kind.ToString();
 	

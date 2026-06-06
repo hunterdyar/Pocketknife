@@ -14,3 +14,10 @@ public class PKInlineOperatorNode : PKNode
 		_invoker = invoker;
 	}
 }
+
+public class PKFilterOperatorNode : PKInlineOperatorNode
+{
+	public PKFilterOperatorNode(string name, OpInvoker invoker) : base(name, invoker)
+	{
+	}
+}

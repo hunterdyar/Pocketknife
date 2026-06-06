@@ -24,12 +24,11 @@ public class CompileContext
 	public void Pack()
 	{
 		var top = Stack.Pop();
-		//todo: this won't work for List<List<Kind>>
 		if (top.IsStream)
 		{
 			throw new Exception("cannot pack a list. yes. this should work but just isn't implemented yet.");
 		}
-		Stack.Push(new PKType(top.Kind, true));
+		Stack.Push(top.Lifted());
 	}
 
 	public void Unpack()
@@ -40,6 +39,6 @@ public class CompileContext
 			throw new Exception("cannot unpack");
 		}
 
-		Stack.Push(new PKType(top.Kind, false));
+		Stack.Push(top.Lowered());
 	}
 }
