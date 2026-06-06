@@ -181,31 +181,35 @@ public class Tests
 	          >"Hello"
 	          |to-upper
 	          :print
-	          """)]
+	          """, "HELLO")]
 	[TestCase("""
 	          >"Hello" "Hi" "ahOYYYY!" "yo"
 	          |to-upper
 	          |to-lower
 	          :print
-	          """)]
+	          """, "hello","hi","ahoyyyy!","yo")]
 	[TestCase("""
 	          >"Hello" "Hi" "ahOYYYY!" "yo"
 	          |to-upper
 	          <>
 	          |count
 	          :print
-	          """)]
+	          """,$"4")]
 	[TestCase("""
 	          >"Hello" "Hi" "ahOYYYY!" "yo"
 	          |to-upper
 	          .
 	          <>
 	          |count
+	          :print
 	          ^
 	          :print
-	          """)]
-	public void SimpleEvalTest(string source)
+	          ""","4","hello","hi","ahoyyyy!","yo")]
+	public void SimpleEvalTest(string source, params string[] expectedOutput)
 	{
+		using var sw = new StringWriter();
+		Console.SetOut(sw);
+		
 		var p = new Parser();
 		p.Parse(source);
 
@@ -216,7 +220,9 @@ public class Tests
 
 		var context = new Context();
 		SimpleEvaluator.Evaluate(compiled, context);
-		//todo: add stream out to runtime context.
+		//i just can't be bothered to deal with environment.newlines.
+		var expectedOutputString = string.Join(Environment.NewLine, expectedOutput);
+		EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);
 	}
 	
 	
