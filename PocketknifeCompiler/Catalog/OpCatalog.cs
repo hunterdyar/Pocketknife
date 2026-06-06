@@ -6,7 +6,7 @@ namespace PocketknifeCore;
 
 public class OpCatalog
 {
-	public Dictionary<string, OperatorResolver> Operators = new Dictionary<string, OperatorResolver>();
+	public readonly Dictionary<string, OperatorResolver> Operators = new Dictionary<string, OperatorResolver>();
 
 	public void AddOp(string name, OperatorDescription description)
 	{
@@ -29,6 +29,7 @@ public class OpCatalog
 		var oc =  new OpCatalog();
 		oc.RegisterMethods(typeof(Standard));
 		oc.RegisterMethods(typeof(StringMethods));
+		oc.RegisterMethods(typeof(IntMethods));
 		oc.RegisterMethods(typeof(ListMethods));
 		return oc;
 	}

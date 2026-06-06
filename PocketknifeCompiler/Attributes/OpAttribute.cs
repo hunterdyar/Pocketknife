@@ -22,7 +22,7 @@ public class PipelineAttribute : OpAttribute
 		
 		Debug.Assert(!PKType.IsNone(inPK));
 		Debug.Assert(!PKType.IsNone(outPK));
-		catalog.RegisterOp(Name, new OperatorDescription()
+		catalog.RegisterOp(Name, new OperatorDescription(OpKind.Pipeline)
 		{
 			InType = inPK,
 			OutType = outPK,
@@ -48,10 +48,41 @@ public class SignalAttribute : OpAttribute
 			Debug.Assert(false, "Signal operators should return void. return type is ignored. This doesn't matter, but enforcing it because it means i messed something else up.");
 		}
 		Debug.Assert(!PKType.IsNone(inPK));
-		catalog.RegisterOp(Name, new OperatorDescription()
+		catalog.RegisterOp(Name, new OperatorDescription(OpKind.Signal)
 		{
 			InType = inPK,
 			OutType = PKType.None,
+			Method = method
+		});
+	}
+}
+
+[AttributeUsage(AttributeTargets.Method)]
+public class GeneratorAttribute : OpAttribute
+{
+	public string Name { get; set; }
+
+	public override void Register(OpCatalog catalog, MethodInfo method)
+	{
+		foreach (var param in method.GetParameters())
+		{
+			var inPK = PKValue.GetPKType(param.ParameterType);
+			if (inPK == PKType.None)
+			{
+				throw new Exception($"Could not determine type of parameter {param.Name} in method {method.Name}");
+			}
+		}
+		var outType = method.ReturnType;
+		var outPK = PKValue.GetPKType(outType);
+		if (!outPK.IsStream)
+		{
+			throw new Exception($"Generator {method.Name} must return a stream type (e.g. List<T>)");
+		}
+
+		catalog.RegisterOp(Name, new OperatorDescription(OpKind.Generator)
+		{
+			InType = PKType.None,
+			OutType = outPK,
 			Method = method
 		});
 	}

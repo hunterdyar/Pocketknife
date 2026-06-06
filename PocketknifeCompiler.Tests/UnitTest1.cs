@@ -229,7 +229,32 @@ public class Tests
 		var compiled = compiler.StartCompile(p.Program);
 
 		var context = new Context();
-		SimpleEvaluator.Evaluate(compiled, context);
+		SimpleEvaluator.EvaluateAll(compiled, context);
+		//i just can't be bothered to deal with environment.newlines.
+		var expectedOutputString = string.Join(Environment.NewLine, expectedOutput);
+		EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);
+	}
+
+	[TestCase("""
+	          >range 0 5
+	          |abs
+	          :print
+	          """, "0", "1", "2", "3", "4", "5")]
+	public void ParamsSimpleEvalTest(string source, params string[] expectedOutput)
+	{
+		using var sw = new StringWriter();
+		Console.SetOut(sw);
+
+		var p = new Parser();
+		p.Parse(source);
+
+		var catalog = OpCatalog.GetDefaultOpCatalog();
+		var compiler = new Compiler(catalog);
+
+		var compiled = compiler.StartCompile(p.Program);
+
+		var context = new Context();
+		SimpleEvaluator.EvaluateAll(compiled, context);
 		//i just can't be bothered to deal with environment.newlines.
 		var expectedOutputString = string.Join(Environment.NewLine, expectedOutput);
 		EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);

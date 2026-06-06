@@ -21,6 +21,7 @@ public class OperatorResolver
 		Debug.Assert(description.Method != null);
 		if (GetTypes().Contains((description.InType, description.OutType)))
 		{
+			//todo: compare arguments.
 			throw new ArgumentException($"Overload already exists for {description.InType} -> {description.OutType}");
 		}
 

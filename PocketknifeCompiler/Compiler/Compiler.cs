@@ -126,7 +126,7 @@ public class Compiler
 				{
 					// Build (or fetch a cached) OpInvoker for this overload.
 					GenInvoker genInvoker = iopr.GetOrBuildGenerator(out var call);
-
+					CompileArguments(call, inputProviderNode.Arguments, ctx);
 					ctx.PushType(call.OutType);
 					return new PKInputProvider(call.OutType, iopr.Name, genInvoker);
 				}
@@ -162,12 +162,14 @@ public class Compiler
 					if (popr.HasOp(ctx.StackTop))
 					{
 						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						CompileArguments(call, pipelineNode.Arguments, ctx);
 						ctx.PopType();
 						ctx.PushType(call.OutType);
 						return new PKInlineOperatorNode(popr.Name, invoker);
 					}else if (popr.HasOp(PKType.Any))
 					{
 						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						CompileArguments(call, pipelineNode.Arguments, ctx);
 						ctx.PopType();
 						ctx.PushType(call.OutType);
 						return new PKInlineOperatorNode(popr.Name, invoker);
@@ -190,15 +192,18 @@ public class Compiler
 					if (sopr.HasOp(ctx.StackTop))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						CompileArguments(call, pipelineNode.Arguments, ctx);
 						return new PKInlineOperatorNode(sopr.Name, invoker);
 					}else if (sopr.HasOp(PKType.Any))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(PKType.Any, out var call);
+						CompileArguments(call, pipelineNode.Arguments, ctx);
 						return new PKInlineOperatorNode(sopr.Name, invoker);
 					}
 					else if (sopr.HasOp(PKType.None))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(PKType.None, out var call);
+						CompileArguments(call, pipelineNode.Arguments, ctx);
 						return new PKInlineOperatorNode(sopr.Name, invoker);
 					}
 					else
@@ -214,11 +219,13 @@ public class Compiler
 					if (fopr.HasOp(ctx.StackTop))
 					{
 						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						CompileArguments(call, filterNode.Arguments, ctx);
 						return new PKFilterOperatorNode(fopr.Name, invoker);
 					}
 					else if (fopr.HasOp(PKType.Any))
 					{
 						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, out var call);
+						CompileArguments(call, filterNode.Arguments, ctx);
 						return new PKFilterOperatorNode(fopr.Name, invoker);
 					}
 					else
@@ -247,6 +254,23 @@ public class Compiler
 			
 			default:
 				throw new NotImplementedException($"{node.GetType()} not yet compilable");
+		}
+	}
+
+	private void CompileArguments(OperatorDescription overload, ExpressionNode[] arguments, CompileContext ctx)
+	{
+		var a = overload.FirstArgIsStream() ? 1 : 0;
+		for (var i = a; i < arguments.Length; i++)
+		{
+			var arg = arguments[i];
+			var e = EvaluateExpression(arg, ctx);
+			//todo: how are we going to get the type of variables? 
+			var paramType = overload.Method.GetParameters()[i].ParameterType;
+			var PKParamType = PKValue.GetPKType(paramType);
+			if (e.Type != PKParamType && PKParamType != PKType.Any)
+			{
+				throw new Exception($"Invalid Type for {e.Type} when expected {PKParamType} for parameter {i} of {overload.Method.Name}");
+			}
 		}
 	}
 
