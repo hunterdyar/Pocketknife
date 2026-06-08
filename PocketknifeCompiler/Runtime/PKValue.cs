@@ -30,7 +30,7 @@ public readonly struct PKValue
 	// public T ScalarAs<T>() => (T)_scalar ?? throw new InvalidOperationException();
 	public int AsInt() => (int)_scalar;
 	public long AsLong() => _scalar;
-	public double AsDouble() => (double)_scalar;
+	public double AsDouble() => BitConverter.Int64BitsToDouble(_scalar);
 	public bool AsBool() => _scalar != 0;
 	public List<PKValue> AsList()
 	{
@@ -67,7 +67,7 @@ public readonly struct PKValue
 	}
 	public static PKValue FromDouble(double d)
 	{
-		return new PKValue(PKType.Double, (long)d);
+		return new PKValue(PKType.Double, BitConverter.DoubleToInt64Bits(d));
 	}
 
 	public static PKType GetPKType(Type type)
@@ -124,7 +124,64 @@ public readonly struct PKValue
 
 	override public string ToString()
 	{
-		return _ref?.ToString() ?? _scalar.ToString();
+		if (_ref != null) return _ref.ToString()!;
+		switch (_type.Kind)
+		{
+			case PKKind.Double: return AsDouble().ToString();
+			case PKKind.Bool:   return AsBool().ToString();
+			default:            return _scalar.ToString();
+		}
 	}
 
+	public static PKValue FromNative(PKType type, object o)
+	{
+		if (type.IsStream)
+		{
+			throw new NotImplementedException();
+			// return FromList((List<PKValue>)o, type.Lowered());
+		}
+
+		var given = GetPKType(o.GetType());
+		if (given != type)
+		{
+			throw new Exception($"Cannot convert {o.GetType()} to {type}");
+		}
+		switch (type.Kind)
+		{
+			case PKKind.Bool:
+				return PKValue.FromBool((bool)o);
+			case PKKind.Double:
+				return FromDouble((double)o);
+			case PKKind.Int:
+				return FromInt((int)o);
+			case PKKind.String:
+				return FromString((string)o);
+			case PKKind.Long:
+				return FromLong((long)o);
+			default:break;
+		}	
+		
+
+		throw new Exception($"Cannot get {type} from {o}");
+
+	}
+
+	public static object ToNative(PKType inType, PKValue pkValue)
+	{
+		switch (inType.Kind)
+		{
+			case PKKind.Bool:
+				return pkValue.AsBool();
+			case PKKind.Double:
+				return pkValue.AsDouble();
+			case PKKind.Int:
+				return pkValue.AsInt();
+			case PKKind.String:
+				return pkValue.AsString();
+			case PKKind.Long:
+				return pkValue.AsLong();
+			default:
+				throw new NotImplementedException();
+		}
+	}
 }

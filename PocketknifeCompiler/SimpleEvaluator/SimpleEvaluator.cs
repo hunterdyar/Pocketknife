@@ -36,16 +36,19 @@ public static class SimpleEvaluator
 				foreach (var evalState in Evaluate(branch.Body, ctx)) yield return evalState;
 				break;
 			case PKInputProvider input:
-				var value = input.Generator.Invoke(Array.Empty<PKValue>(), ctx);
-				ctx.PushStream(input.Type,value);
+				var ia = EvaluateArguments(input.Arguments, ctx);
+				var value = input.Generator.Invoke(ia, ctx);
+				ctx.PushStream(input.Type, value.AsList());
 				yield return EvalState.Good();
 				break;
 			case PKFilterOperatorNode fopr:
-				ctx.FilterOnEach(fopr.Invoker);
+				var fa = EvaluateArguments(fopr.Arguments, ctx);
+				ctx.FilterOnEach(fa, fopr.Invoker);
 				yield return EvalState.Good();
 				break;
 			case PKInlineOperatorNode iopr:
-				ctx.OperateOnEach(iopr.Invoker);
+				var ioprArguments = EvaluateArguments(iopr.Arguments, ctx);
+				ctx.OperateOnEach(ioprArguments, iopr.Invoker);
 				yield return EvalState.Good();
 				break;
 			case PKPack:
@@ -73,6 +76,13 @@ public static class SimpleEvaluator
 			// default:
 			// 	throw new NotImplementedException($"{node.GetType()} not yet compilable");
 		}
+	}
+
+	private static PKValue[] EvaluateArguments(Arguments args, Context ctx)
+	{
+		//todo: check for variables, etc.
+
+		return args.EvaluatedArgs;
 	}
 }
 

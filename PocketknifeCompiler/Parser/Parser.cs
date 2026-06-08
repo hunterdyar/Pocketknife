@@ -513,7 +513,7 @@ public class Parser
                     return new IdentifierNode(token.GetSource(Source));
                 case TokenType.Number:
                     _tokenIndex++;
-                    return new NumberNode(token.GetSource(Source));
+                    return NumberNode.FromString(token.GetSource(Source));
                 case TokenType.Label:
                     return ParseLabel();
                 case TokenType.String:

@@ -2,7 +2,7 @@
 
 namespace PocketknifeCore;
 
-public class IntMethods
+public static class IntMethods
 {
 	[Generator(Name = "range")]
 	public static List<int> Range(int start, int end)
@@ -41,7 +41,12 @@ public class IntMethods
 	{
 		return -i;
 	}
-	
+
+	[Casting]
+	public static double ToDouble(int i)
+	{
+		return (double)i;
+	}
 	
 	//there's a way to do math ops on the underlying scalar and have them work for any signed number type, I bet.
 }

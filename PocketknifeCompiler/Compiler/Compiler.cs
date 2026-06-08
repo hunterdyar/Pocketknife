@@ -112,11 +112,10 @@ public class Compiler
 								throw new Exception($"all arguments must be of the same type. {argKind} != {resArg.Type}");
 							}
 						}
-
 					}
-
+					var literalWrapper = PKValue.FromList(literals, argKind);
 					ctx.PushType(argKind);
-					return new PKInputProvider(argKind, inputLiteralProviderNode.Name, (args, context) => literals);
+					return new PKInputProvider(argKind, inputLiteralProviderNode.Name, (args, context) => literalWrapper, Arguments.Empty);
 
 				}
 				break;
@@ -126,9 +125,11 @@ public class Compiler
 				{
 					// Build (or fetch a cached) OpInvoker for this overload.
 					GenInvoker genInvoker = iopr.GetOrBuildGenerator(out var call);
-					CompileArguments(call, inputProviderNode.Arguments, ctx);
-					ctx.PushType(call.OutType);
-					return new PKInputProvider(call.OutType, iopr.Name, genInvoker);
+					var args = CompileArguments(call, inputProviderNode.Arguments, ctx);
+					//generator out type should be list<x>, but really, it's list. we are doing the following commands on every one.
+					var callType = call.OutType.Lowered();
+					ctx.PushType(callType);
+					return new PKInputProvider(callType, iopr.Name, genInvoker, args);
 				}
 				else
 				{
@@ -154,7 +155,6 @@ public class Compiler
 					ctx.PopFrame(branchNode.Type);
 					return new PKNamedBranch(branchNode.Label, subbranch, branchNode.Type);
 				}
-			
 			case PipelineCommandNode pipelineNode:
 				Debug.Assert(pipelineNode.sigil == "|");
 				if (_catalog.TryGetOp(pipelineNode.Name, out var popr))
@@ -162,22 +162,35 @@ public class Compiler
 					if (popr.HasOp(ctx.StackTop))
 					{
 						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
-						CompileArguments(call, pipelineNode.Arguments, ctx);
+						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
 						ctx.PopType();
 						ctx.PushType(call.OutType);
-						return new PKInlineOperatorNode(popr.Name, invoker);
-					}else if (popr.HasOp(PKType.Any))
+						return new PKInlineOperatorNode(popr.Name, invoker, args);
+					}
+					
+					//check if any of our casts are useful for this operator... they are not sorted, but we presume not a big deal for now!
+					foreach (var cast in _catalog.GetImplicitCasts(ctx.StackTop))
+					{
+						if (popr.HasOp(cast.OutType))
+						{
+							OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, cast, out var call);
+							var args = CompileArguments(call, pipelineNode.Arguments, ctx);
+							ctx.PopType();
+							ctx.PushType(cast.OutType);
+							return new PKInlineOperatorNode(popr.Name, invoker, args);
+						}//else continue
+					}
+					
+					if (popr.HasOp(PKType.Any))
 					{
 						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
-						CompileArguments(call, pipelineNode.Arguments, ctx);
+						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
 						ctx.PopType();
 						ctx.PushType(call.OutType);
-						return new PKInlineOperatorNode(popr.Name, invoker);
+						return new PKInlineOperatorNode(popr.Name, invoker, args);
 					}
-					else
-					{
-						throw new Exception($"operator {popr.Name} does not have an overload for incoming type {ctx.StackTop}");
-					}
+					
+					throw new Exception($"operator {popr.Name} does not have an overload for incoming type {ctx.StackTop}");
 					
 				}
 				else
@@ -192,19 +205,32 @@ public class Compiler
 					if (sopr.HasOp(ctx.StackTop))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(ctx.StackTop, out var call);
-						CompileArguments(call, pipelineNode.Arguments, ctx);
-						return new PKInlineOperatorNode(sopr.Name, invoker);
-					}else if (sopr.HasOp(PKType.Any))
+						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
+						return new PKInlineOperatorNode(sopr.Name, invoker, args);
+					}
+					
+					//check if any of our casts are useful for this operator... they are not sorted, but we presume not a big deal for now!
+					foreach (var cast in _catalog.GetImplicitCasts(ctx.StackTop))
+					{
+						if (sopr.HasOp(cast.OutType))
+						{
+							OpInvoker invoker = sopr.GetOrBuildInvoker(ctx.StackTop, cast, out var call);
+							var args = CompileArguments(call, pipelineNode.Arguments, ctx);
+							return new PKInlineOperatorNode(sopr.Name, invoker, args);
+						} //else continue
+					}
+					
+					if (sopr.HasOp(PKType.Any))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(PKType.Any, out var call);
-						CompileArguments(call, pipelineNode.Arguments, ctx);
-						return new PKInlineOperatorNode(sopr.Name, invoker);
+						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
+						return new PKInlineOperatorNode(sopr.Name, invoker, args);
 					}
 					else if (sopr.HasOp(PKType.None))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(PKType.None, out var call);
-						CompileArguments(call, pipelineNode.Arguments, ctx);
-						return new PKInlineOperatorNode(sopr.Name, invoker);
+						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
+						return new PKInlineOperatorNode(sopr.Name, invoker, args);
 					}
 					else
 					{
@@ -219,14 +245,22 @@ public class Compiler
 					if (fopr.HasOp(ctx.StackTop))
 					{
 						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, out var call);
-						CompileArguments(call, filterNode.Arguments, ctx);
-						return new PKFilterOperatorNode(fopr.Name, invoker);
+						var args = CompileArguments(call, filterNode.Arguments, ctx);
+						return new PKFilterOperatorNode(fopr.Name, invoker, args);
 					}
-					else if (fopr.HasOp(PKType.Any))
+
+					foreach (var cast in _catalog.GetImplicitCasts(ctx.StackTop))
+					{
+						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, cast, out var call);
+						var args = CompileArguments(call, filterNode.Arguments, ctx);
+						return new PKFilterOperatorNode(fopr.Name, invoker, args);
+					}
+					
+					if (fopr.HasOp(PKType.Any))
 					{
 						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, out var call);
-						CompileArguments(call, filterNode.Arguments, ctx);
-						return new PKFilterOperatorNode(fopr.Name, invoker);
+						var args = CompileArguments(call, filterNode.Arguments, ctx);
+						return new PKFilterOperatorNode(fopr.Name, invoker, args);
 					}
 					else
 					{
@@ -257,21 +291,42 @@ public class Compiler
 		}
 	}
 
-	private void CompileArguments(OperatorDescription overload, ExpressionNode[] arguments, CompileContext ctx)
+	private Arguments CompileArguments(OperatorDescription overload, ExpressionNode[] arguments, CompileContext ctx)
 	{
 		var a = overload.FirstArgIsStream() ? 1 : 0;
-		for (var i = a; i < arguments.Length; i++)
+		Debug.Assert(overload.Method.GetParameters().Length == arguments.Length + a);
+		if (arguments.Length == 0)
+		{
+			return Arguments.Empty;
+		}
+		
+		List<PKValue> args = new List<PKValue>(arguments.Length);
+		for (var i = 0; i < arguments.Length; i++)
 		{
 			var arg = arguments[i];
 			var e = EvaluateExpression(arg, ctx);
 			//todo: how are we going to get the type of variables? 
-			var paramType = overload.Method.GetParameters()[i].ParameterType;
+			var paramType = overload.Method.GetParameters()[i+a].ParameterType;
 			var PKParamType = PKValue.GetPKType(paramType);
 			if (e.Type != PKParamType && PKParamType != PKType.Any)
 			{
+				foreach (var cast in _catalog.GetImplicitCasts(e.Type))
+				{
+					if (cast.OutType == PKParamType)
+					{
+						e = cast.ApplyNow(e);
+						goto WithCorrectType;
+					}
+				}
+				
 				throw new Exception($"Invalid Type for {e.Type} when expected {PKParamType} for parameter {i} of {overload.Method.Name}");
+				
 			}
+			WithCorrectType:
+			//check if it's an ArgumentEvalNode or a const i guess.
+			args.Add(e);
 		}
+		return new Arguments(args.ToArray());
 	}
 
 	private PKValue EvaluateExpression(ExpressionNode literal, CompileContext ctx)

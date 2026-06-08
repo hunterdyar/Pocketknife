@@ -53,6 +53,7 @@ public class OperatorResolver
 	}
 	
 	private Dictionary<OperatorDescription, OpInvoker> Invokers = new Dictionary<OperatorDescription, OpInvoker>();
+	private Dictionary<(OperatorDescription, CastingDescription), OpInvoker> _castedInvokers = new Dictionary<(OperatorDescription, CastingDescription), OpInvoker>();
 	public OpInvoker GetOrBuildInvoker(PKType input, out OperatorDescription overload)
 	{
 		overload = _overloads.FirstOrDefault(x => x.InType.Equals(input));
@@ -82,6 +83,36 @@ public class OperatorResolver
 		}
 	}
 
+	public OpInvoker GetOrBuildInvoker(PKType input, CastingDescription cast, out OperatorDescription overload)
+	{
+		overload = _overloads.FirstOrDefault(x => x.InType.Equals(cast.OutType));
+
+		//is generic?
+		if (overload == null)
+		{
+			overload = _overloads.FirstOrDefault(x => x.InType.Equals(new PKType(PKKind.Any, cast.OutType.LiftLevel)));
+		}
+
+		if (overload != null)
+		{
+			//get
+			if (_castedInvokers.TryGetValue((overload, cast), out var invoker))
+			{
+				return invoker;
+			}
+
+			//or build
+			var builtInvoker = BuildInvoker(overload, cast);
+			_castedInvokers.Add((overload, cast), builtInvoker);
+			return builtInvoker;
+		}
+		else
+		{
+			throw new Exception($"Operator {Name} does not have an overload for casted type {cast.OutType} (from {input})");
+		}
+	}
+ 
+
 	private Dictionary<OperatorDescription, GenInvoker> _generators = new Dictionary<OperatorDescription, GenInvoker>();
 
 	public GenInvoker GetOrBuildGenerator(out OperatorDescription overload)
@@ -107,7 +138,7 @@ public class OperatorResolver
 		}
 	}
 
-	static OpInvoker BuildInvoker(OperatorDescription description)
+	static OpInvoker BuildInvoker(OperatorDescription description, CastingDescription? cast = null)
 	{
 		var target = description.Method;
 		
@@ -132,7 +163,28 @@ public class OperatorResolver
 			//if it's a generator, we don't have an input parameter; 
 			if (i == 0 && !PKType.IsNone(description.InType))
 			{
-				callArgs[i] = ConvertPKValue(pInput, pType);
+				if (cast != null)
+				{
+					var castTarget = cast.Method;
+					var castParamType = castTarget.GetParameters()[0].ParameterType;
+					Expression castInput = ConvertPKValue(pInput, castParamType);
+					Expression castCall = castTarget.IsStatic 
+						? Expression.Call(castTarget, castInput) 
+						: throw new NotImplementedException("Non-static casting methods are not supported");
+
+					if (castTarget.ReturnType != pType)
+					{
+						callArgs[i] = Expression.Convert(castCall, pType);
+					}
+					else
+					{
+						callArgs[i] = castCall;
+					}
+				}
+				else
+				{
+					callArgs[i] = ConvertPKValue(pInput, pType);
+				}
 				continue;
 			}
 

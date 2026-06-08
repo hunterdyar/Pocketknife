@@ -236,10 +236,22 @@ public class Tests
 	}
 
 	[TestCase("""
-	          >range 0 5
+	          >range 0 6
 	          |abs
 	          :print
 	          """, "0", "1", "2", "3", "4", "5")]
+	[TestCase("""
+	          >range -5 6
+	          |abs
+	          :print
+	          """, "5","4","3","2","1","0", "1", "2", "3", "4", "5")]
+	[TestCase("""
+	          >1 10 100
+	          |mul 2
+	          |div 5
+	          |ceil
+	          :print
+	          """, "1","4","40")]
 	public void ParamsSimpleEvalTest(string source, params string[] expectedOutput)
 	{
 		using var sw = new StringWriter();

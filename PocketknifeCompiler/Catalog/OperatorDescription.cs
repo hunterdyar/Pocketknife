@@ -23,6 +23,67 @@ public class OperatorDescription
 	}
 }
 
+public class CastingDescription : IEquatable<CastingDescription>
+{
+	public bool Implicit => _isImplicit;
+	private bool _isImplicit;
+	public required PKType InType = PKType.None;
+	public required PKType OutType = PKType.None;
+	public required MethodInfo Method;
+
+	public CastingDescription(bool isImplicit)
+	{
+		_isImplicit = isImplicit;
+	}
+
+
+	#region Generated Equality Members
+
+	public bool Equals(CastingDescription? other)
+	{
+		if (other is null) return false;
+		if (ReferenceEquals(this, other)) return true;
+		return _isImplicit == other._isImplicit && InType.Equals(other.InType) && OutType.Equals(other.OutType);
+	}
+
+	public override bool Equals(object? obj)
+	{
+		if (obj is null) return false;
+		if (ReferenceEquals(this, obj)) return true;
+		if (obj.GetType() != GetType()) return false;
+		return Equals((CastingDescription)obj);
+	}
+
+	public override int GetHashCode()
+	{
+		return HashCode.Combine(_isImplicit, InType, OutType);
+	}
+
+	public static bool operator ==(CastingDescription? left, CastingDescription? right)
+	{
+		return Equals(left, right);
+	}
+
+	public static bool operator !=(CastingDescription? left, CastingDescription? right)
+	{
+		return !Equals(left, right);
+	}
+
+	#endregion
+
+	public PKValue ApplyNow(PKValue pkValue)
+	{
+		if (Method is null)
+		{
+			throw new InvalidOperationException("Method not set for casting description");
+		}
+		
+		
+		var o =(Method.Invoke(null, [PKValue.ToNative(InType, pkValue)]) ?? throw new InvalidOperationException());
+		return PKValue.FromNative(OutType, o);
+	}
+}
+
 public enum OpKind
 {
 	Pipeline,

@@ -8,11 +8,15 @@ public class PKInputProvider : PKNode
 	private GenInvoker _generator;
 	public string Name => _name;
 	private string _name;
-	public PKInputProvider(PKType type, string opName, GenInvoker generator)
+	
+	public Arguments Arguments => _arguments;
+	private Arguments _arguments;
+	public PKInputProvider(PKType type, string opName, GenInvoker generator, Arguments arguments)
 	{
 		_type = type;
 		_name = opName;
 		_generator = generator;
+		_arguments = arguments;
 	}
 
 	public override string ToString()

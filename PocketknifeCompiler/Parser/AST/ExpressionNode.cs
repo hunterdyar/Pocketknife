@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using PocketknifeCore;
@@ -18,13 +19,30 @@ public class IdentifierNode(string source) : ExpressionNode
 public class NumberNode : LiteralExpressionNode
 {
 
-    public NumberNode(string source) : base(PKValue.FromDouble(Convert.ToDouble(source)))
+    public NumberNode(PKValue source) : base(source)
     {
     }
 
     public override string ToString()
     {
         return Value.ToString();
+    }
+    public static NumberNode FromString(string source)
+    {
+        // if(source.EndsWith("f"))
+        // {
+        //     return new NumberNode(PKValue.FromFloat(Convert.ToSingle(source)));
+        // }
+        if (source.Contains('.'))
+        {
+            var d = Convert.ToDouble(source, CultureInfo.InvariantCulture);
+            return new NumberNode(PKValue.FromDouble(d));
+        }
+        else
+        {
+            var i = Convert.ToInt32(source, CultureInfo.InvariantCulture);
+            return new NumberNode(PKValue.FromInt(i));
+        }
     }
 }
 

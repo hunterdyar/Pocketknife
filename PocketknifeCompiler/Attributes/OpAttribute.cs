@@ -87,3 +87,42 @@ public class GeneratorAttribute : OpAttribute
 		});
 	}
 }
+
+
+public class CastingAttribute : OpAttribute
+{
+	public bool IsImplicit => _isImplicit;
+	private bool _isImplicit;
+	public CastingAttribute(bool isImplicit = true)
+	{
+		_isImplicit = isImplicit;
+	}
+	public override void Register(OpCatalog catalog, MethodInfo method)
+	{
+		if (method.GetParameters().Length != 1)
+		{
+			throw new Exception($"Casting operator {method.Name} must have exactly one parameter");
+		}
+
+		var inPK = PKValue.GetPKType(method.GetParameters()[0].ParameterType);
+		var outPK = PKValue.GetPKType(method.ReturnType);
+
+		if (inPK == PKType.None || inPK == PKType.Any)
+		{
+			throw new Exception($"Could not determine type of parameter {method.GetParameters()[0].Name} in method {method.Name}");
+		}
+
+		if (outPK == PKType.None || outPK == PKType.Any)
+		{
+			throw new Exception($"Could not determine return type of method {method.Name}");
+		}		
+
+		catalog.RegisterCast(new CastingDescription(_isImplicit)
+		{
+			InType = inPK,
+			OutType = outPK,
+			Method = method
+		});
+	}
+}
+

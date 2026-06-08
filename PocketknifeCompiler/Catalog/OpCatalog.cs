@@ -7,7 +7,8 @@ namespace PocketknifeCore;
 public class OpCatalog
 {
 	public readonly Dictionary<string, OperatorResolver> Operators = new Dictionary<string, OperatorResolver>();
-
+	private readonly Dictionary<PKType, List<CastingDescription>> ImplicitCasts = new Dictionary<PKType, List<CastingDescription>>();
+	private readonly Dictionary<PKType, List<CastingDescription>> ExplicitCasts = new Dictionary<PKType, List<CastingDescription>>();
 	public void AddOp(string name, OperatorDescription description)
 	{
 		if (!Operators.ContainsKey(name))
@@ -30,6 +31,7 @@ public class OpCatalog
 		oc.RegisterMethods(typeof(Standard));
 		oc.RegisterMethods(typeof(StringMethods));
 		oc.RegisterMethods(typeof(IntMethods));
+		oc.RegisterMethods(typeof(DoubleMethods));
 		oc.RegisterMethods(typeof(ListMethods));
 		return oc;
 	}
@@ -59,6 +61,44 @@ public class OpCatalog
 	}
 
 
+	public void RegisterCast(CastingDescription cast)
+	{
+		if (cast.Implicit)
+		{
+			if(!ImplicitCasts.ContainsKey(cast.InType))
+			{
+				ImplicitCasts.Add(cast.InType, new List<CastingDescription>());
+			}
+			ImplicitCasts[cast.InType].Add(cast);
+		}
+		else
+		{
+			if(!ExplicitCasts.ContainsKey(cast.InType))
+			{
+				ExplicitCasts.Add(cast.InType, new List<CastingDescription>());
+			}
+			ExplicitCasts[cast.InType].Add(cast);
+		}
+	}
+	
+
+	public IEnumerable<CastingDescription> GetImplicitCasts(PKType inType)
+	{
+		if(ImplicitCasts.TryGetValue(inType, out var casts))
+		{
+			return casts;
+		}
+		return Enumerable.Empty<CastingDescription>();
+	}
+	
+	public IEnumerable<CastingDescription> GetExplicitCasts(PKType inType)
+	{
+		if(ExplicitCasts.TryGetValue(inType, out var casts))
+		{
+			return casts;
+		}
+		return Enumerable.Empty<CastingDescription>();
+	}
 }
 
 //a single function

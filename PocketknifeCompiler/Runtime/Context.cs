@@ -20,24 +20,31 @@ public class Context
 	//todo: will arguments ever have to be per-op? @Index, etc?
 	//todo: differentiate arguments that can lookup up just once, or have to be inside the onEach.
 	
-	public void OperateOnEach(OpInvoker invoker)
+	public void OperateOnEach(PKValue[] arguments, OpInvoker invoker)
 	{
 		var top = Frames.Peek();
-		var args = _args.Rent(argCount);//todo: no, wait; rent provides the buffer. we need to populate it.
+		argCount = arguments.Length;
+		var args = _args.Rent(argCount);
+		arguments.CopyTo(args, 0);
+		//todo: no, wait; rent provides the buffer. we need to populate it.
 		//todo: check if any of the args are per-iteration. If so, mark them somehow and move to inside that for loop.
 		//todo: compile the args...
+		
 		for (var i = 0; i < top.Values.Count; i++)
 		{
 			var value = Frames.Peek().Values[i];
 			var result = invoker(value, args, this);
 			top.Values[i] = result;
 		}
+		_args.Return(args);
 	}
 
-	public void FilterOnEach(OpInvoker foprInvoker)
+	public void FilterOnEach(PKValue[] arguments, OpInvoker foprInvoker)
 	{
 		var top = Frames.Peek();
-		var args = _argsBuffer;
+		argCount = arguments.Length;
+		var args = _args.Rent(argCount);
+		arguments.CopyTo(args, 0);//todo: none of this makes sense
 		//todo: same arg stuff as OperateOnEach
 		var result = new List<PKValue>(top.Values.Count);
 		for (var i = 0; i < top.Values.Count; i++)

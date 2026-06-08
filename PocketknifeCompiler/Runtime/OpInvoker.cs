@@ -8,5 +8,5 @@ namespace PocketknifeCore;
 public delegate PKValue OpInvoker(PKValue input, PKValue[] args, Context context);
 
 //todo: i guess we should a more flexible thing than a list. if we want to manage parallel and such? but not sure how to "transform an IEnumerable"... IList?
-public delegate List<PKValue> GenInvoker(PKValue[] args, Context context);
+public delegate PKValue GenInvoker(PKValue[] args, Context context);
 
