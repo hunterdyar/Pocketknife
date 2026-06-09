@@ -133,7 +133,7 @@ public class EmptyListLiteralExpression : LiteralExpressionNode
 {
     //FromList<PKValue>
     
-    public EmptyListLiteralExpression() : base(Array.Empty<object>())
+    public EmptyListLiteralExpression() : base(new List<object>())
     {
     }
 

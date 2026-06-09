@@ -54,14 +54,15 @@ public class CommandSetNode : ASTNode
         Commands = commands;
     }
 }
+
 public class InputBranchNode : RootNode
 {
     public InputProviderNode Input;
     public CommandSetNode CommandSet;
-    public BranchType Type;
+    public BranchType BranchType;
     public InputBranchNode(InputProviderNode input, BranchType type, List<RootNode> commands)
     {
-        this.Type = type;
+        this.BranchType = type;
         Input = input;
         CommandSet = new CommandSetNode(commands);
     }
@@ -75,7 +76,7 @@ public class InputBranchNode : RootNode
             sb.AppendLine(command.ToString());
         }
 
-        switch (Type)
+        switch (BranchType)
         {
             case BranchType.SideEffect:
                 sb.AppendLine("^");

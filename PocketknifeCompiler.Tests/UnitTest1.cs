@@ -236,7 +236,12 @@ public class Tests
 	          
 	          """, "0", "1", "2", "3", "4")]
 	[TestCase("""
-	          >[]
+	          >
+	          
+	          >1
+	          |add 4
+	          &
+	          
 	          
 	          >1
 	          |add 4
@@ -247,7 +252,7 @@ public class Tests
 	          &
 	          
 	          :print
-	          """, "5","0","2","4","6")]
+	          """, "5","5","0","2","4","6")]
 	public void SimpleEvalTest(string source, params string[] expectedOutput)
 	{
 		using var sw = new StringWriter();

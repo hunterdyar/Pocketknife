@@ -147,6 +147,7 @@ public class Context
 				Frames.Pop();
 				break;
 			case BranchType.ListAppend:
+				//todo: we need to typecheck. if the base type is object and empty, then we need to replace the type.
 				var branchFrame = Frames.Pop();
 				foreach (var value in branchFrame.Values)
 				{

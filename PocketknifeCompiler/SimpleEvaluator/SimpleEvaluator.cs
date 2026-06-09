@@ -34,6 +34,15 @@ public static class SimpleEvaluator
 				foreach (var evalState in Evaluate(branch.Input, ctx)) yield return evalState;
 				//take that and operate on it
 				foreach (var evalState in Evaluate(branch.Body, ctx)) yield return evalState;
+				
+				//pop the (input) stream off of the branch.
+				ctx.PopFrame(branch.BranchType);
+				break;
+			case PKEmptyInputProvider emptyInput:
+				//no args to evaluate
+				//nothing to do.
+				
+				ctx.PushStream(typeof(object), new List<object>());
 				break;
 			case PKInputProvider input:
 				var ia = EvaluateArguments(input.Arguments, ctx);
