@@ -85,25 +85,3 @@ public static class SimpleEvaluator
 		return args.EvaluatedArgs;
 	}
 }
-
-public struct EvalState
-{
-	public bool IsErr = false;
-
-	public EvalState()
-	{
-	}
-
-	public static EvalState Good()
-	{
-		return new EvalState();
-	}
-
-	public static EvalState Bad()
-	{
-		return new EvalState()
-		{
-			IsErr = true
-		};
-	}
-}

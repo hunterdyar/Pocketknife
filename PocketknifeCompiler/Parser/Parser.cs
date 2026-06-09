@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using PocketknifeCore;
 
 namespace PocketKnife.Compiler;
@@ -275,9 +276,13 @@ public class Parser
                     return true;
                 case TokenType.PatternBranch:
                     branchType = BranchType.Unknown;
-                    return allowPatternBranchAutoClose;
+                    return allowPatternBranchAutoClose; 
+                default:
+                    branchType = BranchType.Unknown;
+                    return false;
             }
         }
+        //end of file.
         branchType = BranchType.Unknown;
         return false;
     }

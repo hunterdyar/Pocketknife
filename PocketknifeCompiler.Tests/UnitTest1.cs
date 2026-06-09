@@ -144,7 +144,7 @@ public class Tests
 		var p = new Parser();
 		p.Parse(source);
 		var got = p.Program.ToString();
-		EachLineEqualIgnoringIndents(got, source);
+		Helpers.EachLineEqualIgnoringIndents(got, source);
 	}
 
 	// Scaffolding entry point: parse a sample program, then hand the AST to the
@@ -205,6 +205,18 @@ public class Tests
 	          ^
 	          :print
 	          ""","4","hello","hi","ahoyyyy!","yo")]
+
+	[TestCase("""
+	          >"Hello" "Hi" "ahOYYYY!" "yo"
+	          |to-lower
+	          <>
+	          .
+	          |count
+	          :print
+	          ^
+	          ><
+	          :print
+	          """, "4", "hello", "hi", "ahoyyyy!", "yo")]
 	[TestCase("""
 	          >0 1 2 3 4
 	          .
@@ -215,6 +227,19 @@ public class Tests
 	          ^
 	          ^
 	          """, "0", "1", "2", "3", "4")]
+	[TestCase("""
+	          >[]
+	          
+	          >1
+	          |add 4
+	          &
+	          
+	          >range 0 4
+	          |mul 2
+	          &
+	          
+	          :print
+	          """, "5","0","2","4","6")]
 	public void SimpleEvalTest(string source, params string[] expectedOutput)
 	{
 		using var sw = new StringWriter();
@@ -232,7 +257,7 @@ public class Tests
 		SimpleEvaluator.EvaluateAll(compiled, context);
 		//i just can't be bothered to deal with environment.newlines.
 		var expectedOutputString = string.Join(Environment.NewLine, expectedOutput);
-		EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);
+		Helpers.EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);
 	}
 
 	[TestCase("""
@@ -269,20 +294,9 @@ public class Tests
 		SimpleEvaluator.EvaluateAll(compiled, context);
 		//i just can't be bothered to deal with environment.newlines.
 		var expectedOutputString = string.Join(Environment.NewLine, expectedOutput);
-		EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);
+		Helpers.EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);
 	}
 	
 	
-	private void EachLineEqualIgnoringIndents(string got, string source)
-	{
-		var gots = got.Trim().Split(Environment.NewLine).Where(x=>x.Trim()!="").ToArray();
-		var sources = source.Trim().Split(Environment.NewLine).Select(x=>x.Trim()).Where(x => x != "" && !x.StartsWith("//")).ToArray();
-		for (int i = 0; i < sources.Length; i++){
-			if (sources[i].Trim().StartsWith("//"))
-			{
-				continue;
-			}
-			Assert.That(gots[i].Trim(), Is.EqualTo(sources[i].Trim()));
-		}
-	}
+
 }
