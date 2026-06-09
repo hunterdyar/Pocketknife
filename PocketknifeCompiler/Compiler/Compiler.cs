@@ -76,10 +76,7 @@ public class Compiler
 			}
 			case InputBranchNode inputBranchNode:
 				var inputCommand = (PKInputProvider)Compile(inputBranchNode.Input, ctx);
-				
-				//empty or void
-				var empty = inputCommand as PKEmptyInputProvider;
-				Debug.Assert(empty != null || !PKType.IsNone(ctx.StackTop));
+				Debug.Assert(!PKType.IsNone(ctx.StackTop));
 				
 				var body = (PKNodeGroup)Compile(inputBranchNode.CommandSet, ctx);
 				return new PKInputBranch(inputCommand, body, inputBranchNode.BranchType);
@@ -87,7 +84,7 @@ public class Compiler
 				//
 				if (inputLiteralProviderNode.Arguments.Length == 0)
 				{
-					return new PKEmptyInputProvider();
+					throw new Exception("no arguments to literal provider");
 				}
 				else
 				{

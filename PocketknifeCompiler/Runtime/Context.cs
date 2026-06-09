@@ -149,6 +149,17 @@ public class Context
 			case BranchType.ListAppend:
 				//todo: we need to typecheck. if the base type is object and empty, then we need to replace the type.
 				var branchFrame = Frames.Pop();
+				
+				//you can & onto nothing, and it implicitly creates a new list.
+				if (Frames.Count == 0)
+				{
+					Frames.Push(new PKFrame()
+					{
+						Type = branchFrame.Type,
+						Values = new List<object>()
+					});
+				}
+				
 				foreach (var value in branchFrame.Values)
 				{
 					Frames.Peek().Values.Add(value);

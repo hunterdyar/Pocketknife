@@ -236,8 +236,6 @@ public class Tests
 	          
 	          """, "0", "1", "2", "3", "4")]
 	[TestCase("""
-	          >
-	          
 	          >1
 	          |add 4
 	          &

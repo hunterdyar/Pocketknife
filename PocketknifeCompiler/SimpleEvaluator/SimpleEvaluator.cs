@@ -38,12 +38,6 @@ public static class SimpleEvaluator
 				//pop the (input) stream off of the branch.
 				ctx.PopFrame(branch.BranchType);
 				break;
-			case PKEmptyInputProvider emptyInput:
-				//no args to evaluate
-				//nothing to do.
-				
-				ctx.PushStream(typeof(object), new List<object>());
-				break;
 			case PKInputProvider input:
 				var ia = EvaluateArguments(input.Arguments, ctx);
 				var value = input.Generator.Invoke(ia, ctx);

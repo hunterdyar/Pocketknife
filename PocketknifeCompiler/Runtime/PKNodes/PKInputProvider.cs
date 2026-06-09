@@ -24,15 +24,3 @@ public class PKInputProvider : PKNode
 		return $"PKInputProvider({_name})";
 	}
 }
-
-public class PKEmptyInputProvider :PKInputProvider
-{
-	public PKEmptyInputProvider() : base(typeof(object), "EMPTY", null, null)
-	{
-	}
-
-	override public string ToString()
-	{
-		return "EmptyInputProvider()";
-	}
-}
