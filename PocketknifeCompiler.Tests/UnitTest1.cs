@@ -66,13 +66,13 @@ public class Tests
 	          .@sizes
 	            >[]
 	            .@group
-	              >echo "a"
+	              >"a"
 	              .@x1
-	                |to-upper
+	              |to-upper
 	              &
-	              >echo "b"
+	              >"b"
 	              .@x2
-	                |to-upper
+	              |to-upper
 	              &
 	            ^
 	            >@group
@@ -251,6 +251,21 @@ public class Tests
 	          
 	          :print
 	          """, "5","5","0","2","4","6")]
+
+	[TestCase("""
+	          >range 0 5
+	          >range 5 10
+	          <
+	          :print
+	          """, "5", "6", "7", "8", "9")]
+	[TestCase("""
+	          >range 0 5
+	          .
+	          >range 5 10
+	          <
+	          ^ 
+	          :print
+	          """, "0", "1", "2", "3", "4")]
 	public void SimpleEvalTest(string source, params string[] expectedOutput)
 	{
 		using var sw = new StringWriter();
@@ -303,11 +318,8 @@ public class Tests
 
 		var context = new Context();
 		SimpleEvaluator.EvaluateAll(compiled, context);
-		//i just can't be bothered to deal with environment.newlines.
 		var expectedOutputString = string.Join(Environment.NewLine, expectedOutput);
 		Helpers.EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);
 	}
-	
-	
 
 }
