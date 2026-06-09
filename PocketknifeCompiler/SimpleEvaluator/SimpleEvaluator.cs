@@ -38,7 +38,7 @@ public static class SimpleEvaluator
 			case PKInputProvider input:
 				var ia = EvaluateArguments(input.Arguments, ctx);
 				var value = input.Generator.Invoke(ia, ctx);
-				ctx.PushStream(input.Type, value.AsList());
+				ctx.PushStream(input.Type, value);
 				yield return EvalState.Good();
 				break;
 			case PKFilterOperatorNode fopr:
@@ -78,7 +78,7 @@ public static class SimpleEvaluator
 		}
 	}
 
-	private static PKValue[] EvaluateArguments(Arguments args, Context ctx)
+	private static object[] EvaluateArguments(Arguments args, Context ctx)
 	{
 		//todo: check for variables, etc.
 

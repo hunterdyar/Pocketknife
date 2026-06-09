@@ -12,7 +12,7 @@ public class ListMethods
 
 	//all these overloads?
 	[Pipeline(Name = "count")]
-	public static int Count(List<PKValue> list)
+	public static int Count(List<object> list)
 	{
 		return list.Count;
 	}

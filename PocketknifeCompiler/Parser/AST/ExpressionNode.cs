@@ -19,7 +19,7 @@ public class IdentifierNode(string source) : ExpressionNode
 public class NumberNode : LiteralExpressionNode
 {
 
-    public NumberNode(PKValue source) : base(source)
+    public NumberNode(object source) : base(source)
     {
     }
 
@@ -36,19 +36,19 @@ public class NumberNode : LiteralExpressionNode
         if (source.Contains('.'))
         {
             var d = Convert.ToDouble(source, CultureInfo.InvariantCulture);
-            return new NumberNode(PKValue.FromDouble(d));
+            return new NumberNode(d);
         }
         else
         {
             var i = Convert.ToInt32(source, CultureInfo.InvariantCulture);
-            return new NumberNode(PKValue.FromInt(i));
+            return new NumberNode(i);
         }
     }
 }
 
 public class StringLiteralNode : LiteralExpressionNode
 {
-    public StringLiteralNode(string source) : base(PKValue.FromString(source))
+    public StringLiteralNode(string source) : base(source)
     {
     }
 
@@ -119,10 +119,10 @@ public class CommandGroupExpression : ExpressionNode
 }
 public abstract class LiteralExpressionNode : ExpressionNode
 {
-    public PKValue Value => _value;
-    private PKValue _value;
+    public object Value => _value;
+    private object _value;
 
-    protected LiteralExpressionNode(PKValue value)
+    protected LiteralExpressionNode(object value)
     {
         _value = value;
     }
@@ -132,7 +132,8 @@ public abstract class LiteralExpressionNode : ExpressionNode
 public class EmptyListLiteralExpression : LiteralExpressionNode
 {
     //FromList<PKValue>
-    public EmptyListLiteralExpression() : base(PKValue.FromBool(false))
+    
+    public EmptyListLiteralExpression() : base(Array.Empty<object>())
     {
     }
 

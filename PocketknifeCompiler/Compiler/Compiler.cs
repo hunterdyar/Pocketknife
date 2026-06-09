@@ -90,7 +90,7 @@ public class Compiler
 				}
 				else
 				{
-					List<PKValue> literals = new List<PKValue>(inputLiteralProviderNode.Arguments.Length);
+					List<object> literals = new List<object>(inputLiteralProviderNode.Arguments.Length);
 					PKType argKind = PKType.None;
 					for (var i = 0; i < inputLiteralProviderNode.Arguments.Length; i++)
 					{
@@ -98,24 +98,24 @@ public class Compiler
 						var resArg = EvaluateExpression(arg, ctx);
 						if (i == 0)
 						{
-							argKind = resArg.Type;
+							argKind = resArg.GetPKType();
 							literals.Add(resArg);
 						}
 						else
 						{
-							if (resArg.Type == argKind)
+							if (resArg.GetPKType() == argKind)
 							{
 								literals.Add(resArg);
 							}
 							else
 							{
-								throw new Exception($"all arguments must be of the same type. {argKind} != {resArg.Type}");
+								throw new Exception($"all arguments must be of the same type. {argKind} != {resArg.GetPKType()}");
 							}
 						}
 					}
-					var literalWrapper = PKValue.FromList(literals, argKind);
+					
 					ctx.PushType(argKind);
-					return new PKInputProvider(argKind, inputLiteralProviderNode.Name, (args, context) => literalWrapper, Arguments.Empty);
+					return new PKInputProvider(argKind, inputLiteralProviderNode.Name, (args, context) => literals, Arguments.Empty);
 
 				}
 				break;
@@ -300,17 +300,18 @@ public class Compiler
 			return Arguments.Empty;
 		}
 		
-		List<PKValue> args = new List<PKValue>(arguments.Length);
+		List<object> args = new List<object>(arguments.Length);
 		for (var i = 0; i < arguments.Length; i++)
 		{
 			var arg = arguments[i];
 			var e = EvaluateExpression(arg, ctx);
+			var etype = new PKType(e.GetType());
 			//todo: how are we going to get the type of variables? 
 			var paramType = overload.Method.GetParameters()[i+a].ParameterType;
-			var PKParamType = PKValue.GetPKType(paramType);
-			if (e.Type != PKParamType && PKParamType != PKType.Any)
+			var PKParamType = PKType.GetPKType(paramType);
+			if (etype != PKParamType && PKParamType != PKType.Any)
 			{
-				foreach (var cast in _catalog.GetImplicitCasts(e.Type))
+				foreach (var cast in _catalog.GetImplicitCasts(etype))
 				{
 					if (cast.OutType == PKParamType)
 					{
@@ -319,7 +320,7 @@ public class Compiler
 					}
 				}
 				
-				throw new Exception($"Invalid Type for {e.Type} when expected {PKParamType} for parameter {i} of {overload.Method.Name}");
+				throw new Exception($"Invalid Type for {etype} when expected {PKParamType} for parameter {i} of {overload.Method.Name}");
 				
 			}
 			WithCorrectType:
@@ -329,7 +330,7 @@ public class Compiler
 		return new Arguments(args.ToArray());
 	}
 
-	private PKValue EvaluateExpression(ExpressionNode literal, CompileContext ctx)
+	private object EvaluateExpression(ExpressionNode literal, CompileContext ctx)
 	{
 		switch (literal)
 		{

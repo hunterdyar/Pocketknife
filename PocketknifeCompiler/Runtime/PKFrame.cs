@@ -6,7 +6,7 @@ public class PKFrame
 	private string? _name;
 	
 	public PKType Type;
-	public List<PKValue> Values;
+	public List<object> Values;
 
 	public PKFrame(string? name = null)
 	{

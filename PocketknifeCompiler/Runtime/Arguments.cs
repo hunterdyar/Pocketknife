@@ -2,13 +2,13 @@
 
 public class Arguments
 {
-	public PKValue[] EvaluatedArgs;
+	public object[] EvaluatedArgs;
 	// public OpInvoker? Unevaluated;
 	
-	public Arguments(PKValue[] evaluatedArgs)
+	public Arguments(object[] evaluatedArgs)
 	{
 		EvaluatedArgs = evaluatedArgs;
 	}
 
-	public static Arguments Empty = new Arguments(Array.Empty<PKValue>());
+	public static Arguments Empty = new Arguments(Array.Empty<Object>());
 }

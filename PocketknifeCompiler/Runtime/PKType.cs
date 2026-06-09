@@ -1,52 +1,72 @@
 ﻿namespace PocketknifeCore;
 
-public enum PKKind
-{
-	None,
-	Any,
-	String,
-	Int,
-	Long,
-	Bool,
-	Double,
-	File,
-	Table,
-}
-
 public readonly struct PKType : IEquatable<PKType>
 {
-	public static readonly PKType None = new(PKKind.None);
-	public static readonly PKType String = new(PKKind.String);
-	public static readonly PKType Int = new(PKKind.Int);
-	public static readonly PKType Long = new(PKKind.Long);
-	public static readonly PKType Bool = new(PKKind.Bool);
-	public static readonly PKType Double = new(PKKind.Double);
-	public static readonly PKType File = new(PKKind.File);
-	public static readonly PKType Table = new(PKKind.Table);
-	public static readonly PKType Any = new(PKKind.Any);
-
-	public readonly PKKind Kind;
 	public readonly bool IsStream => LiftLevel>0;//isEnumerable
+	public static readonly PKType None = new PKType(typeof(void));
+	public static readonly PKType Any = new PKType(typeof(object));
+
 	public readonly byte LiftLevel = 0;
-	public PKType(PKKind kind, byte liftLevel = 0)
+	public readonly Type Type;
+	public PKType(Type type, byte liftLevel = 0)
 	{
-		Kind = kind;
+		Type = type;
 		LiftLevel = liftLevel;
 	}
 
-	public static bool IsNone(PKType type) => type.Kind == PKKind.None;
-	public bool IsNone() => Kind == PKKind.None;
+	public static bool IsNone(PKType type) => type.Type == typeof(void);
+	public bool IsNone() => Type == typeof(void);
 	
-	public PKType Lifted() => new PKType(Kind, (byte)(LiftLevel+1));
-	public PKType Lowered() => new PKType(Kind, LiftLevel > 0 ? (byte)(LiftLevel-1) : (byte)0);
+	public PKType Lift()
+	{
+		return new PKType(typeof(List<>).MakeGenericType(Type), (byte)(LiftLevel + 1));
+	}
 
-	override public string ToString() => IsStream ? $"<{Kind.ToString()}>" : Kind.ToString();
+	public PKType Lift(int levels)
+	{
+		PKType res = this;
+		for (int i = 0; i < levels; i++)
+		{
+			res = res.Lift();
+		}
+		return res;
+	}
+
+	public PKType Lower()
+	{
+		if (LiftLevel == 0) return None;
+		if (Type.IsGenericType && Type.GetGenericTypeDefinition() == typeof(List<>))
+		{
+			return new PKType(Type.GetGenericArguments()[0], (byte)(LiftLevel - 1));
+		}
+		return None;
+	}
+
+	//todo: rewrite this to use generics/reflection?
+	public PKType Lifted() => Lift();
+	public PKType Lowered() => Lower();
+
+	override public string ToString() => IsStream ? $"<{Type.ToString()}>" : Type.ToString();
+	
+	public static PKType GetPKType(Type type)
+	{
+		if (type == typeof(void)) return None;
+
+		byte levels = 0;
+		Type current = type;
+		while (current.IsGenericType && current.GetGenericTypeDefinition() == typeof(List<>))
+		{
+			levels++;
+			current = current.GetGenericArguments()[0];
+		}
+		return new PKType(type, levels);
+	}
 	
 	#region IDE Generated Equality Members
 	
 	public bool Equals(PKType other)
 	{
-		return Kind == other.Kind && IsStream == other.IsStream;
+		return Type == other.Type && LiftLevel == other.LiftLevel;
 	}
 
 	public override bool Equals(object? obj)
@@ -56,7 +76,7 @@ public readonly struct PKType : IEquatable<PKType>
 
 	public override int GetHashCode()
 	{
-		return HashCode.Combine((int)Kind, IsStream);
+		return HashCode.Combine(Type, LiftLevel);
 	}
 
 	public static bool operator ==(PKType left, PKType right)
@@ -71,4 +91,12 @@ public readonly struct PKType : IEquatable<PKType>
 
 	#endregion
 
+}
+
+public static class PKTypeHelper
+{
+	public static PKType GetPKType(this object obj)
+	{
+		return new PKType(obj.GetType());
+	}
 }

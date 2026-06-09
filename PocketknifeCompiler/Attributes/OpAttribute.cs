@@ -17,8 +17,8 @@ public class PipelineAttribute : OpAttribute
 	{
 		var inType = method.GetParameters()[0].ParameterType;
 		var outType = method.ReturnType;
-		var inPK = PKValue.GetPKType(inType);
-		var outPK = PKValue.GetPKType(outType);
+		var inPK = PKType.GetPKType(inType);
+		var outPK = PKType.GetPKType(outType);
 		
 		Debug.Assert(!PKType.IsNone(inPK));
 		Debug.Assert(!PKType.IsNone(outPK));
@@ -41,7 +41,7 @@ public class SignalAttribute : OpAttribute
 	{
 		var inType = method.GetParameters()[0].ParameterType;
 		var outType = method.ReturnType;
-		var inPK = PKValue.GetPKType(inType);
+		var inPK = PKType.GetPKType(inType);
 
 		if (outType != typeof(void))
 		{
@@ -66,14 +66,14 @@ public class GeneratorAttribute : OpAttribute
 	{
 		foreach (var param in method.GetParameters())
 		{
-			var inPK = PKValue.GetPKType(param.ParameterType);
+			var inPK = PKType.GetPKType(param.ParameterType);
 			if (inPK == PKType.None)
 			{
 				throw new Exception($"Could not determine type of parameter {param.Name} in method {method.Name}");
 			}
 		}
 		var outType = method.ReturnType;
-		var outPK = PKValue.GetPKType(outType);
+		var outPK = PKType.GetPKType(outType);
 		if (!outPK.IsStream)
 		{
 			throw new Exception($"Generator {method.Name} must return a stream type (e.g. List<T>)");
@@ -104,17 +104,17 @@ public class CastingAttribute : OpAttribute
 			throw new Exception($"Casting operator {method.Name} must have exactly one parameter");
 		}
 
-		var inPK = PKValue.GetPKType(method.GetParameters()[0].ParameterType);
-		var outPK = PKValue.GetPKType(method.ReturnType);
+		var inPK = PKType.GetPKType(method.GetParameters()[0].ParameterType);
+		var outPK = PKType.GetPKType(method.ReturnType);
 
-		if (inPK == PKType.None || inPK == PKType.Any)
+		if (inPK == PKType.None)
 		{
-			throw new Exception($"Could not determine type of parameter {method.GetParameters()[0].Name} in method {method.Name}");
+			throw new Exception($"Could not determine type of parameter {method.GetParameters()[0].Name} in method {method.Name}.");
 		}
 
-		if (outPK == PKType.None || outPK == PKType.Any)
+		if (outPK == PKType.None)
 		{
-			throw new Exception($"Could not determine return type of method {method.Name}");
+			throw new Exception($"Could not determine return type of method {method.Name}, our is void");
 		}		
 
 		catalog.RegisterCast(new CastingDescription(_isImplicit)

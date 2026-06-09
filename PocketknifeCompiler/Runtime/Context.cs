@@ -5,10 +5,10 @@ namespace PocketknifeCore;
 public class Context
 {
 	public Stack<PKFrame> Frames = new Stack<PKFrame>();
-	private PKValue[] _argsBuffer = new PKValue[10];//todo: pick a bigger number, make a const, then do a max-arg check
-	private ArrayPool<PKValue> _args = ArrayPool<PKValue>.Shared;
+	private object[] _argsBuffer = new object[10];//todo: pick a bigger number, make a const, then do a max-arg check
+	private ArrayPool<object> _args = ArrayPool<object>.Shared;
 	private int argCount;
-	public void PushStream(PKType type, List<PKValue> list)
+	public void PushStream(PKType type, List<object> list)
 	{
 		Frames.Push(new PKFrame() { Type = type, Values = list });
 	}
@@ -20,7 +20,7 @@ public class Context
 	//todo: will arguments ever have to be per-op? @Index, etc?
 	//todo: differentiate arguments that can lookup up just once, or have to be inside the onEach.
 	
-	public void OperateOnEach(PKValue[] arguments, OpInvoker invoker)
+	public void OperateOnEach(object[] arguments, OpInvoker invoker)
 	{
 		var top = Frames.Peek();
 		argCount = arguments.Length;
@@ -39,18 +39,18 @@ public class Context
 		_args.Return(args);
 	}
 
-	public void FilterOnEach(PKValue[] arguments, OpInvoker foprInvoker)
+	public void FilterOnEach(object[] arguments, OpInvoker foprInvoker)
 	{
 		var top = Frames.Peek();
 		argCount = arguments.Length;
 		var args = _args.Rent(argCount);
 		arguments.CopyTo(args, 0);//todo: none of this makes sense
 		//todo: same arg stuff as OperateOnEach
-		var result = new List<PKValue>(top.Values.Count);
+		var result = new List<object>(top.Values.Count);
 		for (var i = 0; i < top.Values.Count; i++)
 		{
 			var v = top.Values[i];
-			if (foprInvoker(v, args, this).AsBool())
+			if ((bool)foprInvoker(v, args, this))
 			{
 				result.Add(v);
 			}
@@ -65,11 +65,10 @@ public class Context
 		var packedStream = new PKFrame()
 		{
 			Type = top.Type, 
-			Values = new List<PKValue>(1)
+			Values = new List<object>(1)
 		};
-		packedStream.Values.Add(new PKValue(top.Type.Lifted(), top.Values));
+		packedStream.Values.Add(new List<object>(top.Values));
 		Frames.Push(packedStream);
-
 	}
 
 	public void Unpack()
@@ -80,13 +79,14 @@ public class Context
 		{
 			throw new Exception("cannot unpack");
 		}
-		List<PKValue> values = new List<PKValue>();
+		List<object> values = new List<object>();
 		//todo: ensure all the same type.
 		foreach (var value in top.Values)//probably just a single List<T>, but we will unpack them all sequentially.
 		{
+			//top is a stream, so each of these (value) objects is a list.
+			
 			//the actual unpacking, taking out of the [lists in the] stream (aslist) and adding them to the new stream.
-			var l = value.AsList();
-			values.AddRange(l);
+			values.AddRange(value);
 		}
 		
 		var unpackedStream = new PKFrame()
@@ -104,7 +104,7 @@ public class Context
 	{
 		var top = Frames.Peek();
 		
-		var clonedValues = new List<PKValue>(top.Values.Count);
+		var clonedValues = new List<object>(top.Values.Count);
 		clonedValues.AddRange(top.Values);
 		Frames.Push(new PKFrame()
 		{
@@ -116,7 +116,7 @@ public class Context
 	public void NewNamedFrame(string? name = null)
 	{
 		var top = Frames.Peek();
-		var clonedValues = new List<PKValue>(top.Values.Count);
+		var clonedValues = new List<object>(top.Values.Count);
 		clonedValues.AddRange(top.Values);
 		Frames.Push(new PKFrame(name)
 		{

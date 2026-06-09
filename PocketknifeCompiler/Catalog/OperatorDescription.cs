@@ -71,16 +71,16 @@ public class CastingDescription : IEquatable<CastingDescription>
 
 	#endregion
 
-	public PKValue ApplyNow(PKValue pkValue)
+	public object ApplyNow(object pkValue)
 	{
 		if (Method is null)
 		{
 			throw new InvalidOperationException("Method not set for casting description");
 		}
-		
-		
-		var o =(Method.Invoke(null, [PKValue.ToNative(InType, pkValue)]) ?? throw new InvalidOperationException());
-		return PKValue.FromNative(OutType, o);
+
+
+		var o = (Method.Invoke(null, [pkValue]) ?? throw new InvalidOperationException());
+		return o;
 	}
 }
 
