@@ -2,8 +2,8 @@
 
 public class PKInputProvider : PKNode
 {
-	public PKType Type => _type;
-	private PKType _type;
+	public Type Type => _type;
+	private Type _type;
 	public GenInvoker Generator => _generator;
 	private GenInvoker _generator;
 	public string Name => _name;
@@ -11,7 +11,7 @@ public class PKInputProvider : PKNode
 	
 	public Arguments Arguments => _arguments;
 	private Arguments _arguments;
-	public PKInputProvider(PKType type, string opName, GenInvoker generator, Arguments arguments)
+	public PKInputProvider(Type type, string opName, GenInvoker generator, Arguments arguments)
 	{
 		_type = type;
 		_name = opName;

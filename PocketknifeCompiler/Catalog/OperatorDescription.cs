@@ -5,8 +5,8 @@ namespace PocketknifeCore;
 public class OperatorDescription
 {
 	public readonly OpKind OpKind;
-	public PKType InType = PKType.None;
-	public PKType OutType = PKType.None;
+	public Type InType = PKType.None;
+	public Type OutType = PKType.None;
 	public required MethodInfo Method;
 	
 	public int ArgCount => FirstArgIsStream() ? Method.GetParameters().Length -1 : Method.GetParameters().Length;
@@ -27,8 +27,8 @@ public class CastingDescription : IEquatable<CastingDescription>
 {
 	public bool Implicit => _isImplicit;
 	private bool _isImplicit;
-	public required PKType InType = PKType.None;
-	public required PKType OutType = PKType.None;
+	public required Type InType = PKType.None;
+	public required Type OutType = PKType.None;
 	public required MethodInfo Method;
 
 	public CastingDescription(bool isImplicit)
@@ -43,7 +43,7 @@ public class CastingDescription : IEquatable<CastingDescription>
 	{
 		if (other is null) return false;
 		if (ReferenceEquals(this, other)) return true;
-		return _isImplicit == other._isImplicit && InType.Equals(other.InType) && OutType.Equals(other.OutType);
+		return _isImplicit == other._isImplicit && InType == other.InType && OutType == other.OutType;
 	}
 
 	public override bool Equals(object? obj)

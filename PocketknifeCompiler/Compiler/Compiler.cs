@@ -1,7 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using PocketKnife.Compiler;
 
 namespace PocketknifeCore.Compiler;
@@ -91,7 +88,7 @@ public class Compiler
 				else
 				{
 					List<object> literals = new List<object>(inputLiteralProviderNode.Arguments.Length);
-					PKType argKind = PKType.None;
+					Type argKind = PKType.None;
 					for (var i = 0; i < inputLiteralProviderNode.Arguments.Length; i++)
 					{
 						var arg = inputLiteralProviderNode.Arguments[i];
@@ -118,7 +115,6 @@ public class Compiler
 					return new PKInputProvider(argKind, inputLiteralProviderNode.Name, (args, context) => literals, Arguments.Empty);
 
 				}
-				break;
 			case InputProviderNode inputProviderNode:
 				Debug.Assert(inputProviderNode.sigil == ">");
 				if (_catalog.TryGetOp(inputProviderNode.Name, out var iopr))
@@ -127,7 +123,7 @@ public class Compiler
 					GenInvoker genInvoker = iopr.GetOrBuildGenerator(out var call);
 					var args = CompileArguments(call, inputProviderNode.Arguments, ctx);
 					//generator out type should be list<x>, but really, it's list. we are doing the following commands on every one.
-					var callType = call.OutType.Lowered();
+					var callType = call.OutType.Lower();
 					ctx.PushType(callType);
 					return new PKInputProvider(callType, iopr.Name, genInvoker, args);
 				}
@@ -305,10 +301,10 @@ public class Compiler
 		{
 			var arg = arguments[i];
 			var e = EvaluateExpression(arg, ctx);
-			var etype = new PKType(e.GetType());
+			var etype = e.GetType();
 			//todo: how are we going to get the type of variables? 
 			var paramType = overload.Method.GetParameters()[i+a].ParameterType;
-			var PKParamType = PKType.GetPKType(paramType);
+			var PKParamType = paramType;
 			if (etype != PKParamType && PKParamType != PKType.Any)
 			{
 				foreach (var cast in _catalog.GetImplicitCasts(etype))

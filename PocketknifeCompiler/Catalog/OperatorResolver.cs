@@ -34,9 +34,9 @@ public class OperatorResolver
 		}
 		_overloads.Add(description);
 	}
-	public List<(PKType input, PKType output)> GetTypes()
+	public List<(Type input, Type output)> GetTypes()
 	{
-		return _overloads.Select(x => (x.InType, x.OutType)).ToList()!;
+		return _overloads.Select(x => (x.InType, x.OutType)).ToList();
 	}
 
 	public OperatorDescription GetGenerator()
@@ -54,14 +54,14 @@ public class OperatorResolver
 	
 	private Dictionary<OperatorDescription, OpInvoker> Invokers = new Dictionary<OperatorDescription, OpInvoker>();
 	private Dictionary<(OperatorDescription, CastingDescription), OpInvoker> _castedInvokers = new Dictionary<(OperatorDescription, CastingDescription), OpInvoker>();
-	public OpInvoker GetOrBuildInvoker(PKType input, out OperatorDescription overload)
+	public OpInvoker GetOrBuildInvoker(Type input, out OperatorDescription overload)
 	{
-		var found = _overloads.FirstOrDefault(x => x.InType.Equals(input));
+		var found = _overloads.FirstOrDefault(x => x.InType == input);
 		
 		//is generic?
 		if (found == null)
 		{
-			found = _overloads.FirstOrDefault(x => x.InType.Equals(PKType.Any.Lift(input.LiftLevel)));
+			found = _overloads.FirstOrDefault(x => x.InType == PKType.Any.Lift(input.GetLiftLevel()));
 		}
 		
 		if (found != null)
@@ -84,14 +84,14 @@ public class OperatorResolver
 		}
 	}
 
-	public OpInvoker GetOrBuildInvoker(PKType input, CastingDescription cast, out OperatorDescription overload)
+	public OpInvoker GetOrBuildInvoker(Type input, CastingDescription cast, out OperatorDescription overload)
 	{
-		var found = _overloads.FirstOrDefault(x => x.InType.Equals(cast.OutType));
+		var found = _overloads.FirstOrDefault(x => x.InType == cast.OutType);
 
 		//is generic?
 		if (found == null)
 		{
-			found = _overloads.FirstOrDefault(x => x.InType.Equals(PKType.Any.Lift(cast.OutType.LiftLevel)));
+			found = _overloads.FirstOrDefault(x => x.InType == PKType.Any.Lift(cast.OutType.GetLiftLevel()));
 		}
 
 		if (found != null)
@@ -221,30 +221,8 @@ public class OperatorResolver
 		if (targetType.IsGenericType && (targetType.GetGenericTypeDefinition() == typeof(List<>) || targetType.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
 		{
 			var elementType = targetType.GenericTypeArguments[0];
-			
-			// Cast input to IEnumerable<object>
-			var enumerableExpr = Expression.Convert(pkValueExpr, typeof(IEnumerable<object>));
-
-			// list.Select(v => (ElementType)v)
-			var vParam = Expression.Parameter(typeof(object), "v");
-			var convertedElement = ConvertPKValue(vParam, elementType);
-			var selectorType = typeof(Func<,>).MakeGenericType(typeof(object), elementType);
-			var selectorLambda = Expression.Lambda(selectorType, convertedElement, vParam);
-
-			var selectMethod = typeof(Enumerable).GetMethods()
-				.First(m => m.Name == nameof(Enumerable.Select)
-							&& m.GetParameters().Length == 2
-							&& m.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(Func<,>))
-				.MakeGenericMethod(typeof(object), elementType);
-			Expression projected = Expression.Call(selectMethod, enumerableExpr, selectorLambda);
-
-			if (targetType.GetGenericTypeDefinition() == typeof(List<>))
-			{
-				var toListMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!
-					.MakeGenericMethod(elementType);
-				return Expression.Call(toListMethod, projected);
-			}
-			return projected;
+			var method = typeof(PKRuntimeHelpers).GetMethod(nameof(PKRuntimeHelpers.ConvertList))!.MakeGenericMethod(elementType);
+			return Expression.Call(method, pkValueExpr);
 		}
 
 		return Expression.Convert(pkValueExpr, targetType);
@@ -278,32 +256,17 @@ public class OperatorResolver
 
 		if (returnType.IsGenericType && (returnType.GetGenericTypeDefinition() == typeof(List<>) || returnType.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
 		{
-			var elementType = returnType.GenericTypeArguments[0];
-			// Normalize to List<object>
-			var tParam = Expression.Parameter(elementType, "t");
-			var wrappedElement = WrapResult(tParam, elementType);
-			var selectorType = typeof(Func<,>).MakeGenericType(elementType, typeof(object));
-			var selectorLambda = Expression.Lambda(selectorType, wrappedElement, tParam);
-
-			var selectMethod = typeof(Enumerable).GetMethods()
-				.First(m => m.Name == nameof(Enumerable.Select)
-							&& m.GetParameters().Length == 2
-							&& m.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(Func<,>))
-				.MakeGenericMethod(elementType, typeof(object));
-			Expression projected = Expression.Call(selectMethod, callExpr, selectorLambda);
-
-			var toListMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!
-				.MakeGenericMethod(typeof(object));
-			return Expression.Call(toListMethod, projected);
+			var method = typeof(PKRuntimeHelpers).GetMethod(nameof(PKRuntimeHelpers.NormalizeList))!;
+			return Expression.Call(method, Expression.Convert(callExpr, typeof(object)));
 		}
 
 		return Expression.Convert(callExpr, typeof(object));
 	}
 
-	public bool HasOp(PKType top)
+	public bool HasOp(Type top)
 	{
 		//todo: if we have list<list<int>>... that won't work?
-		return _overloads.Any(x => x.InType.Equals(top) || x.InType.Equals(PKType.Any.Lift(top.LiftLevel)));
+		return _overloads.Any(x => x.InType == top || x.InType == PKType.Any.Lift(top.GetLiftLevel()));
 	}
 
 	private GenInvoker BuildGenerator(OperatorDescription description)

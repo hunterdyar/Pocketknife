@@ -5,8 +5,8 @@ public class PKFrame
 	public string? Name => _name;
 	private string? _name;
 	
-	public PKType Type;
-	public List<object> Values;
+	public Type Type = PKType.None;
+	public List<object> Values = new();
 
 	public PKFrame(string? name = null)
 	{

@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Collections;
 
 namespace PocketknifeCore;
 
@@ -8,7 +9,7 @@ public class Context
 	private object[] _argsBuffer = new object[10];//todo: pick a bigger number, make a const, then do a max-arg check
 	private ArrayPool<object> _args = ArrayPool<object>.Shared;
 	private int argCount;
-	public void PushStream(PKType type, List<object> list)
+	public void PushStream(Type type, List<object> list)
 	{
 		Frames.Push(new PKFrame() { Type = type, Values = list });
 	}
@@ -64,10 +65,10 @@ public class Context
 		var top = Frames.Pop();
 		var packedStream = new PKFrame()
 		{
-			Type = top.Type, 
+			Type = top.Type.Lift(), 
 			Values = new List<object>(1)
 		};
-		packedStream.Values.Add(new List<object>(top.Values));
+		packedStream.Values.Add(top.Values);
 		Frames.Push(packedStream);
 	}
 
@@ -75,23 +76,30 @@ public class Context
 	{
 		//stream<List<T>> -> stream<t>
 		var top = Frames.Pop();
-		if (!top.Type.IsStream)
+		if (!top.Type.IsStream())
 		{
-			throw new Exception("cannot unpack");
+			throw new Exception("cannot unpack a non-stream type");
 		}
 		List<object> values = new List<object>();
-		//todo: ensure all the same type.
-		foreach (var value in top.Values)//probably just a single List<T>, but we will unpack them all sequentially.
+		
+		foreach (var value in top.Values)
 		{
-			//top is a stream, so each of these (value) objects is a list.
-			
-			//the actual unpacking, taking out of the [lists in the] stream (aslist) and adding them to the new stream.
-			values.AddRange(value);
+			if (value is IEnumerable enumerable && !(value is string))
+			{
+				foreach (var item in enumerable)
+				{
+					values.Add(item!);
+				}
+			}
+			else
+			{
+				values.Add(value);
+			}
 		}
 		
 		var unpackedStream = new PKFrame()
 		{
-			Type = top.Type.Lifted(),
+			Type = top.Type.Lower(),
 			Values = values
 		};
 		

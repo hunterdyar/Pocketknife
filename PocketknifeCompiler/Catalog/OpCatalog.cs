@@ -7,8 +7,8 @@ namespace PocketknifeCore;
 public class OpCatalog
 {
 	public readonly Dictionary<string, OperatorResolver> Operators = new Dictionary<string, OperatorResolver>();
-	private readonly Dictionary<PKType, List<CastingDescription>> ImplicitCasts = new Dictionary<PKType, List<CastingDescription>>();
-	private readonly Dictionary<PKType, List<CastingDescription>> ExplicitCasts = new Dictionary<PKType, List<CastingDescription>>();
+	private readonly Dictionary<Type, List<CastingDescription>> ImplicitCasts = new Dictionary<Type, List<CastingDescription>>();
+	private readonly Dictionary<Type, List<CastingDescription>> ExplicitCasts = new Dictionary<Type, List<CastingDescription>>();
 	public void AddOp(string name, OperatorDescription description)
 	{
 		if (!Operators.ContainsKey(name))
@@ -82,7 +82,7 @@ public class OpCatalog
 	}
 	
 
-	public IEnumerable<CastingDescription> GetImplicitCasts(PKType inType)
+	public IEnumerable<CastingDescription> GetImplicitCasts(Type inType)
 	{
 		if(ImplicitCasts.TryGetValue(inType, out var casts))
 		{
@@ -91,7 +91,7 @@ public class OpCatalog
 		return Enumerable.Empty<CastingDescription>();
 	}
 	
-	public IEnumerable<CastingDescription> GetExplicitCasts(PKType inType)
+	public IEnumerable<CastingDescription> GetExplicitCasts(Type inType)
 	{
 		if(ExplicitCasts.TryGetValue(inType, out var casts))
 		{

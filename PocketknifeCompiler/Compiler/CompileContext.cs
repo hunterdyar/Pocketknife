@@ -1,17 +1,19 @@
 ﻿namespace PocketknifeCore.Compiler;
 
+using PocketknifeCore;
+
 public class CompileContext
 {
-	public PKType StackTop => Stack.Peek();
-	public Stack<PKType> Stack;
+	public Type StackTop => Stack.Peek();
+	public Stack<Type> Stack;
 
 	public CompileContext()
 	{
-		Stack = new Stack<PKType>();
+		Stack = new Stack<Type>();
 		Stack.Push(PKType.None);
 	}
 
-	public void PushType(PKType pkType)
+	public void PushType(Type pkType)
 	{
 		Stack.Push(pkType);
 	}
@@ -24,22 +26,22 @@ public class CompileContext
 	public void Pack()
 	{
 		var top = Stack.Pop();
-		if (top.IsStream)
+		if (top.IsStream())
 		{
 			throw new Exception("cannot pack a list. yes. this should work but just isn't implemented yet.");
 		}
-		Stack.Push(top.Lifted());
+		Stack.Push(top.Lift());
 	}
 
 	public void Unpack()
 	{
 		var top = Stack.Pop();
-		if (!top.IsStream)
+		if (!top.IsStream())
 		{
 			throw new Exception("cannot unpack");
 		}
 
-		Stack.Push(top.Lowered());
+		Stack.Push(top.Lower());
 	}
 	
 	public void PopFrame(BranchType frameType)

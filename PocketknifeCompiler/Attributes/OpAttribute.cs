@@ -17,15 +17,13 @@ public class PipelineAttribute : OpAttribute
 	{
 		var inType = method.GetParameters()[0].ParameterType;
 		var outType = method.ReturnType;
-		var inPK = PKType.GetPKType(inType);
-		var outPK = PKType.GetPKType(outType);
 		
-		Debug.Assert(!PKType.IsNone(inPK));
-		Debug.Assert(!PKType.IsNone(outPK));
+		Debug.Assert(!PKType.IsNone(inType));
+		Debug.Assert(!PKType.IsNone(outType));
 		catalog.RegisterOp(Name, new OperatorDescription(OpKind.Pipeline)
 		{
-			InType = inPK,
-			OutType = outPK,
+			InType = inType,
+			OutType = outType,
 			Method = method
 		});
 	}
@@ -41,16 +39,15 @@ public class SignalAttribute : OpAttribute
 	{
 		var inType = method.GetParameters()[0].ParameterType;
 		var outType = method.ReturnType;
-		var inPK = PKType.GetPKType(inType);
 
 		if (outType != typeof(void))
 		{
 			Debug.Assert(false, "Signal operators should return void. return type is ignored. This doesn't matter, but enforcing it because it means i messed something else up.");
 		}
-		Debug.Assert(!PKType.IsNone(inPK));
+		Debug.Assert(!PKType.IsNone(inType));
 		catalog.RegisterOp(Name, new OperatorDescription(OpKind.Signal)
 		{
-			InType = inPK,
+			InType = inType,
 			OutType = PKType.None,
 			Method = method
 		});
@@ -66,15 +63,14 @@ public class GeneratorAttribute : OpAttribute
 	{
 		foreach (var param in method.GetParameters())
 		{
-			var inPK = PKType.GetPKType(param.ParameterType);
+			var inPK = param.ParameterType;
 			if (inPK == PKType.None)
 			{
 				throw new Exception($"Could not determine type of parameter {param.Name} in method {method.Name}");
 			}
 		}
 		var outType = method.ReturnType;
-		var outPK = PKType.GetPKType(outType);
-		if (!outPK.IsStream)
+		if (!outType.IsStream())
 		{
 			throw new Exception($"Generator {method.Name} must return a stream type (e.g. List<T>)");
 		}
@@ -82,7 +78,7 @@ public class GeneratorAttribute : OpAttribute
 		catalog.RegisterOp(Name, new OperatorDescription(OpKind.Generator)
 		{
 			InType = PKType.None,
-			OutType = outPK,
+			OutType = outType,
 			Method = method
 		});
 	}
@@ -104,8 +100,8 @@ public class CastingAttribute : OpAttribute
 			throw new Exception($"Casting operator {method.Name} must have exactly one parameter");
 		}
 
-		var inPK = PKType.GetPKType(method.GetParameters()[0].ParameterType);
-		var outPK = PKType.GetPKType(method.ReturnType);
+		var inPK = method.GetParameters()[0].ParameterType;
+		var outPK = method.ReturnType;
 
 		if (inPK == PKType.None)
 		{
