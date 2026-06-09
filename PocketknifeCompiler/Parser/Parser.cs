@@ -178,6 +178,13 @@ public class Parser
             commands.Add(ParseRootNode());
             EatOptionalLinebreaks();
         }
+        
+        //end-of-file can implicitly end a branch. which is allowed (but maybe shouldn't be for pattern branch arms? can be ambiguous?)
+        if(_tokenIndex >= _lexer.TokenCount)
+        {
+            branchType = BranchType.SideEffect;
+        }
+        
         return new PatternBranchArm(filter, commands, branchType);
     }
 
@@ -210,6 +217,11 @@ public class Parser
             }
 
             EatOptionalLinebreaks();
+        }
+
+        if (_tokenIndex >= _lexer.TokenCount)
+        {
+            btype = BranchType.SideEffect;
         }
         
         var b = new InputBranchNode(input, btype, commands);
@@ -320,6 +332,7 @@ public class Parser
         if (_tokenIndex >= _lexer.TokenCount)
         {
             //the branch ended with the end of the file, which is allowed
+            branchType = BranchType.SideEffect;
         }else if (branchType == BranchType.Unknown)
         {
             throw new ParserException(this, _lexer.Tokens[_tokenIndex],$"Unexpected token {_lexer.Tokens[_tokenIndex]}. Expected ^, <, or & to end a branch.");
