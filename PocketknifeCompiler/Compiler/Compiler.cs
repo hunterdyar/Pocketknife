@@ -302,6 +302,12 @@ public class Compiler
 		{
 			var arg = arguments[i];
 			var e = EvaluateExpression(arg, ctx);
+			// VarRef args are resolved per-item at runtime; skip compile-time type check.
+			if (e is VarRef)
+			{
+				args.Add(e);
+				continue;
+			}
 			var etype = e.GetType();
 			//todo: how are we going to get the type of variables? 
 			var paramType = overload.Method.GetParameters()[i+a].ParameterType;
@@ -333,6 +339,9 @@ public class Compiler
 		{
 			case LiteralExpressionNode literalNode:
 				return literalNode.Value;
+			case LabelNode labelNode:
+				// `@name` / `@^name` reference — resolved per-item at runtime by Context.
+				return new VarRef(labelNode.Name, labelNode.ReachOut);
 			// case EmptyListLiteralExpression literalExpressionNode:
 			// 	return literalExpressionNode.Value;
 			default:

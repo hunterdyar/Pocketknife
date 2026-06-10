@@ -36,7 +36,7 @@ public static class SimpleEvaluator
 				foreach (var evalState in Evaluate(branch.Body, ctx)) yield return evalState;
 				
 				//pop the (input) stream off of the branch.
-				ctx.PopFrame(branch.BranchType);
+				ctx.PopFrame(branch.BranchType, PopType.SubBranch);
 				break;
 			case PKInputProvider input:
 				var ia = EvaluateArguments(input.Arguments, ctx);
@@ -70,14 +70,14 @@ public static class SimpleEvaluator
 				ctx.NewNamedFrame(namedBranch.Label);
 				yield return EvalState.Good();
 				foreach (var state in Evaluate(namedBranch.Body, ctx)) yield return state;
-				ctx.PopFrame(namedBranch.Type);
+				ctx.PopFrame(namedBranch.Type, PopType.ClonedBranch);
 				yield return EvalState.Good();
 				break;
 			case PKBranch branch:
 				ctx.NewFrame();
 				yield return EvalState.Good();
 				foreach (var state in Evaluate(branch.Body, ctx)) yield return state;
-				ctx.PopFrame(branch.Type);
+				ctx.PopFrame(branch.Type, PopType.ClonedBranch);
 				yield return EvalState.Good();
 				break;
 			// default:
