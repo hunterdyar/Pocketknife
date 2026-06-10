@@ -40,13 +40,17 @@ public static class SimpleEvaluator
 				break;
 			case PKInputProvider input:
 				var ia = EvaluateArguments(input.Arguments, ctx);
-				var value = input.Generator.Invoke(ia, ctx);
-				ctx.PushStream(input.Type, value);
+				ctx.PushStreamWithGenerator(input.Type, ia, input.Generator);
 				yield return EvalState.Good();
 				break;
 			case PKFilterOperatorNode fopr:
 				var fa = EvaluateArguments(fopr.Arguments, ctx);
 				ctx.FilterOnEach(fa, fopr.Invoker);
+				yield return EvalState.Good();
+				break;
+			case PKSignalOperatorNode sopr:
+				var soprArguments = EvaluateArguments(sopr.Arguments, ctx);
+				ctx.SignalOnEach(soprArguments, sopr.Invoker);
 				yield return EvalState.Good();
 				break;
 			case PKInlineOperatorNode iopr:

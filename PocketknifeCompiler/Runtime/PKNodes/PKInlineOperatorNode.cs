@@ -25,3 +25,10 @@ public class PKFilterOperatorNode : PKInlineOperatorNode
 	{
 	}
 }
+
+public class PKSignalOperatorNode : PKInlineOperatorNode
+{
+	public PKSignalOperatorNode(string name, OpInvoker invoker, Arguments arguments) : base(name, invoker, arguments)
+	{
+	}
+}

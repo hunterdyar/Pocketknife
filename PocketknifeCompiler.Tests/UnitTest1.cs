@@ -259,6 +259,12 @@ public class Tests
 	          :print
 	          """, "5", "6", "7", "8", "9")]
 	[TestCase("""
+	          >"a" "b"
+	          >1 2
+	          :print
+	          ^
+	          """, "1", "2", "1", "2")]
+	[TestCase("""
 	          >range 0 5
 	          .
 	          >range 5 10

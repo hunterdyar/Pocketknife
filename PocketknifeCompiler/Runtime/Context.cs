@@ -5,17 +5,47 @@ namespace PocketknifeCore;
 
 public class Context
 {
-	public Stack<PKFrame> Frames = new Stack<PKFrame>();
+	private PKFrame[] _frames = new PKFrame[128];
+	private int _frameCount;
 	private object[] _argsBuffer = new object[10];//todo: pick a bigger number, make a const, then do a max-arg check
 	private ArrayPool<object> _args = ArrayPool<object>.Shared;
 	private int argCount;
 	public void PushStream(Type type, List<object> list)
 	{
-		Frames.Push(new PKFrame() { Type = type, Values = list });
+		_frames[_frameCount] = new PKFrame() { Type = type, Stream = new Stream(list) };
+		_frameCount++;
 	}
-	public void PopStream()
+
+	public void PushStreamWithGenerator(Type inputType, object[] ia, GenInvoker generator)
 	{
-		Frames.Pop();
+		if (_frameCount == 0)
+		{
+			_frames[0] = new PKFrame();
+			_frames[0].Stream = new Stream(generator.Invoke(ia, this));
+			_frameCount++;
+			return;
+		}
+		//else
+		var top = Peek();
+		top.Stream.GenerateChildStream(inputType, ia, generator, this);
+	}
+	
+	private void Push(PKFrame frame)
+	{
+		_frames[_frameCount] = frame;
+		_frameCount++;
+	}
+
+	private PKFrame Peek()
+	{
+		return _frames[_frameCount - 1];
+	}
+	public PKFrame Pop()
+	{
+		var f = _frames[_frameCount-1];
+		_frames[_frameCount-1] = null; //let garbage collector do it's thing
+		_frameCount--;
+		return f;
 	}
 	
 	//todo: will arguments ever have to be per-op? @Index, etc?
@@ -23,67 +53,66 @@ public class Context
 	
 	public void OperateOnEach(object[] arguments, OpInvoker invoker)
 	{
-		var top = Frames.Peek();
+		var top = Peek();
 		argCount = arguments.Length;
 		var args = _args.Rent(argCount);
 		arguments.CopyTo(args, 0);
 		//todo: no, wait; rent provides the buffer. we need to populate it.
 		//todo: check if any of the args are per-iteration. If so, mark them somehow and move to inside that for loop.
 		//todo: compile the args...
-		
-		for (var i = 0; i < top.Values.Count; i++)
-		{
-			var value = Frames.Peek().Values[i];
-			var result = invoker(value, args, this);
-			top.Values[i] = result;
-		}
+
+		top.Stream.OperateOnEach(invoker, args, this);
+		_args.Return(args);
+	}
+
+	public void SignalOnEach(object[] arguments, OpInvoker sInvoker)
+	{
+		var top = Peek();
+		argCount = arguments.Length;
+		var args = _args.Rent(argCount);
+		arguments.CopyTo(args, 0);
+		//todo:see opOnEach
+		top.Stream.SignalOnEach(sInvoker, args, this);
 		_args.Return(args);
 	}
 
 	public void FilterOnEach(object[] arguments, OpInvoker foprInvoker)
 	{
-		var top = Frames.Peek();
+		var top = Peek();
 		argCount = arguments.Length;
 		var args = _args.Rent(argCount);
 		arguments.CopyTo(args, 0);//todo: none of this makes sense
 		//todo: same arg stuff as OperateOnEach
-		var result = new List<object>(top.Values.Count);
-		for (var i = 0; i < top.Values.Count; i++)
-		{
-			var v = top.Values[i];
-			if ((bool)foprInvoker(v, args, this))
-			{
-				result.Add(v);
-			}
-		}
-
-		top.Values = result;
+		
+		top.Stream.FilterOnEach(foprInvoker, args, this);
+		
 	}
 	
 	public void Pack()
 	{
-		var top = Frames.Pop();
+		var top = Pop();
 		var packedStream = new PKFrame()
 		{
 			Type = top.Type.Lift(), 
-			Values = new List<object>(1)
+			Stream = new Stream(new List<object>(1))
 		};
-		packedStream.Values.Add(top.Values);
-		Frames.Push(packedStream);
+		packedStream.Stream.Values.Add(top.Stream.Values);
+		Push(packedStream);
 	}
 
 	public void Unpack()
 	{
 		//stream<List<T>> -> stream<t>
-		var top = Frames.Pop();
+		var top = Pop();
 		if (!top.Type.IsStream())
 		{
 			throw new Exception("cannot unpack a non-stream type");
 		}
 		List<object> values = new List<object>();
 		
-		foreach (var value in top.Values)
+		foreach (var vt in top.Stream)
 		{
+			var value = vt.Item2;
 			if (value is IEnumerable enumerable && !(value is string))
 			{
 				foreach (var item in enumerable)
@@ -100,42 +129,40 @@ public class Context
 		var unpackedStream = new PKFrame()
 		{
 			Type = top.Type.Lower(),
-			Values = values
+			Stream = new Stream(values)
 		};
 		
-		Frames.Push(unpackedStream);
+		Push(unpackedStream);
 	}
 
 
 	//copy the previous frame up.
 	public void NewFrame()
 	{
-		var top = Frames.Peek();
-		
-		var clonedValues = new List<object>(top.Values.Count);
-		clonedValues.AddRange(top.Values);
-		Frames.Push(new PKFrame()
+		var top = Peek();
+
+		var clonedStream = top.Stream.Clone();
+		Push(new PKFrame()
 		{
 			Type = top.Type,
-			Values = clonedValues,
+			Stream = clonedStream,
 		});
 	}
 	
 	public void NewNamedFrame(string? name = null)
 	{
-		var top = Frames.Peek();
-		var clonedValues = new List<object>(top.Values.Count);
-		clonedValues.AddRange(top.Values);
-		Frames.Push(new PKFrame(name)
+		var top = Peek();
+		var clonedStream = top.Stream.Clone();
+		Push(new PKFrame(name)
 		{
 			Type = top.Type,
-			Values = clonedValues,
+			Stream = clonedStream,
 		});
 	}
 
 	public void PopFrame(BranchType frameType)
 	{
-		if (Frames.Peek().Name != null)
+		if (Peek().Name != null)
 		{
 			throw new NotImplementedException();
 		}
@@ -144,32 +171,34 @@ public class Context
 		{
 			case BranchType.SideEffect:
 				//assign value.
-				Frames.Pop();
+				Pop();
 				break;
 			case BranchType.ListAppend:
 				//todo: we need to typecheck. if the base type is object and empty, then we need to replace the type.
-				var branchFrame = Frames.Pop();
+				var branchFrame = Pop();
 				
 				//you can & onto nothing, and it implicitly creates a new list.
-				if (Frames.Count == 0)
+				if (_frameCount == 0)
 				{
-					Frames.Push(new PKFrame()
+					Push(new PKFrame()
 					{
 						Type = branchFrame.Type,
-						Values = new List<object>()
+						Stream = new Stream(),
 					});
 				}
 				
-				foreach (var value in branchFrame.Values)
+				foreach (var value in branchFrame.Stream)
 				{
-					Frames.Peek().Values.Add(value);
+					Peek().Stream.Values.Add(value);
 				}
 				break;
 			case BranchType.Replace:
-				var replaceFrame = Frames.Pop();
-				Frames.Peek().Values = replaceFrame.Values;
-				Frames.Peek().Type = replaceFrame.Type;
+				var replaceFrame = Pop();
+				Peek().Stream = replaceFrame.Stream;
+				Peek().Type = replaceFrame.Type;
 				break;
 		}
 	}
+
+
 }
