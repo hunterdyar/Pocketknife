@@ -5,9 +5,10 @@
 public sealed class PKItem
 {
 	public object? Value;
-	public PKItem? Progenitor; // an Item in the previous layer. Let's us walk up and resolve variables.
+	public PKItem? Progenitor; // an Item in the previous layer. Let's us walk up and resolve variables. "progenitor" is a better name than "daddy"
 	//named branches, @Index/@Count, etc. 
 	public Dictionary<string, object>? Bindings;
+	public int Index;
 
 	public PKItem(object? value, PKItem? progenitor = null)
 	{
@@ -19,5 +20,23 @@ public sealed class PKItem
 	{
 		Bindings ??= new Dictionary<string, object>();
 		Bindings[name] = value;
+	}
+	
+	public bool TryGetValue(string name, out object value)
+	{
+		//I think this string comparison check is cheaper than loading a dictionary for every single variable, even when they don't have bindings?
+		//we lose the lazy allocation of the dictionary if it contains Index... idk what's more performant.
+		if (name == "Index")
+		{
+			value = Index;
+			 return true;
+		}
+
+		value = default;
+		if (Bindings != null && Bindings.TryGetValue(name, out value))
+		{
+			return true;
+		}
+		return false;
 	}
 }

@@ -4,8 +4,7 @@ namespace PocketknifeCore;
 
 // Layered, breadth-first runtime.
 // _timeline is the history of layers; the current layer is the last one.
-// _scopes records open scopes (`.`, `.@x`, or `>`-expansion at index >= 1).
-// Public API mirrors the old depth-first runtime so SimpleEvaluator is unchanged.
+// _scopes records open scopes ('.', '.@x', '|>' or '>'-expansion at index >= 1).
 public class Context
 {
 	private readonly List<PKLayer> _timeline = new();
@@ -16,35 +15,19 @@ public class Context
 
 	public Context()
 	{
-		// Synthetic root layer at index 0. This is the implicit accumulator for
-		// top-level `&` branches and the anchor that all scope StartLayerIndexes
-		// can refer back to. The first real input layer is added at index 1.
+		// Synthetic root layer at index 0.
+		// This is the implicit accumulator for top-level `&` branches and the anchor that all scope StartLayerIndexes can refer back to. The first real input layer is added at index 1.
 		_timeline.Add(new PKLayer(typeof(void)));
 	}
 
 	private PKLayer Top => _timeline[^1];
 	private bool IsAtRoot => _timeline.Count == 1; // only the synthetic root exists.
-
-	// -------- seeding --------
-
-	public void PushStream(Type type, List<object> list)
-	{
-		var layer = new PKLayer(type);
-		foreach (var v in list) layer.Items.Add(new PKItem(v));
-		_scopes.Push(new ScopeInfo
-		{
-			StartLayerIndex = _timeline.Count - 1,
-			IsExpansionScope = true,
-		});
-		_timeline.Add(layer);
-	}
-
+	
 	public void PushStreamWithGenerator(Type inputType, object[] ia, GenInvoker generator)
 	{
 		if (IsAtRoot)
 		{
-			// first input: seed layer 1, push a root expansion scope rooted at
-			// the synthetic layer 0 so PopFrame always has matching state.
+			// first input: seed layer 1, push a root expansion scope rooted at the (synthetic) layer 0 so PopFrame always has matching state.
 			var seedValues = generator.Invoke(ia, this);
 			var layer = new PKLayer(inputType);
 			foreach (var v in seedValues) layer.Items.Add(new PKItem(v));
@@ -76,8 +59,11 @@ public class Context
 			foreach (var v in children)
 			{
 				var child = new PKItem(v, p);
-				child.Bind("Index", idx);
-				child.Bind("Count", count);
+				child.Index = idx;
+				//todo: test if this is more performant or not.
+				//store the evergreen variables as values and check later, so we keep the dictionary lazy.
+				// child.Bind("Index", idx);
+				// child.Bind("Count", count);
 				expanded.Items.Add(child);
 				idx++;
 			}
@@ -88,12 +74,11 @@ public class Context
 	}
 
 	//per-item transitions
-
 	public void OperateOnEach(object[] arguments, OpInvoker invoker)
 	{
 		var prev = Top;
 		var next = new PKLayer(prev.Type);
-		bool hasVars = ArgsContainVarRef(arguments);
+		bool hasVars = ArgsNeedRuntimeEval(arguments);
 		object[] resolved = hasVars ? new object[arguments.Length] : arguments;
 		foreach (var p in prev.Items)
 		{
@@ -109,7 +94,7 @@ public class Context
 	public void SignalOnEach(object[] arguments, OpInvoker sInvoker)
 	{
 		var prev = Top;
-		bool hasVars = ArgsContainVarRef(arguments);
+		bool hasVars = ArgsNeedRuntimeEval(arguments);
 		object[] resolved = hasVars ? new object[arguments.Length] : arguments;
 		// Signals do not advance a layer; they are pure side-effects.
 		foreach (var p in prev.Items)
@@ -125,7 +110,7 @@ public class Context
 	{
 		var prev = Top;
 		var next = new PKLayer(prev.Type);
-		bool hasVars = ArgsContainVarRef(arguments);
+		bool hasVars = ArgsNeedRuntimeEval(arguments);
 		object[] resolved = hasVars ? new object[arguments.Length] : arguments;
 		foreach (var p in prev.Items)
 		{
@@ -140,10 +125,15 @@ public class Context
 		_timeline.Add(next);
 	}
 
-	private static bool ArgsContainVarRef(object[] args)
+	//the only current "runtime eval" is a VarRef.
+	//todo: cache this information during compilation and save the for loop. it's cheap tho.
+	private static bool ArgsNeedRuntimeEval(object[] args)
 	{
 		for (int i = 0; i < args.Length; i++)
+		{
 			if (args[i] is VarRef) return true;
+		}
+
 		return false;
 	}
 
@@ -158,15 +148,19 @@ public class Context
 
 	public object ResolveVariable(PKItem item, string name, int reachOut)
 	{
-		// Option A (layer-step): step `reachOut` progenitor links outward,
-		// then return the first binding for `name` found by walking
-		// progenitors from that point downward through the chain.
 		PKItem? cur = item;
-		for (int i = 0; i < reachOut && cur != null; i++) cur = cur.Progenitor;
+		//first, skip the number of @^^^^name reach outs.
+		for (int i = 0; i < reachOut && cur != null; i++)
+		{
+			cur = cur.Progenitor;
+		}
+		//then, walk up the bindings to get the value.
 		while (cur != null)
 		{
-			if (cur.Bindings != null && cur.Bindings.TryGetValue(name, out var v))
+			if (cur.Bindings != null && cur.TryGetValue(name, out var v))
+			{
 				return v;
+			}
 			cur = cur.Progenitor;
 		}
 		throw new Exception($"variable {name} not found");
@@ -177,8 +171,12 @@ public class Context
 	{
 		var top = _timeline[^1];
 		var packedList = new List<object>(top.Items.Count);
-		foreach (var it in top.Items) packedList.Add(it.Value!);
+		foreach (var it in top.Items)
+		{
+			packedList.Add(it.Value!);
+		}
 		var packed = new PKLayer(top.Type.Lift());
+		
 		// Progenitor chain: link the single packed item to one representative item
 		// in the prior layer so variable lookup still works through Pack/Unpack.
 		var progen = top.Items.Count > 0 ? top.Items[0] : null;
@@ -190,7 +188,9 @@ public class Context
 	{
 		var top = _timeline[^1];
 		if (!top.Type.IsStream())
+		{
 			throw new Exception("cannot unpack a non-stream type");
+		}
 		var unpacked = new PKLayer(top.Type.Lower());
 		foreach (var it in top.Items)
 		{
@@ -207,9 +207,7 @@ public class Context
 		}
 		_timeline.Add(unpacked);
 	}
-
-
-	// scopes
+	
 	public void NewFrame()
 	{
 		_scopes.Push(new ScopeInfo
@@ -274,14 +272,8 @@ public class Context
 					var merged = new PKLayer(currentLayer.Type);
 					if (currentLayer.Items.Count > 0 && startLayer.Items.Count == currentLayer.Items.Count && !scope.IsExpansionScope)
 					{
-						// 1:1 ClonedBranch replace.
-						// Option A (layer-step) semantics for @^name: for NAMED scopes,
-						// keep the start-layer item itself in the progenitor chain so any
-						// outer binding sitting on it (potentially shadowed by this scope's
-						// own binding) is reachable as a true ancestor via `@^name`.
-						// For unnamed scopes there's nothing to shadow, so we preserve the
-						// historical behavior of rebasing to `p.Progenitor` to keep the
-						// chain flat.
+						// keep the start-layer item itself in the progenitor chain so any outer binding sitting on it (potentially shadowed by this scope's own binding) is reachable as a true ancestor via `@^name`.
+						// For unnamed scopes there's nothing to shadow, so we preserve the historical behavior of rebasing to `p.Progenitor` to keep the chain flat.
 						bool keepStartItemAsProgenitor = scope.Name != null;
 						for (int i = 0; i < startLayer.Items.Count; i++)
 						{
