@@ -56,6 +56,66 @@ public static class IntMethods
 		return -i;
 	}
 
+	[Filter(Name="negative")]
+	public static bool IsNegative(int i)
+	{
+		return i < 0;
+	} 
+	
+	[Filter(Name="is-even")]
+	public static bool IsEven(int i)
+	{
+		return i % 2 == 0;
+	} 
+	
+	[Filter(Name="is-odd")]
+	public static bool IsOdd(int i)
+	{
+		return i % 2 != 0;
+	}
+
+	[Filter(Name = "non-zero")]
+	public static bool IsNonZero(int i)
+	{
+		return i != 0;
+	}
+
+	[Filter(Name = "positive")]
+	public static bool IsPositive(int i)
+	{
+		return i > 0;
+	}
+
+	[Pipeline(Name = "min")]
+	public static int Min(int i, int b)
+	{
+		return Math.Min(i, b);
+	}
+
+	[Pipeline(Name = "max")]
+	public static int Max(int i, int b)
+	{
+		return Math.Max(i, b);
+	}
+
+	[Pipeline(Name = "clamp")]
+	public static int Clamp(int i,int a, int b)
+	{
+		return Math.Clamp(i,a, b);
+	}
+
+	[Pipeline(Name = "clamp01")]
+	public static int Clamp01(int i)
+	{
+		return Math.Clamp(i, 0,1);
+	}
+
+	[Filter(Name = "between")]
+	public static bool Between(int i, int min, int max)
+	{
+		return i >= min && i <= max;
+	}
+	
 	[Casting]
 	public static double ToDouble(int i)
 	{
