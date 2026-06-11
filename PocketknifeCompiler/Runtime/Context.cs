@@ -208,6 +208,17 @@ public class Context
 		_timeline.Add(unpacked);
 	}
 	
+	private void NewClonedLayer()
+	{
+		var top = _timeline[^1];
+		//todo: not a deep enough clone? idk if that matters for reference objects.
+		var cloned = new PKLayer(top.Type)
+		{
+			Items = new List<PKItem>(top.Items)
+		};
+		_timeline.Add(cloned);
+	}
+	
 	public void NewFrame()
 	{
 		_scopes.Push(new ScopeInfo
@@ -216,6 +227,7 @@ public class Context
 			IsExpansionScope = false,
 			Name = null,
 		});
+		NewClonedLayer();
 	}
 
 	public void NewNamedFrame(string? name = null)
@@ -226,9 +238,10 @@ public class Context
 			IsExpansionScope = false,
 			Name = name,
 		});
+		NewClonedLayer();
 	}
 
-	public void PopFrame(BranchType frameType, PopType popType)
+	public void PopFrame(BranchType frameType)
 	{
 		// scope was opened. Merge accordingly.
 		if (_scopes.Count > 0)
@@ -360,10 +373,4 @@ public class Context
 			if (it.Value != null) it.Bind(scope.Name, it.Value);
 		}
 	}
-}
-
-public enum PopType
-{
-	ClonedBranch,
-	SubBranch,
 }
