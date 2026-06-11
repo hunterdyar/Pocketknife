@@ -34,10 +34,23 @@ public class StringMethods
 		return str.Trim();
 	}
 
+	[Pipeline(Name = "length")]
+	public static int Length(string str)
+	{
+		return str.Length;
+	}
+	
+
 	[Filter(Name = "has-whitespace")]
 	public static bool HasWhitespace(string str)
 	{
 		return str.Any(char.IsWhiteSpace);
+	}
+
+	[Filter(Name = "is-whitespace")]
+	public static bool IsWhitespace(string str)
+	{
+		return str.All(char.IsWhiteSpace);
 	}
 	
 	[Filter(Name = "is-empty")]

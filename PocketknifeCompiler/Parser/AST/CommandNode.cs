@@ -115,13 +115,12 @@ public class SignalCommandNode : CommandNode
     }
 }
 
-public class PipeInCommandNode : CommandNode
+public class PipeInInputProviderNode : InputProviderNode
 {
     override public string sigil => "|>";
-    public List<RootNode> Commands;
     //|>transform data into stream<data>
-    public PipeInCommandNode(List<RootNode> commands, string name, List<ExpressionNode> args, Options? opts) : base(name, args, opts)
+    public PipeInInputProviderNode(string name, List<ExpressionNode> args, Options? opts) : base(name, args, opts)
     {
-        Commands = commands;
+        
     }
 }

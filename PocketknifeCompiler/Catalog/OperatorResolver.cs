@@ -113,9 +113,10 @@ public class OperatorResolver
 			throw new Exception($"Operator {Name} does not have an overload for casted type {cast.OutType} (from {input})");
 		}
 	}
- 
-
+	
 	private Dictionary<OperatorDescription, GenInvoker> _generators = new Dictionary<OperatorDescription, GenInvoker>();
+	private Dictionary<OperatorDescription, PipeGenInvoker> _pipeGenerators = new Dictionary<OperatorDescription, PipeGenInvoker>();
+	private Dictionary<(OperatorDescription, CastingDescription), PipeGenInvoker> _castedPipeGenerators = new Dictionary<(OperatorDescription, CastingDescription), PipeGenInvoker>();
 
 	public GenInvoker GetOrBuildGenerator(out OperatorDescription overload)
 	{
@@ -140,77 +141,32 @@ public class OperatorResolver
 			throw new Exception($"Operator {Name} does not exist or is not a generator (>)");
 		}
 	}
-
-	static OpInvoker BuildInvoker(OperatorDescription description, CastingDescription? cast = null)
+	public PipeGenInvoker GetOrBuildPipeGenerator(Type input, out OperatorDescription overload)
 	{
-		var target = description.Method;
-		
-		var pInput = Expression.Parameter(typeof(object), "input");
-		var pArgs = Expression.Parameter(typeof(object[]), "args");
-		var pCtx = Expression.Parameter(typeof(Context), "ctx");
-		
-		var parameters = target.GetParameters();
-		var callArgs = new Expression[parameters.Length];
+		var found = _overloads.FirstOrDefault(x => x.InType == input);
 
-		int argIndex = 0;
-		for (int i = 0; i < parameters.Length; i++)
+		
+		if (found != null)
 		{
-			var pType = parameters[i].ParameterType;
-
-			if (pType == typeof(Context))
+			overload = found;
+			//get
+			if (_pipeGenerators.TryGetValue(overload, out var invoker))
 			{
-				callArgs[i] = pCtx;
-				continue;
+				return invoker;
 			}
 
-			//if it's a generator, we don't have an input parameter; 
-			if (i == 0 && !PKType.IsNone(description.InType))
-			{
-				if (cast != null)
-				{
-					var castTarget = cast.Method;
-					var castParamType = castTarget.GetParameters()[0].ParameterType;
-					Expression castInput = ConvertPKValue(pInput, castParamType);
-					Expression castCall = castTarget.IsStatic 
-						? Expression.Call(castTarget, castInput) 
-						: throw new NotImplementedException("Non-static casting methods are not supported");
-
-					if (castTarget.ReturnType != pType)
-					{
-						callArgs[i] = Expression.Convert(castCall, pType);
-					}
-					else
-					{
-						callArgs[i] = castCall;
-					}
-				}
-				else
-				{
-					callArgs[i] = ConvertPKValue(pInput, pType);
-				}
-				continue;
-			}
-
-			callArgs[i] = ReadArg(pArgs, argIndex++, pType, parameters[i]);
-		}
-
-		Expression body;
-		if (target.IsStatic)
-		{
-			body = Expression.Call(target, callArgs);
-			body = WrapResult(body, target.ReturnType);
+			//or build
+			var builtInvoker = BuildPipeGenerator(overload);
+			_pipeGenerators.Add(overload, builtInvoker);
+			return builtInvoker;
 		}
 		else
 		{
-			throw new NotImplementedException();
+			throw new Exception($"Operator {Name} does not exist or is not a generator (>)");
 		}
-		
-		var result = Expression.Lambda<OpInvoker>(body, pInput, pArgs, pCtx).Compile();
-
-		Debug.WriteLine($"Built invoker for {target.Name}:");
-		Debug.WriteLine(Expression.Lambda<OpInvoker>(body, pInput, pArgs, pCtx).ToString());
-		return result;
 	}
+
+	//todo: casting overload for Pipeline Generator
 
 	//expression that returns expression from value, cast.
 	private static Expression ConvertPKValue(Expression pkValueExpr, Type targetType)
@@ -269,6 +225,74 @@ public class OperatorResolver
 		return _overloads.Any(x => x.InType == top || x.InType == PKType.Any.Lift(top.GetLiftLevel()));
 	}
 
+	static OpInvoker BuildInvoker(OperatorDescription description, CastingDescription? cast = null)
+	{
+		var target = description.Method;
+
+		var pInput = Expression.Parameter(typeof(object), "input");
+		var pArgs = Expression.Parameter(typeof(object[]), "args");
+		var pCtx = Expression.Parameter(typeof(Context), "ctx");
+
+		var parameters = target.GetParameters();
+		var callArgs = new Expression[parameters.Length];
+
+		int argIndex = 0;
+		for (int i = 0; i < parameters.Length; i++)
+		{
+			var pType = parameters[i].ParameterType;
+
+			if (pType == typeof(Context))
+			{
+				callArgs[i] = pCtx;
+				continue;
+			}
+
+			if (i == 0 && !PKType.IsNone(description.InType))
+			{
+				if (cast != null)
+				{
+					var castTarget = cast.Method;
+					var castParamType = castTarget.GetParameters()[0].ParameterType;
+					Expression castInput = ConvertPKValue(pInput, castParamType);
+					Expression castCall = castTarget.IsStatic ? Expression.Call(castTarget, castInput) : throw new NotImplementedException("Non-static casting methods are not supported");
+
+					if (castTarget.ReturnType != pType)
+					{
+						callArgs[i] = Expression.Convert(castCall, pType);
+					}
+					else
+					{
+						callArgs[i] = castCall;
+					}
+				}
+				else
+				{
+					callArgs[i] = ConvertPKValue(pInput, pType);
+				}
+
+				continue;
+			}
+
+			callArgs[i] = ReadArg(pArgs, argIndex++, pType, parameters[i]);
+		}
+
+		Expression body;
+		if (target.IsStatic)
+		{
+			body = Expression.Call(target, callArgs);
+			body = WrapResult(body, target.ReturnType);
+		}
+		else
+		{
+			throw new NotImplementedException();
+		}
+
+		var result = Expression.Lambda<OpInvoker>(body, pInput, pArgs, pCtx).Compile();
+
+		Debug.WriteLine($"Built invoker for {target.Name}:");
+		Debug.WriteLine(Expression.Lambda<OpInvoker>(body, pInput, pArgs, pCtx).ToString());
+		return result;
+	}
 	private GenInvoker BuildGenerator(OperatorDescription description)
 	{
 		var target = description.Method;
@@ -309,6 +333,76 @@ public class OperatorResolver
 
 		Debug.WriteLine($"Built invoker for {target.Name}:");
 		Debug.WriteLine(Expression.Lambda<GenInvoker>(body, pArgs, pCtx).ToString());
+		return result;
+	}
+
+	private PipeGenInvoker BuildPipeGenerator(OperatorDescription description, CastingDescription? cast = null)
+	{
+		var target = description.Method;
+
+		var pInput = Expression.Parameter(typeof(object), "input");
+		var pArgs = Expression.Parameter(typeof(object[]), "args");
+		var pCtx = Expression.Parameter(typeof(Context), "ctx");
+
+		var parameters = target.GetParameters();
+		var callArgs = new Expression[parameters.Length];
+
+		int argIndex = 0;
+		for (int i = 0; i < parameters.Length; i++)
+		{
+			var pType = parameters[i].ParameterType;
+
+			if (pType == typeof(Context))
+			{
+				callArgs[i] = pCtx;
+				continue;
+			}
+
+			if (i == 0 && !PKType.IsNone(description.InType))
+			{
+				if (cast != null)
+				{
+					var castTarget = cast.Method;
+					var castParamType = castTarget.GetParameters()[0].ParameterType;
+					Expression castInput = ConvertPKValue(pInput, castParamType);
+					Expression castCall = castTarget.IsStatic ? Expression.Call(castTarget, castInput) : throw new NotImplementedException("Non-static casting methods are not supported");
+
+					if (castTarget.ReturnType != pType)
+					{
+						callArgs[i] = Expression.Convert(castCall, pType);
+					}
+					else
+					{
+						callArgs[i] = castCall;
+					}
+				}
+				else
+				{
+					callArgs[i] = ConvertPKValue(pInput, pType);
+				}
+
+				continue;
+			}
+
+			callArgs[i] = ReadArg(pArgs, argIndex++, pType, parameters[i]);
+		}
+
+		Expression body;
+		if (target.IsStatic)
+		{
+			body = Expression.Call(target, callArgs);
+			body = WrapResult(body, target.ReturnType);
+		}
+		else
+		{
+			throw new NotImplementedException();
+		}
+
+
+		var result = Expression.Lambda<PipeGenInvoker>(body, pInput, pArgs, pCtx).Compile();
+
+		Debug.WriteLine($"Built invoker for {target.Name}:");
+		Debug.WriteLine(Expression.Lambda<PipeGenInvoker>(body, pInput, pArgs, pCtx).ToString());
 		return result;
 	}
 }

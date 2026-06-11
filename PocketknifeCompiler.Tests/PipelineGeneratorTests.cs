@@ -12,12 +12,16 @@ public class PipelineGeneratorTests
 	          |>chars
 	          |append " "
 	          :print
-	          """, "H ","e  ","l  ","l  ","o  ")]
+	          """, "h ","e  ","l  ","l  ","o  ")]
+	[TestCase("""
+	          >"hello, world"
+	          |>split ","
+	          <>
+	          |count
+	          :print
+	          """, "2")]
 	public void PipelineGetSimple(string source, params string[] expectedOutput)
 	{
 		Helpers.RunAndAssert(source, expectedOutput);
 	}
-	
-
-	
 }

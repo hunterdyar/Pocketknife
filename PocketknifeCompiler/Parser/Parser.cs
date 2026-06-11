@@ -46,6 +46,7 @@ public class Parser
             return token.Type switch
             {
                 TokenType.Input => ParseInputToOutputBranch(),
+                TokenType.PipeIn => ParseInputToOutputBranch(),
                 TokenType.StartBranch => ParseBranch(),//.
                 TokenType.PackList => ParsePackList(),
                 TokenType.UnpackList => ParseUnpackList(),
@@ -259,7 +260,7 @@ public class Parser
             case TokenType.Bang:
                 return ParseAbortCommand();
             case TokenType.PipeIn:
-                return ParsePipeIn();
+                return ParsePipeInInputProvider();
             case TokenType.PatternStart:
                 throw new NotImplementedException();
             default:
@@ -367,6 +368,11 @@ public class Parser
 
     private InputProviderNode ParseInputCommand()
     {
+        if (_lexer.Tokens[_tokenIndex].Type == TokenType.PipeIn)
+        {
+            return ParsePipeInInputProvider();
+        }//else
+        
         Consume(TokenType.Input);
         //we now have either a literal or an identifier.
         if (_lexer.Tokens[_tokenIndex].Type == TokenType.Identifier)
@@ -384,6 +390,31 @@ public class Parser
         }
     }
 
+    private PipeInInputProviderNode ParsePipeInInputProvider()
+    {
+        Consume(TokenType.PipeIn);
+        var (name, args, opts) = ParseStandardCommand();
+        EatOptionalLinebreaks();
+
+        // List<RootNode> branchCommands = new List<RootNode>();
+        // while (_tokenIndex < _lexer.TokenCount)
+        // {
+        //     var token = _lexer.Tokens[_tokenIndex];
+        //     if (token.Type == TokenType.EndBranchReplace)
+        //     {
+        //         Consume(TokenType.EndBranchReplace);
+        //         break;
+        //     }
+        //     else
+        //     {
+        //         branchCommands.Add(ParseRootNode());
+        //     }
+        //
+        //     EatOptionalLinebreaks();
+        // }
+
+        return new PipeInInputProviderNode(name, args, opts);
+    }
     private PipelineCommandNode ParsePipeCommand()
     {
         Consume(TokenType.Pipe);
@@ -392,31 +423,7 @@ public class Parser
         return new PipelineCommandNode(name, args, opts);
     }
 
-    private PipeInCommandNode ParsePipeIn()
-    {
-        Consume(TokenType.PipeIn);
-        var (name, args, opts) = ParseStandardCommand();
-        EatOptionalLinebreaks();
-
-        List<RootNode> branchCommands = new List<RootNode>();
-        while (_tokenIndex < _lexer.TokenCount)
-        {
-            var token = _lexer.Tokens[_tokenIndex];
-            if (token.Type == TokenType.EndBranchReplace)
-            {
-                Consume(TokenType.EndBranchReplace);
-                break;
-            }
-            else
-            {
-                branchCommands.Add(ParseRootNode());
-            }
-
-            EatOptionalLinebreaks();
-        }
-        
-        return new PipeInCommandNode(branchCommands, name, args, opts);
-    }
+   
 
     private void ConsumeLinebreakOrEndOfFile()
     {

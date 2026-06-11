@@ -9,3 +9,4 @@ public delegate object OpInvoker(object input, object[] args, Context context);
 
 public delegate List<object> GenInvoker(object[] args, Context context);
 
+public delegate List<object> PipeGenInvoker(object input, object[] args, Context context);

@@ -75,11 +75,11 @@ public class Compiler
 				return new PKNodeGroup(groups);
 			}
 			case InputBranchNode inputBranchNode:
-				var inputCommand = (PKInputProvider)Compile(inputBranchNode.Input, ctx);
+				var ic = (PKInputProvider)Compile(inputBranchNode.Input, ctx);
 				Debug.Assert(!PKType.IsNone(ctx.StackTop));
-				
 				var body = (PKNodeGroup)Compile(inputBranchNode.CommandSet, ctx);
-				return new PKInputBranch(inputCommand, body, inputBranchNode.BranchType);
+				return new PKInputBranch(ic, body, inputBranchNode.BranchType);
+				
 			case InputLiteralProviderNode inputLiteralProviderNode:
 				//
 				if (inputLiteralProviderNode.Arguments.Length == 0)
@@ -113,9 +113,26 @@ public class Compiler
 					}
 					
 					ctx.PushType(argKind);
-					return new PKInputProvider(argKind, inputLiteralProviderNode.Name, (args, context) => literals, Arguments.Empty);
+					return new PKGenInputProvider(argKind, inputLiteralProviderNode.Name, Arguments.Empty, (args, context) => literals);
 
 				}
+			case PipeInInputProviderNode pipeInInputProviderNode:
+				Debug.Assert(pipeInInputProviderNode.sigil == "|>");
+				if (_catalog.TryGetOp(pipeInInputProviderNode.Name, out var piopr))
+				{
+					// Build (or fetch a cached) OpInvoker for this overload.
+					//todo: casting!
+					PipeGenInvoker opInvoker = piopr.GetOrBuildPipeGenerator(ctx.StackTop, out var call);
+					var args = CompileArguments(call, pipeInInputProviderNode.Arguments, ctx);
+					var callType = call.OutType.Lower();
+					ctx.PushType(callType);
+					return new PKPipeInputProvider(callType, piopr.Name, opInvoker, args);
+				}
+				else
+				{
+					throw new Exception($"unknown operator {pipeInInputProviderNode.Name}");
+				}
+				break;
 			case InputProviderNode inputProviderNode:
 				Debug.Assert(inputProviderNode.sigil == ">");
 				if (_catalog.TryGetOp(inputProviderNode.Name, out var iopr))
@@ -126,7 +143,7 @@ public class Compiler
 					//generator out type should be list<x>, but really, it's list. we are doing the following commands on every one.
 					var callType = call.OutType.Lower();
 					ctx.PushType(callType);
-					return new PKInputProvider(callType, iopr.Name, genInvoker, args);
+					return new PKGenInputProvider(callType, iopr.Name, args, genInvoker);
 				}
 				else
 				{
@@ -152,12 +169,6 @@ public class Compiler
 					ctx.PopFrame(branchNode.Type);
 					return new PKNamedBranch(branchNode.Label, subbranch, branchNode.Type);
 				}
-			case PipeInCommandNode pipeInNode:
-				//normal generators give us inputprovider and branch... 
-				//todo: fix the AST to match, then make PipeIn return an input provider. so > and |> are the same inputBranch node.
-				Debug.Assert(pipeInNode.sigil == "|>");
-				throw new NotImplementedException();
-				break;
 			case PipelineCommandNode pipelineNode:
 				Debug.Assert(pipelineNode.sigil == "|");
 				if (_catalog.TryGetOp(pipelineNode.Name, out var popr))

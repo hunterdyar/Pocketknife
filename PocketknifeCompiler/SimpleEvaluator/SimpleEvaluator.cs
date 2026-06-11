@@ -38,9 +38,14 @@ public static class SimpleEvaluator
 				//pop the (input) stream off of the branch.
 				ctx.PopFrame(branch.BranchType);
 				break;
-			case PKInputProvider input:
+			case PKGenInputProvider input:
 				var ia = EvaluateArguments(input.Arguments, ctx);
 				ctx.PushStreamWithGenerator(input.Type, ia, input.Generator);
+				yield return EvalState.Good();
+				break;
+			case PKPipeInputProvider input:
+				var pia = EvaluateArguments(input.Arguments, ctx);
+				ctx.PushStreamWithPipeGenerator(input.Type, pia, input.PipeGenerator);
 				yield return EvalState.Good();
 				break;
 			case PKFilterOperatorNode fopr:

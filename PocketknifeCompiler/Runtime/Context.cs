@@ -73,6 +73,48 @@ public class Context
 		_scopes.Push(scope);
 	}
 
+	public void PushStreamWithPipeGenerator(Type inputType, object[] arguments, PipeGenInvoker generator)
+	{
+		if (IsAtRoot)
+		{
+			throw new InvalidOperationException();
+		}
+
+		// nested expansion: each item in current layer fans out to its own list of children.
+		var parent = Top;
+		var expanded = new PKLayer(inputType);
+		bool hasVars = ArgsNeedRuntimeEval(arguments);
+		object[] resolved = hasVars ? new object[arguments.Length] : arguments;
+
+		// scope start = index of the layer BEFORE expansion (i.e., the current top).
+		var scope = new ScopeInfo
+		{
+			StartLayerIndex = _timeline.Count - 1,
+			IsExpansionScope = true,
+			Name = null,
+		};
+		foreach (var p in parent.Items)
+		{
+			CurrentItem = p;
+			var args = hasVars ? ResolveArgs(arguments, resolved, p) : arguments;
+			var children = generator.Invoke(p.Value!, args, this);
+			int idx = 0;
+			// int count = children.Count;
+			foreach (var v in children)
+			{
+				var child = new PKItem(v, p);
+				child.Index = idx;
+				//todo: see gen todo
+				expanded.Items.Add(child);
+				idx++;
+			}
+		}
+		
+		CurrentItem = null;
+		_timeline.Add(expanded);
+		_scopes.Push(scope);
+	}
+	
 	//per-item transitions
 	public void OperateOnEach(object[] arguments, OpInvoker invoker)
 	{
@@ -373,4 +415,7 @@ public class Context
 			if (it.Value != null) it.Bind(scope.Name, it.Value);
 		}
 	}
+
+
+
 }
