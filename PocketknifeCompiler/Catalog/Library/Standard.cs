@@ -12,4 +12,10 @@ public static class Standard
 	
 	[Signal(Name = "print")]
 	public static void Print(int i) => Console.WriteLine(i.ToString());
+
+	[Filter(Name = "is")]
+	public static bool IsValue(object value, object compare)
+	{
+		return value.Equals(compare);
+	}
 }

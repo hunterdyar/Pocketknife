@@ -65,6 +65,30 @@ public static class DoubleMethods
 		return i / b;
 	}
 
+	[Pipeline(Name = "sin")]
+	public static double Sin(double x)
+	{
+		return Math.Sin(x);
+	}
+
+	[Pipeline(Name = "cos")]
+	public static double Cos(double x)
+	{
+		return Math.Cos(x);
+	}
+
+	[Pipeline(Name = "clamp")]
+	public static double Clamp(double x, double a, double b)
+	{
+		return Math.Clamp(x, a,b);
+	}
+
+	[Pipeline(Name = "clamp01")]
+	public static double Clamp01(double x)
+	{
+		return Math.Clamp(x, 0, 1);
+	}
+	
 	[Pipeline(Name = "divided-by")]
 	public static double DividedBy(double i, double b)
 	{

@@ -31,6 +31,7 @@ public class OpCatalog
 		oc.RegisterMethods(typeof(Standard));
 		oc.RegisterMethods(typeof(StringMethods));
 		oc.RegisterMethods(typeof(IntMethods));
+		oc.RegisterMethods(typeof(BoolMethods));
 		oc.RegisterMethods(typeof(DoubleMethods));
 		oc.RegisterMethods(typeof(ListMethods));
 		return oc;
