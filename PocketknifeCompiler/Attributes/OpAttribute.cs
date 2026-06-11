@@ -29,7 +29,6 @@ public class PipelineAttribute : OpAttribute
 	}
 }
 
-
 [AttributeUsage(AttributeTargets.Method)]
 public class SignalAttribute : OpAttribute
 {
@@ -49,6 +48,27 @@ public class SignalAttribute : OpAttribute
 		{
 			InType = inType,
 			OutType = PKType.None,
+			Method = method
+		});
+	}
+}
+
+[AttributeUsage(AttributeTargets.Method)]
+public class FilterAttribute : OpAttribute
+{
+	public string Name { get; set; }
+
+	public override void Register(OpCatalog catalog, MethodInfo method)
+	{
+		var inType = method.GetParameters()[0].ParameterType;
+		var outType = method.ReturnType;
+
+		Debug.Assert(!PKType.IsNone(inType));
+		Debug.Assert(outType == typeof(bool));
+		catalog.RegisterOp(Name, new OperatorDescription(OpKind.Filter)
+		{
+			InType = inType,
+			OutType = typeof(bool),
 			Method = method
 		});
 	}
@@ -84,6 +104,36 @@ public class GeneratorAttribute : OpAttribute
 	}
 }
 
+[AttributeUsage(AttributeTargets.Method)]
+public class PipeGeneratorAttribute : OpAttribute
+{
+	public string Name { get; set; }
+
+	public override void Register(OpCatalog catalog, MethodInfo method)
+	{
+		var paramCount = method.GetParameters().Length;
+		Debug.Assert(paramCount >= 1);
+		
+		var inPK= method.GetParameters()[0].ParameterType;
+		if (inPK == PKType.None)
+		{
+			throw new Exception($"Could not determine type of first parameter {inPK.Name} in method {method.Name}");
+		}
+
+		var outType = method.ReturnType;
+		if (!outType.IsStream())
+		{
+			throw new Exception($"Generator {method.Name} must return a stream type (e.g. List<T>)");
+		}
+
+		catalog.RegisterOp(Name, new OperatorDescription(OpKind.PipeIn)
+		{
+			InType = inPK,
+			OutType = outType,
+			Method = method
+		});
+	}
+}
 
 public class CastingAttribute : OpAttribute
 {

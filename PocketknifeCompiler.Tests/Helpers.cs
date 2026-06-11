@@ -1,4 +1,9 @@
-﻿namespace PocketknifeCompiler.Tests;
+﻿using PocketKnife.Compiler;
+using PocketknifeCore;
+using PocketknifeCore.Compiler;
+using PocketknifeCore.SimpleEvaluator;
+
+namespace PocketknifeCompiler.Tests;
 
 public static class Helpers
 {
@@ -15,5 +20,25 @@ public static class Helpers
 
 			Assert.That(gots[i].Trim(), Is.EqualTo(sources[i].Trim()));
 		}
+	}
+
+	public static void RunAndAssert(string source, string[] expectedOutput)
+	{
+		using var sw = new StringWriter();
+		Console.SetOut(sw);
+
+		var p = new Parser();
+		p.Parse(source);
+
+		var catalog = OpCatalog.GetDefaultOpCatalog();
+		var compiler = new Compiler(catalog);
+
+		var compiled = compiler.StartCompile(p.Program);
+
+		var context = new Context();
+		SimpleEvaluator.EvaluateAll(compiled, context);
+
+		var expectedOutputString = string.Join(Environment.NewLine, expectedOutput);
+		Helpers.EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);
 	}
 }

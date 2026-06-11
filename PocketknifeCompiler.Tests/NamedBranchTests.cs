@@ -28,7 +28,7 @@ public class NamedBranchTests
 	          """, "HELLOHELLO")]
 	public void NamedBranchBindAndRead(string source, params string[] expectedOutput)
 	{
-		RunAndAssert(source, expectedOutput);
+		Helpers.RunAndAssert(source, expectedOutput);
 	}
 
 	// `@^name` reaches one binding-layer outward, skipping the inner shadow — used when an inner named-branch shadows the same name.
@@ -48,7 +48,7 @@ public class NamedBranchTests
 	          """, "helloHELLO")]
 	public void NamedBranchReachOut(string source, params string[] expectedOutput)
 	{
-		RunAndAssert(source, expectedOutput);
+		Helpers.RunAndAssert(source, expectedOutput);
 	}
 
 	// Plain `.` then `^` (SideEffect) discards body changes — the named binding from inside a SideEffect-closed branch is NOT propagated
@@ -70,7 +70,7 @@ public class NamedBranchTests
 	          """, "helloHELLO")]
 	public void NamedBranchSideEffectDoesntDiscardValue(string source, params string[] expectedOutput)
 	{
-		RunAndAssert(source, expectedOutput);
+		Helpers.RunAndAssert(source, expectedOutput);
 	}
 
 	// Named branch results bind across iterations: each outer item gets its own merged value.
@@ -84,26 +84,7 @@ public class NamedBranchTests
 	          """, "HIHI", "BYEBYE")]
 	public void NamedBranchPerItemBinding(string source, params string[] expectedOutput)
 	{
-		RunAndAssert(source, expectedOutput);
+		Helpers.RunAndAssert(source, expectedOutput);
 	}
-
-	private static void RunAndAssert(string source, string[] expectedOutput)
-	{
-		using var sw = new StringWriter();
-		Console.SetOut(sw);
-
-		var p = new Parser();
-		p.Parse(source);
-
-		var catalog = OpCatalog.GetDefaultOpCatalog();
-		var compiler = new Compiler(catalog);
-
-		var compiled = compiler.StartCompile(p.Program);
-
-		var context = new Context();
-		SimpleEvaluator.EvaluateAll(compiled, context);
-
-		var expectedOutputString = string.Join(Environment.NewLine, expectedOutput);
-		Helpers.EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);
-	}
+	
 }

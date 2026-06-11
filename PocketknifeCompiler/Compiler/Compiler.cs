@@ -152,6 +152,12 @@ public class Compiler
 					ctx.PopFrame(branchNode.Type);
 					return new PKNamedBranch(branchNode.Label, subbranch, branchNode.Type);
 				}
+			case PipeInCommandNode pipeInNode:
+				//normal generators give us inputprovider and branch... 
+				//todo: fix the AST to match, then make PipeIn return an input provider. so > and |> are the same inputBranch node.
+				Debug.Assert(pipeInNode.sigil == "|>");
+				throw new NotImplementedException();
+				break;
 			case PipelineCommandNode pipelineNode:
 				Debug.Assert(pipelineNode.sigil == "|");
 				if (_catalog.TryGetOp(pipelineNode.Name, out var popr))
