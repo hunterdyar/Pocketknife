@@ -109,6 +109,12 @@ public class PipeGeneratorAttribute : OpAttribute
 {
 	public string Name { get; set; }
 
+	public PipeGeneratorAttribute(string name)
+	{
+		Name = name;
+	}
+
+
 	public override void Register(OpCatalog catalog, MethodInfo method)
 	{
 		var paramCount = method.GetParameters().Length;

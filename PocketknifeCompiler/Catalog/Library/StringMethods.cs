@@ -65,13 +65,13 @@ public class StringMethods
 		return str.Contains(substring);
 	}
 	
-	[PipeGenerator(Name = "split")]
+	[PipeGenerator("split")]
 	public static List<string> Split(string str, string separator)
 	{
 		return str.Split(separator).ToList();
 	}
 	
-	[PipeGenerator(Name = "chars")]
+	[PipeGenerator("chars")]
 	public static List<string> Chars(string str)
 	{
 		return str.ToCharArray().Select(c => c.ToString()).ToList();
