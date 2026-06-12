@@ -40,9 +40,30 @@ public class PatternMatchTests
 	          + ~~
 	            |to-string
 	            |prepend "out of range: "
-	          <
+	          ^
 	          :print
 	          """, "in range: 50")]
+	[TestCase("""
+	          >range -5 5
+	          ?
+	          + ~positive
+	            ~drop
+	          + ~negative
+	            |neg
+	          ^
+	          :print
+	          """, "4","3","2","1","0")]
+
+	[TestCase("""
+	          >range -5 5
+	          ?
+	          + ~positive
+	            ~drop
+	          + ~~
+	            ~is-even
+	          ^
+	          :print
+	          """, "4", "3", "2", "1", "0")]
 	public void PipelineMatchAnd(string source, params string[] expected)
 	{
 		Helpers.RunAndAssert(source, expected);

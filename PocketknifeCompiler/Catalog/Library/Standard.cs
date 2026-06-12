@@ -18,4 +18,17 @@ public static class Standard
 	{
 		return value.Equals(compare);
 	}
+
+	[Filter(Name = "drop")]
+	public static bool Drop(object _)
+	{
+		return false;	
+	}
+
+	//basically a NOP filter.
+	[Filter(Name = "keep")]
+	public static bool Keep(object _)
+	{
+		return true;
+	}
 }

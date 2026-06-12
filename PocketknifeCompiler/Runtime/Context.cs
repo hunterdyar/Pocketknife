@@ -33,7 +33,7 @@ public class Context
 			foreach (var v in seedValues) layer.Items.Add(new PKItem(v));
 			_scopes.Push(new ScopeInfo
 			{
-				StartLayerIndex = 0,
+				StartLayerIndex = 0,//root
 				IsExpansionScope = true,
 			});
 			_timeline.Add(layer);
@@ -50,24 +50,23 @@ public class Context
 			IsExpansionScope = true,
 			Name = null,
 		};
+		//iterate over the loop, applying to only matching items. If we aren't in a branch (armID == null), then we won't bother doing the check for every item.
+
 		foreach (var p in parent.Items)
-		{
+		{	
 			CurrentItem = p;
 			var children = generator.Invoke(ia, this);
 			int idx = 0;
-			int count = children.Count;
 			foreach (var v in children)
 			{
 				var child = new PKItem(v, p);
 				child.Index = idx;
 				//todo: test if this is more performant or not.
-				//store the evergreen variables as values and check later, so we keep the dictionary lazy.
-				// child.Bind("Index", idx);
-				// child.Bind("Count", count);
 				expanded.Items.Add(child);
 				idx++;
 			}
 		}
+
 		CurrentItem = null;
 		_timeline.Add(expanded);
 		_scopes.Push(scope);
@@ -406,14 +405,25 @@ public class Context
 		}
 	}
 
-	private void BindIfNamed(ScopeInfo scope, PKLayer target, bool collectSelf)
+	public void SplitLayersByMatch(OpInvoker invoker, object[] arguments)
 	{
-		if (scope.Name == null) return;
-		// SideEffect with name: bind start values onto items (rare but supported).
-		foreach (var it in target.Items)
+		//create multiple layers for each branch, and fill these layers with what matched them.
+			//we only iterate the incoming list once.
+		//execute on each now runs on layer 0,1,2
+			//so it has to know it's inside of a branch scope.
+			//if we enter a new layer... that should be fine. the top is not a branch scope, but it just deals with it, remerges back to that layer.... 
+				//this breaks the assumption that the sequence of layers follows historical precedence. the 'previous' might not be the scope's startlayer.
+				//so we need to move the start layer into the layer? so layers can know their own parent... i think?
+				
+		
+		//create a new scope so that when we finish the branch, we're actually done with it.
+		ScopeInfo scope = new()
 		{
-			if (it.Value != null) it.Bind(scope.Name, it.Value);
-		}
+			StartLayerIndex = _timeline.Count - 1,
+			IsExpansionScope = false,
+			Name = null,
+			//is branchScope, so we know how to re-merge the layers?
+		};
 	}
 	
 }

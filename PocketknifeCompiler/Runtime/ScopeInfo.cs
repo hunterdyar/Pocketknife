@@ -14,4 +14,6 @@ public struct ScopeInfo
 	// Affects whether PopFrame collapses parent-by-parent (expansion) or 1-to-1 (cloned branch).
 	// AKA expansion is > or |> operators, 1-1 is . operator.
 	public bool IsExpansionScope;
+	
+	
 }

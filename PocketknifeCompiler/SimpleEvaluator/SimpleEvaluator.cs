@@ -86,20 +86,11 @@ public static class SimpleEvaluator
 				yield return EvalState.Good();
 				break;
 			case PKPatternMatch patternMatch:
+				
+				// ctx.SplitLayersByMatch(;
 				foreach (var branch in patternMatch.Branches)
 				{
-					//todo: ctx doesn't contain branches... but it does need to manage running all the elements?
-					//so it passes back. which is not how the stepping works, since items can hit different bodies.
-					//so, uh.... hmmm. maybe context and evaluator aren't so separated as I would like. gotta think about it... how would it 'compile' for real?
-					if (ctx.Match(branch.Filter))
-					{
-						foreach (var state in Evaluate(branch.Body, ctx))
-						{
-							yield return state;
-						}
-						//todo: frame popping.
-						yield break;
-					}
+					
 				}
 				yield return EvalState.Good();
 				break;

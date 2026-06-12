@@ -9,7 +9,8 @@ public sealed class PKItem
 	//named branches, @Index/@Count, etc. 
 	public Dictionary<string, object>? Bindings;
 	public int Index;
-
+	public int? ArmID = null;
+	
 	public PKItem(object? value, PKItem? progenitor = null)
 	{
 		Value = value;
