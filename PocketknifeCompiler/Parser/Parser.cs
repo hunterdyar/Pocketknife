@@ -185,8 +185,8 @@ public class Parser
         {
             branchType = BranchType.SideEffect;
         }
-        
-        return new PatternBranchArm(filter, commands, branchType);
+        var body = new CommandSetNode(commands);
+        return new PatternBranchArm(filter, body, branchType);
     }
 
     private PackListNode ParsePackList()

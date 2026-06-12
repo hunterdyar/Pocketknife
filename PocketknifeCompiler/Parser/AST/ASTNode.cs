@@ -47,7 +47,6 @@ public class RootNode : ASTNode
 public class CommandSetNode : ASTNode
 {
     public List<RootNode> Commands;
-    public List<string> BranchNames = new List<string>();
 
     public CommandSetNode(List<RootNode> commands)
     {
@@ -185,23 +184,23 @@ public class NakedPatternMatch : PatternMatch
     }
 }
 
-public class PatternExpressionMatch : PatternMatch
-{
-    public ExpressionNode Expression;
-
-    public PatternExpressionMatch(ExpressionNode expr, List<PatternBranchArm> arms, BranchType closeType) : base(arms, closeType)
-    {
-        Expression = expr;
-    }
-}
+// public class PatternExpressionMatch : PatternMatch
+// {
+//     public ExpressionNode Expression;
+//
+//     public PatternExpressionMatch(ExpressionNode expr, List<PatternBranchArm> arms, BranchType closeType) : base(arms, closeType)
+//     {
+//         Expression = expr;
+//     }
+// }
 
 public class PatternBranchArm : RootNode
 {
-    public List<RootNode> Commands;
+    public CommandSetNode Commands;
     public BranchType CloseType;
     public bool IsDefault = false;
     public FilterCommandNode? FilterToMatch;
-    public PatternBranchArm(FilterCommandNode? filterCommandNode, List<RootNode>? commands, BranchType closeType)
+    public PatternBranchArm(FilterCommandNode? filterCommandNode, CommandSetNode commands, BranchType closeType)
     {
         Commands = commands;
         CloseType = closeType;
@@ -214,7 +213,7 @@ public class PatternBranchArm : RootNode
         StringBuilder sb = new StringBuilder();
         sb.Append("+ ");
         sb.AppendLine(FilterToMatch?.ToString() ?? "~~");
-        foreach (var command in Commands)
+        foreach (var command in Commands.Commands)
         {
             sb.AppendLine(command.ToString());
         }

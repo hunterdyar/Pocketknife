@@ -60,7 +60,18 @@ public static class IntMethods
 	public static bool IsNegative(int i)
 	{
 		return i < 0;
-	} 
+	}
+
+	[Filter(Name = "lt")]
+	public static bool LessThan(int i, int b)
+	{
+		return i < b;
+	}
+	[Filter(Name = "gt")]
+	public static bool GreaterThan(int i, int b)
+	{
+		return i > b;
+	}
 	
 	[Filter(Name="is-even")]
 	public static bool IsEven(int i)

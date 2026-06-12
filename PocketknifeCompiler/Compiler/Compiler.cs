@@ -252,6 +252,10 @@ public class Compiler
 					}
 				}
 				throw new Exception($"unknown : operator {pipelineNode.Name}");
+			case DefaultFilterCommandNode defaultFilterNode:
+				Debug.Assert(defaultFilterNode.sigil == "~~");
+				return new PKFilterOperatorNode("~~", ((input, args, context) => true), Arguments.Empty);
+				break;
 			case FilterCommandNode filterNode:
 				Debug.Assert(filterNode.sigil == "~");
 				if(_catalog.TryGetOp(filterNode.Name, out var fopr))
@@ -292,14 +296,47 @@ public class Compiler
 				ctx.Unpack();
 				return new PKUnpack();
 			case NakedPatternMatch nakedPatternMatch:
-				throw new NotImplementedException();
-			case PatternExpressionMatch patternExpressionMatchNode:
-				throw new NotImplementedException();
-			case PatternMatch patternMatchNode:
-				throw new NotImplementedException();
-			case PatternBranchArm patternNode:
-				throw new NotImplementedException();
-			
+				var arms = new List<PKPatternFilterMatchBranch>(nakedPatternMatch.Arms.Count);
+				PKPatternBranch? defaultArm = null;
+				foreach (var patternBranchArm in nakedPatternMatch.Arms)
+				{
+					if (patternBranchArm.IsDefault)
+					{
+						defaultArm = (PKPatternBranch)Compile(patternBranchArm, ctx);
+					}
+					else
+					{
+						//naked ? means ~ arms. (unless syntactic sugar stuff.)
+						arms.Add((PKPatternFilterMatchBranch)Compile(patternBranchArm, ctx));
+					}
+				}
+
+				if (nakedPatternMatch.CloseType != BranchType.SideEffect)
+				{
+					throw new Exception("pattern match (?+) must have ^ closer. (it's not a real branch, it can't &append or <replace because it doesn't branch away to begin with).");
+				}
+				return new PKPatternMatch(arms, defaultArm, nakedPatternMatch.CloseType);
+			// case PatternExpressionMatch patternExpressionMatchNode:
+			// 	//compile the branches but we expect expressions, not filters.
+			// 	throw new NotImplementedException();
+			case PatternBranchArm branchArm:
+				PKFilterOperatorNode? filter = null;
+				if (branchArm.FilterToMatch != null)
+				{
+					filter = (PKFilterOperatorNode)Compile(branchArm.FilterToMatch,ctx);
+				}
+				var armBody = (PKNodeGroup)Compile(branchArm.Commands,ctx);
+
+				if (filter == null)
+				{
+					return new PKPatternBranch(armBody, branchArm.CloseType);
+				}
+				else
+				{
+					return new PKPatternFilterMatchBranch(filter.Invoker, armBody, branchArm.CloseType);
+				}
+				
+				break;
 			default:
 				throw new NotImplementedException($"{node.GetType()} not yet compilable");
 		}

@@ -1,9 +1,22 @@
-﻿using PocketknifeCore.Attributes;
+﻿using System.Globalization;
+using PocketknifeCore.Attributes;
 
 namespace PocketknifeCore;
 
 public class StringMethods
 {
+	[Pipeline(Name = "to-string")]
+	public static string ToString(object o)
+	{
+		return o.ToString() ?? throw new InvalidOperationException();
+	}
+	
+	[Casting(true)]
+	public static string Cast(int i)
+	{
+		return i.ToString(CultureInfo.InvariantCulture);
+	}
+	
 	[Pipeline(Name = "append")]
 	public static string Append(string first, string second)
 	{

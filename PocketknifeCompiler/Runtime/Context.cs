@@ -415,7 +415,5 @@ public class Context
 			if (it.Value != null) it.Bind(scope.Name, it.Value);
 		}
 	}
-
-
-
+	
 }
