@@ -298,8 +298,22 @@ public class Compiler
 			case NakedPatternMatch nakedPatternMatch:
 				var arms = new List<PKPatternFilterMatchBranch>(nakedPatternMatch.Arms.Count);
 				PKPatternBranch? defaultArm = null;
+				// All arms see the same input type (the ?-input) and may produce different
+				// output types. Save the input type so we can restore it before compiling
+				// each subsequent arm, and collect arm output types to widen the post-?
+				// top type when arms disagree.
+				var inputType = ctx.StackTop;
+				Type? unifiedOut = null;
+				bool first = true;
 				foreach (var patternBranchArm in nakedPatternMatch.Arms)
 				{
+					if (!first)
+					{
+						// Reset stack top to the ? input before compiling this arm.
+						ctx.PopType();
+						ctx.PushType(inputType);
+					}
+					first = false;
 					if (patternBranchArm.IsDefault)
 					{
 						defaultArm = (PKPatternBranch)Compile(patternBranchArm, ctx);
@@ -309,7 +323,22 @@ public class Compiler
 						//naked ? means ~ arms. (unless syntactic sugar stuff.)
 						arms.Add((PKPatternFilterMatchBranch)Compile(patternBranchArm, ctx));
 					}
+					var armOut = ctx.StackTop;
+					if (unifiedOut == null)
+					{
+						unifiedOut = armOut;
+					}
+					else if (unifiedOut != armOut)
+					{
+						unifiedOut = PKType.Any;
+						//consider throwing an exception, but this would break ~~ and ~drop, which the compiler should not worry about.
+						//not sure the best way to deal with it, but any is a good enough solution for now; I don't have (a|b) types.
+					}
 				}
+
+				// Final stack top is the unified arm output (or the input type if there were no arms).
+				ctx.PopType();
+				ctx.PushType(unifiedOut ?? inputType);
 
 				if (nakedPatternMatch.CloseType != BranchType.SideEffect)
 				{
@@ -320,20 +349,26 @@ public class Compiler
 			// 	//compile the branches but we expect expressions, not filters.
 			// 	throw new NotImplementedException();
 			case PatternBranchArm branchArm:
+				// Arms run on parallel copies of the ? input — their type changes must
+				// not leak across sibling arms or out of the pattern match.
+				var armCloseType = branchArm.CloseType == BranchType.Unknown ? BranchType.Replace : branchArm.CloseType;
+				ctx.PushFrame();
 				PKFilterOperatorNode? filter = null;
-				if (branchArm.FilterToMatch != null)
+				if (branchArm.FilterToMatch != null && !branchArm.IsDefault)
 				{
 					filter = (PKFilterOperatorNode)Compile(branchArm.FilterToMatch,ctx);
 				}
 				var armBody = (PKNodeGroup)Compile(branchArm.Commands,ctx);
-
+				// Bubble the arm's output type up so NakedPatternMatch can collect it.
+				ctx.PopFrame(BranchType.Replace);
+				
 				if (filter == null)
 				{
-					return new PKPatternBranch(armBody, branchArm.CloseType);
+					return new PKPatternBranch(armBody, armCloseType);
 				}
 				else
 				{
-					return new PKPatternFilterMatchBranch(filter.Invoker, armBody, branchArm.CloseType);
+					return new PKPatternFilterMatchBranch(filter.Invoker, filter.Arguments, armBody, armCloseType);
 				}
 				
 				break;

@@ -86,12 +86,25 @@ public static class SimpleEvaluator
 				yield return EvalState.Good();
 				break;
 			case PKPatternMatch patternMatch:
-				
-				// ctx.SplitLayersByMatch(;
-				foreach (var branch in patternMatch.Branches)
+				//todo: optimize for allocations
+				var filters = patternMatch.Branches.Select(x => x.Filter);
+				var args = patternMatch.Branches.Select(x => x.Arguments);
+				//todo: alternate needs to be in the list of iterators, not separate.
+				ctx.BeginPatternMatch(filters.ToArray(), args.Select(x=>x.EvaluatedArgs).ToArray(), patternMatch.Alternate != null);
+				for (var i = 0; i < patternMatch.Branches.Count; i++)
 				{
-					
+					var branch = patternMatch.Branches[i];
+					ctx.EnterArm(i);
+					foreach (var state in Evaluate(branch.Body, ctx)) yield return state;
+					ctx.ExitArm(branch.CloseType);
 				}
+				if (patternMatch.Alternate != null)
+				{
+					ctx.EnterArm(patternMatch.Branches.Count);
+					foreach (var state in Evaluate(patternMatch.Alternate.Body, ctx)) yield return state;
+					ctx.ExitArm(patternMatch.Alternate.CloseType);
+				}
+				ctx.EndPatternMatch();
 				yield return EvalState.Good();
 				break;
 			// default:

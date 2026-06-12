@@ -13,6 +13,7 @@ public class PKPatternMatch : PKNode
 	public PKPatternMatch(List<PKPatternFilterMatchBranch> branches, PKPatternBranch? alternate, BranchType branchType)
 	{
 		Branches = branches;
+		Alternate = alternate;
 		BranchType = branchType;
 	}
 }
@@ -31,10 +32,11 @@ public class PKPatternBranch : PKNode
 public class PKPatternFilterMatchBranch : PKPatternBranch
 {
 	public OpInvoker Filter;
-
-	public PKPatternFilterMatchBranch(OpInvoker filter, PKNodeGroup body, BranchType closeType) : base(body, closeType)
+	public Arguments Arguments;
+	public PKPatternFilterMatchBranch(OpInvoker filter, Arguments arguments, PKNodeGroup body, BranchType closeType) : base(body, closeType)
 	{
 		Filter = filter;
+		Arguments = arguments;
 	}
 }
 

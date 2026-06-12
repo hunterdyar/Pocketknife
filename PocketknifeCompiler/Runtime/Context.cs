@@ -51,9 +51,19 @@ public class Context
 			Name = null,
 		};
 		//iterate over the loop, applying to only matching items. If we aren't in a branch (armID == null), then we won't bother doing the check for every item.
-
+		
 		foreach (var p in parent.Items)
-		{	
+		{
+			//inactive parents. don't invoke...
+			//but we still need to add them to the timeline so that the progenitor chain is correct.
+			//...IsActive continues to recognize it as belonging to the inactive arm on subsequent layers.
+			if (!IsActive(p))
+			{
+				var leaf = new PKItem(p.Value, p);
+				leaf.Index = 0;
+				expanded.Items.Add(leaf);
+				continue;
+			}
 			CurrentItem = p;
 			var children = generator.Invoke(ia, this);
 			int idx = 0;
@@ -94,6 +104,15 @@ public class Context
 		};
 		foreach (var p in parent.Items)
 		{
+			//see note in PushStreamWithGenerator.
+			if (!IsActive(p))
+			{
+				var leaf = new PKItem(p.Value, p);
+				leaf.Index = 0;
+				expanded.Items.Add(leaf);
+				continue;
+			}
+			
 			CurrentItem = p;
 			var args = hasVars ? ResolveArgs(arguments, resolved, p) : arguments;
 			var children = generator.Invoke(p.Value!, args, this);
@@ -123,10 +142,18 @@ public class Context
 		object[] resolved = hasVars ? new object[arguments.Length] : arguments;
 		foreach (var p in prev.Items)
 		{
-			CurrentItem = p;
-			var args = hasVars ? ResolveArgs(arguments, resolved, p) : arguments;
-			var result = invoker(p.Value!, args, this);
-			next.Items.Add(new PKItem(result, p));
+			if (IsActive(p))
+			{
+				CurrentItem = p;
+				var args = hasVars ? ResolveArgs(arguments, resolved, p) : arguments;
+				var result = invoker(p.Value!, args, this);
+				next.Items.Add(new PKItem(result, p));
+			}
+			else
+			{
+				//not my branch, but keep in timeline.
+				next.Items.Add(new PKItem(p.Value, p));
+			}
 		}
 		CurrentItem = null;
 		_timeline.Add(next);
@@ -140,9 +167,12 @@ public class Context
 		// Signals do not advance a layer; they are pure side-effects.
 		foreach (var p in prev.Items)
 		{
-			CurrentItem = p;
-			var args = hasVars ? ResolveArgs(arguments, resolved, p) : arguments;
-			sInvoker(p.Value!, args, this);
+			if (IsActive(p))
+			{
+				CurrentItem = p;
+				var args = hasVars ? ResolveArgs(arguments, resolved, p) : arguments;
+				sInvoker(p.Value!, args, this);
+			}
 		}
 		CurrentItem = null;
 	}
@@ -155,12 +185,19 @@ public class Context
 		object[] resolved = hasVars ? new object[arguments.Length] : arguments;
 		foreach (var p in prev.Items)
 		{
+			if (!IsActive(p))
+			{
+				next.Items.Add(new PKItem(p.Value, p));
+				continue;
+			}
+
 			CurrentItem = p;
 			var args = hasVars ? ResolveArgs(arguments, resolved, p) : arguments;
 			if ((bool)foprInvoker(p.Value!, args, this))
 			{
 				next.Items.Add(new PKItem(p.Value, p));
 			}
+			
 		}
 		CurrentItem = null;
 		_timeline.Add(next);
@@ -282,7 +319,7 @@ public class Context
 		NewClonedLayer();
 	}
 
-	public void PopFrame(BranchType frameType)
+	public void PopFrame(BranchType frameType, bool keepHistory = false)
 	{
 		// scope was opened. Merge accordingly.
 		if (_scopes.Count > 0)
@@ -326,9 +363,10 @@ public class Context
 					var merged = new PKLayer(currentLayer.Type);
 					if (currentLayer.Items.Count > 0 && startLayer.Items.Count == currentLayer.Items.Count && !scope.IsExpansionScope)
 					{
-						// keep the start-layer item itself in the progenitor chain so any outer binding sitting on it (potentially shadowed by this scope's own binding) is reachable as a true ancestor via `@^name`.
+						// keep the start-layer item in the progenitor chain so any outer binding sitting on it (potentially shadowed by this scope's own binding) is reachable as an ancestor via @^name.
 						// For unnamed scopes there's nothing to shadow, so we preserve the historical behavior of rebasing to `p.Progenitor` to keep the chain flat.
-						bool keepStartItemAsProgenitor = scope.Name != null;
+						// keepHistory=true (pattern-match arm exit) must also preserve the start-layer item in the progenitor chain so IsActive() can walk back to the [umbrella partition] layer where ArmID stamps live.
+						bool keepStartItemAsProgenitor = scope.Name != null || keepHistory;
 						for (int i = 0; i < startLayer.Items.Count; i++)
 						{
 							var p = startLayer.Items[i];
@@ -347,8 +385,17 @@ public class Context
 							merged.Items.Add(item);
 						}
 					}
-					_timeline.RemoveRange(startIdx + 1, _timeline.Count - startIdx - 1);
-					_timeline[startIdx] = merged;
+
+					if (keepHistory)
+					{
+						_timeline.Add(merged);	
+					}
+					else
+					{
+						_timeline.RemoveRange(startIdx + 1, _timeline.Count - startIdx - 1);
+						_timeline[startIdx] = merged;
+					}
+
 					break;
 				}
 				case BranchType.ListAppend:
@@ -405,25 +452,129 @@ public class Context
 		}
 	}
 
-	public void SplitLayersByMatch(OpInvoker invoker, object[] arguments)
+	public void BeginPatternMatch(OpInvoker[] filters, object[][] filterArgs, bool hasAlternate)
 	{
-		//create multiple layers for each branch, and fill these layers with what matched them.
-			//we only iterate the incoming list once.
-		//execute on each now runs on layer 0,1,2
-			//so it has to know it's inside of a branch scope.
-			//if we enter a new layer... that should be fine. the top is not a branch scope, but it just deals with it, remerges back to that layer.... 
-				//this breaks the assumption that the sequence of layers follows historical precedence. the 'previous' might not be the scope's startlayer.
-				//so we need to move the start layer into the layer? so layers can know their own parent... i think?
-				
-		
-		//create a new scope so that when we finish the branch, we're actually done with it.
-		ScopeInfo scope = new()
+		var startIdx = _timeline.Count - 1;
+		//NewClonedLayer()-style clone where the cloning helper stamps ArmID on each new PKItem according to the first matching filter (with CurrentItem set during evaluation so bindings resolve).
+		var top = _timeline[^1];
+		var cloned = new PKLayer(top.Type)
 		{
-			StartLayerIndex = _timeline.Count - 1,
+			Items = new List<PKItem>(top.Items)
+		};
+		int alternate = filters.Length;
+		foreach (var item in cloned.Items)
+		{
+			for (int i = 0; i < filters.Length; i++)
+			{
+				var f = (bool)filters[i](item.Value, filterArgs[i], this);
+				if (f)
+				{
+					item.ArmID = i;
+					break;
+				}
+			}
+
+			if (hasAlternate && item.ArmID == null)
+			{
+				item.ArmID = alternate;
+			}
+			
+		}
+		//
+		_timeline.Add(cloned);
+		
+		var s = new ScopeInfo()
+		{
+			StartLayerIndex = startIdx,
+			ArmID = null,
+			IsArmUmbrella = true,
+		};
+		_scopes.Push(s);
+
+		// _scopes.Push(...);
+	}
+
+	public void EnterArm(int i)
+	{
+		// Find the umbrella's partition layer — that is the layer where ArmID stamps live, and must be used as this arm's StartLayerIndex so IsActive() can walk back to it via Progenitor to determine arm membership.
+		int partitionIdx = -1;
+		foreach (var s in _scopes)
+		{
+			if (s.IsArmUmbrella)
+			{
+				partitionIdx = s.StartLayerIndex + 1;
+				break;
+			}
+		}
+		if (partitionIdx < 0)
+		{
+			throw new Exception("EnterArm called outside an active pattern match umbrella scope");
+		}
+
+		_scopes.Push(new ScopeInfo
+		{
+			StartLayerIndex = partitionIdx,
+			ArmID = i,
 			IsExpansionScope = false,
 			Name = null,
-			//is branchScope, so we know how to re-merge the layers?
-		};
+		});
+		// Clone the current top: this preserves accumulated transformations from prior arms (inactive items pass through unchanged), so each arm layers its changes on top of the previous arm's merged result.
+		NewClonedLayer();
 	}
-	
+
+	public void ExitArm(BranchType closeType)
+	{
+		PopFrame(closeType, true);
+	}
+
+	public void EndPatternMatch()
+	{
+		if (_scopes.TryPeek(out var scope))
+		{
+			if (scope.IsArmUmbrella)
+			{
+				_scopes.Pop();
+			}
+			else
+			{
+				throw new Exception("no active pattern match");
+			}
+		}
+		else
+		{
+			throw new Exception("no active pattern scope");
+		}
+	}
+
+	private bool IsActive(PKItem item)
+	{
+		foreach (var scope in _scopes)
+		{
+			if (scope.IsArmUmbrella)
+			{
+				//inside ? but not inside specific arm body.
+				return true;
+			}
+
+			if (scope.ArmID != null)
+			{
+				//walk it back to a progenitor that lives in this arm scopes start layer.
+				var startLayer = _timeline[scope.StartLayerIndex];
+				var cur = item;
+				while (cur != null)
+				{
+					//
+					if (startLayer.Items.Contains(cur)) //todo: optimize with HashSet<PKItem> per arm scope (cached on ScopeInfo or computed lazily?) for the start-layer membership check.
+					{
+						return cur.ArmID == scope.ArmID;
+					}
+					cur = cur.Progenitor;
+				}
+
+				return false;
+			}
+		}
+
+		return true;//no arm context, all active.
+	}
 }

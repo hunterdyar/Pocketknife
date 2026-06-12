@@ -8,6 +8,21 @@ namespace PocketknifeCompiler.Tests;
 public class PatternMatchTests
 {
 	[TestCase("""
+	          >1 2 3 4
+	          ?
+	          + ~is-even
+	            |prepend "e"
+	          + ~is-odd
+	            |prepend "o"
+	          ^
+	          :print
+	          """, "o1","e2", "o3", "e4")]
+	public void BasicPipelineMatch(string source, params string[] expectedOutput)
+	{
+		Helpers.RunAndAssert(source, expectedOutput);
+	}
+	
+	[TestCase("""
 	          >range 1 5
 	          <>
 	          |count
@@ -20,16 +35,16 @@ public class PatternMatchTests
 	            |to-string
 	            |prepend "count = "
 	            |append " (zero-or-negative)"
-	          <
+	          ^
 	          :print
-	          """, "5 (positive)")]
+	          """, "count = 4 (positive)")]
 	public void PipelineMatch(string source, params string[] expectedOutput)
 	{
 		Helpers.RunAndAssert(source, expectedOutput);
 	}
 
 	[TestCase("""
-	          >range 1 50
+	          >range 0 50
 	          <>
 	          |count
 	          ?
@@ -52,7 +67,7 @@ public class PatternMatchTests
 	            |neg
 	          ^
 	          :print
-	          """, "4","3","2","1","0")]
+	          """, "5", "4", "3", "2", "1", "0")]
 
 	[TestCase("""
 	          >range -5 5
@@ -63,7 +78,7 @@ public class PatternMatchTests
 	            ~is-even
 	          ^
 	          :print
-	          """, "4", "3", "2", "1", "0")]
+	          """, "-4", "-2", "0")]
 	public void PipelineMatchAnd(string source, params string[] expected)
 	{
 		Helpers.RunAndAssert(source, expected);
