@@ -1,9 +1,9 @@
 ﻿namespace PocketKnife.Compiler;
 
 //just a baseclass so we can catch 'handled vs. unhandled in try/catch.
-public class PocketKnifeException : Exception
+public class PocketknifeException : Exception
 {
-	public PocketKnifeException(string message) : base(message)
+	public PocketknifeException(string message) : base(message)
 	{
 		
 	}

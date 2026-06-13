@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using PocketKnife.Compiler;
+using PocketknifeCore.Errors;
 
 namespace PocketknifeCore.Compiler;
 
@@ -84,7 +85,7 @@ public class Compiler
 				//
 				if (inputLiteralProviderNode.Arguments.Length == 0)
 				{
-					throw new Exception("no arguments to literal provider");
+					throw new CompilerException(inputLiteralProviderNode.Start, "no arguments to literal provider");
 				}
 				else
 				{
@@ -107,7 +108,7 @@ public class Compiler
 							}
 							else
 							{
-								throw new Exception($"all arguments must be of the same type. {argKind} != {resArg.GetPKType()}");
+								throw new CompilerException(inputLiteralProviderNode.Arguments[i].Start, $"all arguments must be of the same type. {argKind} != {resArg.GetPKType()}");
 							}
 						}
 					}
@@ -130,7 +131,7 @@ public class Compiler
 				}
 				else
 				{
-					throw new Exception($"unknown operator {pipeInInputProviderNode.Name}");
+					throw new CompilerException(pipeInInputProviderNode.Start, $"unknown operator {pipeInInputProviderNode.Name}");
 				}
 				break;
 			case InputProviderNode inputProviderNode:
@@ -147,7 +148,7 @@ public class Compiler
 				}
 				else
 				{
-					throw new Exception($"unknown operator {inputProviderNode.Name}");
+					throw new CompilerException(inputProviderNode.Start, $"unknown operator {inputProviderNode.Name}");
 				}
 			case BranchNode branchNode:
 				if (branchNode.Type == BranchType.Unknown)
@@ -204,12 +205,12 @@ public class Compiler
 						return new PKInlineOperatorNode(popr.Name, invoker, args);
 					}
 					
-					throw new Exception($"operator {popr.Name} does not have an overload for incoming type {ctx.StackTop}");
+					throw new CompilerException(pipelineNode.Start, $"operator {popr.Name} does not have an overload for incoming type {ctx.StackTop}");
 					
 				}
 				else
 				{
-					throw new Exception($"unknown | operator {pipelineNode.Name}");
+					throw new CompilerException(pipelineNode.Start, $"unknown | operator {pipelineNode.Name}");
 				}
 			case SignalCommandNode pipelineNode:
 				Debug.Assert(pipelineNode.sigil == ":");
@@ -248,10 +249,10 @@ public class Compiler
 					}
 					else
 					{
-						throw new Exception($"operator {sopr.Name} does not have an overload for incoming type {ctx.StackTop}");
+						throw new CompilerException(pipelineNode.Start, $"operator {sopr.Name} does not have an overload for incoming type {ctx.StackTop}");
 					}
 				}
-				throw new Exception($"unknown : operator {pipelineNode.Name}");
+				throw new CompilerException(pipelineNode.Start, $"unknown : operator {pipelineNode.Name}");
 			case DefaultFilterCommandNode defaultFilterNode:
 				Debug.Assert(defaultFilterNode.sigil == "~~");
 				return new PKFilterOperatorNode("~~", ((input, args, context) => true), Arguments.Empty);
@@ -282,12 +283,12 @@ public class Compiler
 					}
 					else
 					{
-						throw new Exception($"operator {fopr.Name} does not have an overload for incoming type {ctx.StackTop}");
+						throw new CompilerException(filterNode.Start, $"operator {fopr.Name} does not have an overload for incoming type {ctx.StackTop}");
 					}
 					
 				}
 
-				throw new Exception($"unknown ~ operator {filterNode.Name}");
+				throw new CompilerException(filterNode.Start, $"unknown ~ operator {filterNode.Name}");
 
 			case PackListNode:
 				ctx.Pack();
@@ -342,7 +343,7 @@ public class Compiler
 
 				if (nakedPatternMatch.CloseType != BranchType.SideEffect)
 				{
-					throw new Exception("pattern match (?+) must have ^ closer. (it's not a real branch, it can't &append or <replace because it doesn't branch away to begin with).");
+					throw new CompilerException(nakedPatternMatch.Start, "pattern match (?+) must have ^ closer. (it's not a real branch, it can't &append or <replace because it doesn't branch away to begin with).");
 				}
 				return new PKPatternMatch(arms, defaultArm, nakedPatternMatch.CloseType);
 			// case PatternExpressionMatch patternExpressionMatchNode:
@@ -412,7 +413,7 @@ public class Compiler
 					}
 				}
 				
-				throw new Exception($"Invalid Type for {etype} when expected {PKParamType} for parameter {i} of {overload.Method.Name}");
+				throw new CompilerException(arguments[i].Start, $"Invalid Type for {etype} when expected {PKParamType} for parameter {i} of {overload.Method.Name}");
 				
 			}
 			WithCorrectType:

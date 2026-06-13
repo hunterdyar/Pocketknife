@@ -2,7 +2,7 @@
 
 namespace PocketKnife;
 
-public class LexerException : PocketKnifeException
+public class LexerException : PocketknifeException
 {
 	private Lexer _lexer;
 	private int _position;

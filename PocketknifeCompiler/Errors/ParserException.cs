@@ -1,7 +1,7 @@
 ﻿using System.Text;
 
 namespace PocketKnife.Compiler;
-public class ParserException : PocketKnifeException
+public class ParserException : PocketknifeException
 {
 	private readonly Token? _errToken;
 	private readonly Parser _parser;
