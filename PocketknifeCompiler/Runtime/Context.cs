@@ -246,25 +246,37 @@ public class Context
 	{
 		PKItem? cur = item;
 		//first, skip the number of @^^^^name reach outs.
-		for (int i = 0; i < reachOut && cur != null; i++)
-		{
-			cur = cur.Progenitor;
-		}
-		//then, walk up the bindings to get the value.
+		int reachedPast = reachOut;
+
+		//walk up the bindings to get the value.
+		object value = null;
 		while (cur != null)
 		{
-			if (cur.TryGetValue(name, out var v))
+			if (cur.TryGetValue(name, out value))
 			{
+				//valid binding found, we return or skip it.
+				if(reachedPast > 0)
+				{
+					reachedPast--;
+					cur = cur.Progenitor;
+					continue;
+				}
 				if (cast != null)
 				{
 					//todo: replace with compiled invoker.
-					v = cast.ApplyNow(v);
+					value = cast.ApplyNow(value);
 				}
-				return v;
+				return value;
 			}
 			cur = cur.Progenitor;
 		}
+
+		if (value != null && reachOut > 0)
+		{
+			throw new Exception($"variable {name} exists, but it was skipped by ^ reach-outs. Value not found.");
+		}
 		throw new Exception($"variable {name} not found");
+		
 	}
 
 	
