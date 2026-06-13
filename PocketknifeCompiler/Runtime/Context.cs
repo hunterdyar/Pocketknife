@@ -158,12 +158,12 @@ public class Context
 				CurrentItem = p;
 				var args = hasVars ? ResolveArgs(arguments, resolved, p) : arguments;
 				var result = invoker(p.Value!, args, this);
-				next.Items.Add(new PKItem(result, p));
+				next.Items.Add(new PKItem(result, p, p.Index));
 			}
 			else
 			{
 				//not my branch, but keep in timeline.
-				next.Items.Add(new PKItem(p.Value, p));
+				next.Items.Add(new PKItem(p.Value, p, p.Index));
 			}
 		}
 		CurrentItem = null;
@@ -195,11 +195,14 @@ public class Context
 		var next = new PKLayer(prev.Type);
 		bool hasVars = ArgsNeedRuntimeEval(arguments);
 		object[] resolved = hasVars ? new object[arguments.Length] : arguments;
+		int idx = 0;
 		foreach (var p in prev.Items)
 		{
 			if (!IsActive(p))
 			{
-				next.Items.Add(new PKItem(p.Value, p));
+				//todo: add test for new index after filtering
+				next.Items.Add(new PKItem(p.Value, p, idx));
+				idx++; 
 				continue;
 			}
 
@@ -207,7 +210,8 @@ public class Context
 			var args = hasVars ? ResolveArgs(arguments, resolved, p) : arguments;
 			if ((bool)foprInvoker(p.Value!, args, this))
 			{
-				next.Items.Add(new PKItem(p.Value, p));
+				next.Items.Add(new PKItem(p.Value, p, idx));
+				idx++;
 			}
 			
 		}

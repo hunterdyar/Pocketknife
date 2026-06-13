@@ -162,6 +162,24 @@ public class PatternMatchTests
 	          ^
 	          :print
 	          """, "10-even-0", "11-odd-1", "12-even-2", "13-odd-3")]
+	[TestCase("""
+	          >range 10 14
+	          ?
+	          .@i
+	          |@Index
+	          ^
+	          
+	          + ~is-even
+	            |to-string
+	            |append "-even-"
+	            |append @i
+	          + ~~
+	            |to-string
+	            |append "-odd-"
+	            |append @i
+	          ^
+	          :print
+	          """, "10-even-0", "11-odd-1", "12-even-2", "13-odd-3")]
 	public void PipelineMatchIndexInsideArms(string source, params string[] expectedOutput)
 	{
 		Helpers.RunAndAssert(source, expectedOutput);
