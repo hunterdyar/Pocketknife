@@ -7,6 +7,10 @@ namespace PocketknifeCore;
 // _scopes records open scopes ('.', '.@x', '|>' or '>'-expansion at index >= 1).
 public class Context
 {
+	public int TimelineLength => _timeline.Count;
+	public int MaxTimelineLength;
+	public int MaxScopeDepth;
+	
 	private readonly List<PKLayer> _timeline = new();
 	private readonly Stack<ScopeInfo> _scopes = new();
 
@@ -37,6 +41,8 @@ public class Context
 				IsExpansionScope = true,
 			});
 			_timeline.Add(layer);
+			MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
+			MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
 			return;
 		}
 
@@ -80,6 +86,8 @@ public class Context
 		CurrentItem = null;
 		_timeline.Add(expanded);
 		_scopes.Push(scope);
+		MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
+		MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
 	}
 
 	public void PushStreamWithPipeGenerator(Type inputType, object[] arguments, PipeGenInvoker generator)
@@ -131,6 +139,8 @@ public class Context
 		CurrentItem = null;
 		_timeline.Add(expanded);
 		_scopes.Push(scope);
+		MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
+		MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
 	}
 	
 	//per-item transitions
@@ -157,6 +167,7 @@ public class Context
 		}
 		CurrentItem = null;
 		_timeline.Add(next);
+		MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
 	}
 
 	public void SignalOnEach(object[] arguments, OpInvoker sInvoker)
@@ -201,6 +212,7 @@ public class Context
 		}
 		CurrentItem = null;
 		_timeline.Add(next);
+		MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
 	}
 
 	//the only current "runtime eval" is a VarRef.
@@ -260,6 +272,7 @@ public class Context
 		var progen = top.Items.Count > 0 ? top.Items[0] : null;
 		packed.Items.Add(new PKItem(packedList, progen));
 		_timeline.Add(packed);
+		MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
 	}
 
 	public void Unpack()
@@ -284,6 +297,7 @@ public class Context
 			}
 		}
 		_timeline.Add(unpacked);
+		MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
 	}
 	
 	private void NewClonedLayer()
@@ -295,6 +309,7 @@ public class Context
 			Items = new List<PKItem>(top.Items)
 		};
 		_timeline.Add(cloned);
+		MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
 	}
 	
 	public void NewFrame()
@@ -305,6 +320,7 @@ public class Context
 			IsExpansionScope = false,
 			Name = null,
 		});
+		MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
 		NewClonedLayer();
 	}
 
@@ -316,6 +332,7 @@ public class Context
 			IsExpansionScope = false,
 			Name = name,
 		});
+		MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
 		NewClonedLayer();
 	}
 
@@ -395,7 +412,8 @@ public class Context
 						_timeline.RemoveRange(startIdx + 1, _timeline.Count - startIdx - 1);
 						_timeline[startIdx] = merged;
 					}
-
+					
+					MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
 					break;
 				}
 				case BranchType.ListAppend:
@@ -491,7 +509,10 @@ public class Context
 		};
 		_scopes.Push(s);
 
-		// _scopes.Push(...);
+		MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
+		MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
+		
+		
 	}
 
 	public void EnterArm(int i)
@@ -518,6 +539,7 @@ public class Context
 			IsExpansionScope = false,
 			Name = null,
 		});
+		MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
 		// Clone the current top: this preserves accumulated transformations from prior arms (inactive items pass through unchanged), so each arm layers its changes on top of the previous arm's merged result.
 		NewClonedLayer();
 	}

@@ -40,5 +40,8 @@ public static class Helpers
 
 		var expectedOutputString = string.Join(Environment.NewLine, expectedOutput);
 		Helpers.EachLineEqualIgnoringIndents(sw.ToString(), expectedOutputString);
+		TestContext.Out.WriteLine($"Final Timeline Length: {context.TimelineLength}");
+		TestContext.Out.WriteLine("Max Timeline Length: " + context.MaxTimelineLength);
+		TestContext.Out.WriteLine("Max Scope Depth: " + context.MaxScopeDepth);
 	}
 }
