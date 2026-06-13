@@ -165,18 +165,16 @@ public class PatternMatchTests
 	[TestCase("""
 	          >range 10 14
 	          ?
-	          .@i
-	          |@Index
-	          ^
-	          
 	          + ~is-even
 	            |to-string
 	            |append "-even-"
-	            |append @i
+	            |append @Index
+	            
 	          + ~~
 	            |to-string
 	            |append "-odd-"
-	            |append @i
+	            |append @Index
+	            
 	          ^
 	          :print
 	          """, "10-even-0", "11-odd-1", "12-even-2", "13-odd-3")]
