@@ -232,12 +232,12 @@ public class Context
 	{
 		for (int i = 0; i < src.Length; i++)
 		{
-			dst[i] = src[i] is VarRef vr ? ResolveVariable(item, vr.Name, vr.ReachOut) : src[i];
+			dst[i] = src[i] is VarRef vr ? ResolveVariable(item, vr.Name, vr.ReachOut, vr.Cast) : src[i];
 		}
 		return dst;
 	}
 
-	public object ResolveVariable(PKItem item, string name, int reachOut)
+	public object ResolveVariable(PKItem item, string name, int reachOut, CastingDescription? cast = null)
 	{
 		PKItem? cur = item;
 		//first, skip the number of @^^^^name reach outs.
@@ -250,6 +250,11 @@ public class Context
 		{
 			if (cur.TryGetValue(name, out var v))
 			{
+				if (cast != null)
+				{
+					//todo: replace with compiled invoker.
+					v = cast.ApplyNow(v);
+				}
 				return v;
 			}
 			cur = cur.Progenitor;

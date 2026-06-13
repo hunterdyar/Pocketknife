@@ -28,12 +28,17 @@ public class Arguments
 // represents an unresolved `@name` / `@^^name` argument.
 public readonly struct VarRef
 {
+	public readonly Type Type;
 	public readonly string Name;
 	public readonly int ReachOut;
-	public VarRef(string name, int reachOut)
+	public readonly CastingDescription? Cast;
+	public VarRef(string name, int reachOut, Type type, CastingDescription? cast = null)
 	{
 		Name = name;
 		ReachOut = reachOut;
+		Type = type;
+		Cast = cast;
 	}
 	public override string ToString() => "@" + new string('^', ReachOut) + Name;
+	
 }

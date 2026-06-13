@@ -391,17 +391,40 @@ public class Compiler
 		for (var i = 0; i < arguments.Length; i++)
 		{
 			var arg = arguments[i];
+			var paramType = overload.Method.GetParameters()[i + a].ParameterType;
+			var PKParamType = paramType;
+			
 			var e = EvaluateExpression(arg, ctx);
 			// VarRef args are resolved per-item at runtime; skip compile-time type check.
-			if (e is VarRef)
+			bool addedWithCast = false;
+			if (e is VarRef evr)
 			{
-				args.Add(e);
+				//todo: we need to check casting overloads.
+				if (evr.Type != PKParamType && PKParamType != PKType.Any)
+				{
+					foreach (var cast in _catalog.GetImplicitCasts(e.GetPKType()))
+					{
+						if (cast.OutType == PKParamType)
+						{
+							//GetOrBuildInvoker exists inside of OperatorResolver... which arguments don't have...
+							
+							//OpInvoker castInvoker = GetOrBuildInvoker(ctx.StackTop, cast, out var call);
+							//replace e with e+cast.
+							args.Add(new VarRef(evr.Name, evr.ReachOut,cast.OutType, cast));
+							addedWithCast = true;
+							break;
+						}
+					}
+				}
+
+				if (!addedWithCast)
+				{
+					args.Add(e);
+				}
 				continue;
 			}
+			
 			var etype = e.GetType();
-			//todo: how are we going to get the type of variables? 
-			var paramType = overload.Method.GetParameters()[i+a].ParameterType;
-			var PKParamType = paramType;
 			if (etype != PKParamType && PKParamType != PKType.Any)
 			{
 				foreach (var cast in _catalog.GetImplicitCasts(etype))
@@ -431,7 +454,8 @@ public class Compiler
 				return literalNode.Value;
 			case LabelNode labelNode:
 				// `@name` / `@^name` reference — resolved per-item at runtime by Context.
-				return new VarRef(labelNode.Name, labelNode.ReachOut);
+				//todo: we don't know the type, because we aren't saving it on branch openings.
+				return new VarRef(labelNode.Name, labelNode.ReachOut, PKType.Any);
 			// case EmptyListLiteralExpression literalExpressionNode:
 			// 	return literalExpressionNode.Value;
 			default:

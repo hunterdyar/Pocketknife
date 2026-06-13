@@ -7,6 +7,8 @@ public class CompileContext
 	public Type StackTop => Stack.Peek();
 	public Stack<Type> Stack;
 
+	//todo: replace the stack with a frame that has a lazy dictionary, so we can correctly resolve ^@var reachout types.
+	
 	public CompileContext()
 	{
 		Stack = new Stack<Type>();
