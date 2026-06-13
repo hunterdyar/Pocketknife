@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 
 namespace PocketknifeCore;
 
@@ -293,17 +294,22 @@ public class Context
 			throw new Exception("cannot unpack a non-stream type");
 		}
 		var unpacked = new PKLayer(top.Type.Lower());
+		int idx = 0;
 		foreach (var it in top.Items)
 		{
 			var value = it.Value;
 			if (value is IEnumerable enumerable && value is not string)
 			{
 				foreach (var v in enumerable)
-					unpacked.Items.Add(new PKItem(v!, it.Progenitor));
+				{
+					unpacked.Items.Add(new PKItem(v!, it.Progenitor, idx));
+					idx++;
+				}
 			}
 			else
 			{
-				unpacked.Items.Add(new PKItem(value, it.Progenitor));
+				unpacked.Items.Add(new PKItem(value, it.Progenitor, idx));
+				idx++;
 			}
 		}
 		_timeline.Add(unpacked);
@@ -398,17 +404,22 @@ public class Context
 						{
 							var p = startLayer.Items[i];
 							var v = currentLayer.Items[i].Value;
-							var item = new PKItem(v, keepStartItemAsProgenitor ? p : p.Progenitor);
-							if (scope.Name != null) item.Bind(scope.Name, v!);
+							var item = new PKItem(v, keepStartItemAsProgenitor ? p : p.Progenitor, p.Index);//we can copy index over because the counts are the same. i think?
+							Debug.Assert(p.Index == i);
+							if (scope.Name != null)
+							{
+								item.Bind(scope.Name, v!);
+							}
 							merged.Items.Add(item);
 						}
 					}
 					else
 					{
 						//collapse current values into a flat layer parented to startLayer's parents.
+						int idx = merged.Items.Count;
 						foreach (var it in currentLayer.Items)
 						{
-							var item = new PKItem(it.Value, it.Progenitor);
+							var item = new PKItem(it.Value, it.Progenitor, idx++);
 							merged.Items.Add(item);
 						}
 					}
@@ -430,10 +441,16 @@ public class Context
 				{
 					// append current items into the start layer (flat).
 					var merged = new PKLayer(currentLayer.Type);
-					foreach (var it in startLayer.Items) merged.Items.Add(it);
+					int idx = 0;
+					foreach (var it in startLayer.Items)
+					{
+						merged.Items.Add(it);
+						idx++;
+					}
 					foreach (var it in currentLayer.Items)
 					{
-						merged.Items.Add(new PKItem(it.Value, it.Progenitor));
+						merged.Items.Add(new PKItem(it.Value, it.Progenitor, idx));
+						idx++;
 					}
 					_timeline.RemoveRange(startIdx + 1, _timeline.Count - startIdx - 1);
 					_timeline[startIdx] = merged;
@@ -456,9 +473,11 @@ public class Context
 					// merge into previous accumulator if present.
 					_timeline.RemoveAt(_timeline.Count - 1);
 					var acc = _timeline[^1];
+					int idx = acc.Items.Count;
 					foreach (var it in top.Items)
 					{
-						acc.Items.Add(new PKItem(it.Value, it.Progenitor));
+						acc.Items.Add(new PKItem(it.Value, it.Progenitor, idx));
+						idx++;
 					}
 				}
 				else
