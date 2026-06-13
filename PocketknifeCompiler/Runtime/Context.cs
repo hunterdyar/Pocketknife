@@ -34,7 +34,11 @@ public class Context
 			// first input: seed layer 1, push a root expansion scope rooted at the (synthetic) layer 0 so PopFrame always has matching state.
 			var seedValues = generator.Invoke(ia, this);
 			var layer = new PKLayer(inputType);
-			foreach (var v in seedValues) layer.Items.Add(new PKItem(v));
+			for (var i = 0; i < seedValues.Count; i++)
+			{
+				layer.Items.Add(new PKItem(seedValues[i], null, i));
+			}
+
 			_scopes.Push(new ScopeInfo
 			{
 				StartLayerIndex = 0,//root
@@ -75,8 +79,7 @@ public class Context
 			int idx = 0;
 			foreach (var v in children)
 			{
-				var child = new PKItem(v, p);
-				child.Index = idx;
+				var child = new PKItem(v, p, idx);
 				//todo: test if this is more performant or not.
 				expanded.Items.Add(child);
 				idx++;
@@ -115,8 +118,7 @@ public class Context
 			//see note in PushStreamWithGenerator.
 			if (!IsActive(p))
 			{
-				var leaf = new PKItem(p.Value, p);
-				leaf.Index = 0;
+				var leaf = new PKItem(p.Value, p, 0);
 				expanded.Items.Add(leaf);
 				continue;
 			}
@@ -128,8 +130,7 @@ public class Context
 			// int count = children.Count;
 			foreach (var v in children)
 			{
-				var child = new PKItem(v, p);
-				child.Index = idx;
+				var child = new PKItem(v, p, idx);
 				//todo: see gen todo
 				expanded.Items.Add(child);
 				idx++;
@@ -247,7 +248,7 @@ public class Context
 		//then, walk up the bindings to get the value.
 		while (cur != null)
 		{
-			if (cur.Bindings != null && cur.TryGetValue(name, out var v))
+			if (cur.TryGetValue(name, out var v))
 			{
 				return v;
 			}

@@ -11,10 +11,11 @@ public sealed class PKItem
 	public int Index;
 	public int? ArmID = null;
 	
-	public PKItem(object? value, PKItem? progenitor = null)
+	public PKItem(object? value, PKItem? progenitor = null, int index = 0)
 	{
 		Value = value;
 		Progenitor = progenitor;
+		Index = index;
 	}
 
 	public void Bind(string name, object value)
@@ -33,6 +34,12 @@ public sealed class PKItem
 			 return true;
 		}
 
+		if (Bindings == null)
+		{
+			value = default;
+			return false;
+		}
+		
 		value = default;
 		if (Bindings != null && Bindings.TryGetValue(name, out value))
 		{
