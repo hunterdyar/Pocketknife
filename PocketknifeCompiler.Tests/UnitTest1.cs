@@ -259,6 +259,7 @@ public class Tests
 	          :print
 	          ^
 	          """, "1", "2", "1", "2")]
+
 	[TestCase("""
 	          >range 0 5
 	          .
@@ -266,6 +267,11 @@ public class Tests
 	          <
 	          ^ 
 	          :print
+	          """, "0", "1", "2", "3", "4")]
+	
+	[TestCase("""
+	          >range 10 15
+	          :echo @Index
 	          """, "0", "1", "2", "3", "4")]
 	public void SimpleEvalTest(string source, params string[] expectedOutput)
 	{

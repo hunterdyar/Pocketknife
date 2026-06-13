@@ -83,4 +83,87 @@ public class PatternMatchTests
 	{
 		Helpers.RunAndAssert(source, expected);
 	}
+
+	//even branch produces string, ~~ branch produces int. after ^ it should be an "any" type, which print should be able to handle.
+	[TestCase("""
+	          >range -2 3
+	          ?
+	          + ~is-even
+	            |to-string
+	            |prepend "even="
+	          + ~~
+	            |add 0
+	          ^
+	          :print
+	          """, "even=-2", "-1", "even=0", "1", "even=2")]
+	public void PipelineMatchHeterogeneousArmTypes(string source, params string[] expectedOutput)
+	{
+		Helpers.RunAndAssert(source, expectedOutput);
+	}
+	
+	[TestCase("""
+	          >range -3 4
+	          ?
+	          + ~positive
+	            ?
+	            + ~is-even
+	              |to-string
+	              |prepend "pos-even="
+	            + ~~
+	              |to-string
+	              |prepend "pos-odd="
+	            ^
+	          + ~~
+	            |to-string
+	            |prepend "nonpos="
+	          ^
+	          :print
+	          """, "nonpos=-3", "nonpos=-2", "nonpos=-1", "nonpos=0", "pos-odd=1", "pos-even=2", "pos-odd=3")]
+	public void NestedPipelineMatch(string source, params string[] expectedOutput)
+	{
+		Helpers.RunAndAssert(source, expectedOutput);
+	}
+	
+	[TestCase("""
+	          >range 1 5
+	          .@x
+	          <
+	          ?
+	          + ~is-even
+	            .@x
+	              |neg
+	            <
+	            |to-string
+	            |append " outer="
+	            |append @^x
+	          + ~~
+	            |to-string
+	            |append " x="
+	            |append @x
+	          ^
+	          :print
+	          """, "1 x=1", "-2 outer=2", "3 x=3", "-4 outer=4")]
+	public void PipelineMatchReachOutNamedBinding(string source, params string[] expectedOutput)
+	{
+		Helpers.RunAndAssert(source, expectedOutput);
+	}
+	
+	[TestCase("""
+	          >range 10 14
+	          ?
+	          + ~is-even
+	            |to-string
+	            |append "-even-"
+	            |append @Index
+	          + ~~
+	            |to-string
+	            |append "-odd-"
+	            |append @Index
+	          ^
+	          :print
+	          """, "10-even-0", "11-odd-1", "12-even-2", "13-odd-3")]
+	public void PipelineMatchIndexInsideArms(string source, params string[] expectedOutput)
+	{
+		Helpers.RunAndAssert(source, expectedOutput);
+	}
 }
