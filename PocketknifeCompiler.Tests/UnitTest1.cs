@@ -61,13 +61,13 @@ public class Tests
 	            >[]
 	            .@group
 	              >"a"
-	              .@x1
-	              |to-upper
-	              &
+	                .@x1
+	                |to-upper
+	               &
 	              >"b"
-	              .@x2
-	              |to-upper
-	              &
+	                .@x2
+	                |to-upper
+	               &
 	            ^
 	            >@group
 	            |count

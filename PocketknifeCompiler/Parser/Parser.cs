@@ -81,17 +81,19 @@ public class Parser
                 //^
                 BranchType closer = default;
                 var arms = ParsePatternBranchArms();
-                if (arms.Count > 0)
+                
+                //end the ?
+                if (!TryEndBranch(out closer, false))
                 {
-                    closer = arms[^1].CloseType;
-                    arms[^1].CloseType = BranchType.Unknown;//we take it's token!
+                    throw new ParserException(this, _lexer.Tokens[_tokenIndex],$"Unexpected token {_lexer.Tokens[_tokenIndex]}. Expected ^, <, or & to end a pattern match (?)");
                 }
-                else
+                
+                if (arms.Count == 0)
                 {
                     //no arms, but ?^ is allowed.
                     if (!TryEndBranch(out closer, false))
                     {
-                        throw new Exception("sometin broke with patterh match block i think.");
+                        throw new ParserException(this, _lexer.Tokens[_tokenIndex], "Syntax error, expected end of ? pattern match. missing branch arms? (+)");
                     }
                 }
 
@@ -130,11 +132,6 @@ public class Parser
             
             arms.Add(ParsePatternBranchArm());
             EatOptionalLinebreaks();
-            //consume root nodes and add to list like elsewhere.
-            if (TryEndBranch(out branchType, false))
-            {
-                break;
-            }
         }
 
         if (arms.Count(x => x.IsDefault) > 1)
@@ -170,8 +167,11 @@ public class Parser
         List<RootNode> commands = new List<RootNode>();
         while (_tokenIndex < _lexer.TokenCount)
         {
-            //consume root nodes and add to list like elsewhere.
-            if (TryEndBranch(out branchType, true))
+            //branch ends on +, or the ? closes with normal closers.
+            if (_lexer.Tokens[_tokenIndex].Type == TokenType.PatternBranch
+                ||_lexer.Tokens[_tokenIndex].Type == TokenType.EndBranchAppend 
+                || _lexer.Tokens[_tokenIndex].Type == TokenType.EndBranchReplace
+                || _lexer.Tokens[_tokenIndex].Type == TokenType.EndBranchStop)
             {
                 break;
             }

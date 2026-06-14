@@ -109,16 +109,13 @@ public class PatternMatchTests
 	            + ~is-even
 	              |to-string
 	              |prepend "pos-even="
-	              ^
 	            + ~~
 	              |to-string
 	              |prepend "pos-odd="
-	              ^//all branches convert to string, so this should be string.
 	            ^
 	          + ~~
 	            |to-string
 	            |prepend "nonpos="
-	            ^
 	          ^
 	          //all branches convert to string, so this should be string; not int. 
 	          :print
@@ -131,10 +128,8 @@ public class PatternMatchTests
 	            ?
 	            + ~gt 10
 	              |add 1
-	              ^
 	            + ~~
 	              |add 2
-	              ^
 	            ^
 	          + ~~ //1 3
 	            |add 1
