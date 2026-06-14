@@ -133,6 +133,7 @@ public class Tests
 	          |prepend "min: "
 	          :print
 	          """)]
+	
 	public void ParseTest(string source)
 	{
 		var p = new Parser();
@@ -140,6 +141,31 @@ public class Tests
 		var got = p.Program.ToString();
 		Helpers.EachLineEqualIgnoringIndents(got, source);
 	}
+
+	[TestCase("""
+	          >range 1 5
+	          ?
+	          + ~is-even
+	            |mul 3
+	            ?
+	            + ~gt 10
+	              |add 1
+	            + ~~
+	              |add 2
+	            ^
+	          + ~~
+	            |add 1
+	          ^
+	          :print
+	          """)]
+	public void ParsePatternMatchTest(string source)
+	{
+		var p = new Parser();
+		p.Parse(source);
+		var got = p.Program.ToString();
+		Helpers.EachLineEqualIgnoringIndents(got, source);
+	}
+	
 
 	// Scaffolding entry point: parse a sample program, then hand the AST to the
 	// Compiler with the default op catalog. Not asserting structure yet — this

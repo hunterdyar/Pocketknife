@@ -100,7 +100,7 @@ public class PatternMatchTests
 	{
 		Helpers.RunAndAssert(source, expectedOutput);
 	}
-	
+	//todo: nested patternmatches do not parse clearly. you currently need to close the last branch and the ? with ^'s to disambiguate.
 	[TestCase("""
 	          >range -3 4
 	          ?
@@ -109,21 +109,44 @@ public class PatternMatchTests
 	            + ~is-even
 	              |to-string
 	              |prepend "pos-even="
+	              ^
 	            + ~~
 	              |to-string
 	              |prepend "pos-odd="
+	              ^//all branches convert to string, so this should be string.
 	            ^
 	          + ~~
 	            |to-string
 	            |prepend "nonpos="
+	            ^
 	          ^
+	          //all branches convert to string, so this should be string; not int. 
 	          :print
 	          """, "nonpos=-3", "nonpos=-2", "nonpos=-1", "nonpos=0", "pos-odd=1", "pos-even=2", "pos-odd=3")]
+	[TestCase("""
+	          >range 1 5
+	          ?
+	          + ~is-even //2 4
+	            |mul 3
+	            ?
+	            + ~gt 10
+	              |add 1
+	              ^
+	            + ~~
+	              |add 2
+	              ^
+	            ^
+	          + ~~ //1 3
+	            |add 1
+	          ^
+	          :print
+	          """, "2", "8", "4", "13")]//stays int throughout this test.
 	public void NestedPipelineMatch(string source, params string[] expectedOutput)
 	{
 		Helpers.RunAndAssert(source, expectedOutput);
 	}
-	
+
+
 	[TestCase("""
 	          >range 1 5
 	          .@x

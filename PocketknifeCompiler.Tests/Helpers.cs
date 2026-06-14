@@ -18,7 +18,10 @@ public static class Helpers
 				continue;
 			}
 
-			Assert.That(gots[i].Trim(), Is.EqualTo(sources[i].Trim()));
+			if (gots[i].Trim() != sources[i].Trim())
+			{
+				throw new Exception($"Line {i + 1} does not match. Got '{gots[i].Trim()}', Expected '{sources[i].Trim()}'");
+			}
 		}
 	}
 

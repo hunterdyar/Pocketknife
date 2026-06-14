@@ -63,6 +63,30 @@ public static class IntMethods
 	
 		return l;
 	}
+
+	[Pipeline(Name = "mul")]
+	public static int Mul(int i, int b)
+	{
+		return i * b;
+	}
+
+	[Pipeline(Name = "add")]
+	public static int Add(int i, int b)
+	{
+		return i + b;
+	}
+
+	[Pipeline(Name = "div-int")]
+	public static int DivInt(int i, int b)
+	{
+		return i / b;
+	}
+
+	[Pipeline(Name = "sub")]
+	public static int Sub(int i, int b)
+	{
+		return i - b;
+	}
 	
 	[Pipeline(Name = "abs")]
 	public static int Abs(int i)
