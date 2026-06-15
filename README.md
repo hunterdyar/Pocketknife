@@ -6,6 +6,8 @@ It's a tool that transforms inputs into outputs. Manipulate files, process or cl
 It has a unique, simple, and enjoyable syntax that is easy to learn and intuit about.
 
 ## Basics
+To read the code, just scan down the first column. Every line starts with a symbol that will tell you exactly how the data is being transformed. Knowing this, one can intuit the flow of data without intensely reading the code. Pocketknife is a simply enough language that it's *hard* to write programs that are challenging to intuit at. (There aren't a lot of clever shorthands.)
+
 Here's an example of some pocketknife code
 
 ```
@@ -90,9 +92,28 @@ I like to imagine rotating around the . symbol. The data is cloned, and anything
 ^
 :print
 ```
-
 **?** starts a pattern match. **+** starts each branch, which should be followed by a filter.
 If the filter matches, that branch runs.
 **~~** is the 'catch' or final 'else' branch.
 
 Each branch will operate in order, top-to-bottom; but the items will keep their original order.
+
+---
+
+## Design Decisions
+
+### Simplicity
+Things don't get much more complicated than this, and that's by design. Programs accomplish one thing and then move on. Complexities of implementation, algorithm choice, and so on, are handled by the libraries that provide the tools and types. 
+
+It's built on C#, and types can be any valid c# - or dotnet, with some fiddling - type.
+
+### Iteration
+One curiosity of the language is that it doesn't handle loops or iteration like most programming languages. It works on all of the data, one line at a time. The code runs top to bottom, never jumping around or looping, thanks to a clever interpreter. The purpose of this is to allow step-by-step debugging and interactive execution (a work-in-progress). The language should feel like experimenting in a playground, and once it does what you want, you might be done and ready to throw the code away. Fine!
+
+In the future, I hope it will also be undo-able!
+
+### Tool, not Programs
+Another goal of the language is to be a tool for the user. There is one environment for plugins/packages per user-installation, one folder to drop dll's. No package.json, no plugins, no virtual environments - if you need those tools, they are there. Because of this, this pocketknife is closer to bash (or Powershell or zsh or fish or ysh) than python.
+
+#### So why not use those terminal tools?
+Go for it! They're great! Pocketknife's advantage is the ease of reasoning about a program by reading it. 
