@@ -139,7 +139,7 @@ public static class IntMethods
 	[Filter(Name = "positive")]
 	public static bool IsPositive(int i)
 	{
-		return i > 0;
+		return i >= 0;
 	}
 
 	[Pipeline(Name = "min")]

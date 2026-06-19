@@ -136,6 +136,23 @@ public class PatternMatchTests
 	          ^
 	          :print
 	          """, "2", "8", "4", "13")]//stays int throughout this test.
+	[TestCase("""
+	          >range 1 5
+	          ?
+	          + ~is-even //2 4
+	            |mul 3
+	            ?
+	            + ~gt 10
+	              |add 1
+	            + ~lt 11
+	              |add 2
+	            ^
+	          + ~is-odd //1 3
+	            |add 1
+	          ^
+	          :print
+	          """, "2", "8", "4", "13")] //stays int throughout this test.
+
 	public void NestedPipelineMatch(string source, params string[] expectedOutput)
 	{
 		Helpers.RunAndAssert(source, expectedOutput);

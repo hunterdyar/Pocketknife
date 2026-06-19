@@ -338,6 +338,8 @@ public class Compiler
 					}
 				}
 
+				//ctx.Branches -= nakedPatternMatch.Arms.Count;//reset branch counter.
+
 				// Final stack top is the unified arm output (or the input type if there were no arms).
 				ctx.TransformType(unifiedOut ?? inputType);
 

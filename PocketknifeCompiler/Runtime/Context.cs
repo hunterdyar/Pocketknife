@@ -1,4 +1,4 @@
-ï»¿using System.Collections;
+using System.Collections;
 using System.Diagnostics;
 
 namespace PocketknifeCore;
@@ -14,6 +14,54 @@ public class Context
 	
 	private readonly List<PKLayer> _timeline = new();
 	private readonly Stack<ScopeInfo> _scopes = new();
+
+	public static bool DebugTrace = false;
+	public static string? DebugTracePath = null;
+	private static void DbgWrite(string s)
+	{
+		if (DebugTracePath != null) System.IO.File.AppendAllText(DebugTracePath, s + Environment.NewLine);
+		else Console.WriteLine(s);
+	}
+	private void DbgScopes()
+	{
+		if (!DebugTrace) return;
+		var parts = new List<string>();
+		foreach (var s in _scopes)
+		{
+			if (s.IsArmUmbrella) parts.Add($"U(start={s.StartLayerIndex})");
+			else if (s.ArmID != null) parts.Add($"Arm{s.ArmID}(start={s.StartLayerIndex})");
+			else parts.Add($".(start={s.StartLayerIndex},exp={s.IsExpansionScope})");
+		}
+		DbgWrite($"[DEBUG_LOG]   scopes(top->bot)=[{string.Join(", ", parts)}]");
+	}
+	private void DbgLayer(string tag)
+	{
+		if (!DebugTrace) return;
+		var top = _timeline[^1];
+		var parts = new List<string>();
+		foreach (var it in top.Items)
+		{
+			parts.Add($"{{v={it.Value},arm={(it.ArmID?.ToString()??"null")},hash={it.GetHashCode():X4}}}");
+		}
+		DbgWrite($"[DEBUG_LOG] {tag} top@{_timeline.Count-1} items=[{string.Join(",", parts)}]");
+		DbgScopes();
+	}
+	private void DbgAllLayers(string tag)
+	{
+		if (!DebugTrace) return;
+		DbgWrite($"[DEBUG_LOG] === {tag} (timeline len={_timeline.Count}) ===");
+		for (int li = 0; li < _timeline.Count; li++)
+		{
+			var lyr = _timeline[li];
+			var parts = new List<string>();
+			foreach (var it in lyr.Items)
+			{
+				parts.Add($"{{v={it.Value},arm={(it.ArmID?.ToString()??"null")},h={it.GetHashCode():X4},p={(it.Progenitor==null?"-":it.Progenitor.GetHashCode().ToString("X4"))}}}");
+			}
+			DbgWrite($"[DEBUG_LOG]   L{li}: [{string.Join(",", parts)}]");
+		}
+		DbgScopes();
+	}
 
 	// Set per iteration in *OnEach so ops (and EvaluateArguments) can ask "which item am I on?"
 	public PKItem? CurrentItem { get; private set; }
@@ -148,6 +196,7 @@ public class Context
 	//per-item transitions
 	public void OperateOnEach(object[] arguments, OpInvoker invoker)
 	{
+		DbgLayer("OperateOnEach BEGIN");
 		var prev = Top;
 		var next = new PKLayer(prev.Type);
 		bool hasVars = ArgsNeedRuntimeEval(arguments);
@@ -472,7 +521,7 @@ public class Context
 			return;
 		}
 
-		// no scope open â€” root-level pop on the very first input branch.
+		// no scope open — root-level pop on the very first input branch.
 		var top = _timeline[^1];
 		switch (frameType)
 		{
@@ -513,6 +562,8 @@ public class Context
 
 	public void BeginPatternMatch(OpInvoker[] filters, object[][] filterArgs, bool hasAlternate)
 	{
+		if (DebugTrace) DbgWrite($"[DEBUG_LOG] >>> BeginPatternMatch filters={filters.Length} hasAlternate={hasAlternate}");
+		DbgLayer("BeginPatternMatch PRE");
 		var startIdx = _timeline.Count - 1;
 		//NewClonedLayer()-style clone where the cloning helper stamps ArmID on each new PKItem according to the first matching filter (with CurrentItem set during evaluation so bindings resolve).
 		var top = _timeline[^1];
@@ -523,6 +574,11 @@ public class Context
 		int alternate = filters.Length;
 		foreach (var item in cloned.Items)
 		{
+			if (!IsActive(item))
+			{
+				continue;
+			}
+			
 			for (int i = 0; i < filters.Length; i++)
 			{
 				var f = (bool)filters[i](item.Value, filterArgs[i], this);
@@ -549,16 +605,16 @@ public class Context
 			IsArmUmbrella = true,
 		};
 		_scopes.Push(s);
+		DbgLayer("BeginPatternMatch POST-stamp");
 
 		MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
 		MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
-		
-		
 	}
 
 	public void EnterArm(int i)
 	{
-		// Find the umbrella's partition layer â€” that is the layer where ArmID stamps live, and must be used as this arm's StartLayerIndex so IsActive() can walk back to it via Progenitor to determine arm membership.
+		if (DebugTrace) DbgWrite($"[DEBUG_LOG] >>> EnterArm({i})");
+		// Find the umbrella's partition layer — that is the layer where ArmID stamps live, and must be used as this arm's StartLayerIndex so IsActive() can walk back to it via Progenitor to determine arm membership.
 		int partitionIdx = -1;
 		foreach (var s in _scopes)
 		{
@@ -583,15 +639,21 @@ public class Context
 		MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
 		// Clone the current top: this preserves accumulated transformations from prior arms (inactive items pass through unchanged), so each arm layers its changes on top of the previous arm's merged result.
 		NewClonedLayer();
+		DbgLayer("EnterArm POST");
 	}
 
 	public void ExitArm(BranchType closeType)
 	{
+		if (DebugTrace) DbgWrite($"[DEBUG_LOG] >>> ExitArm({closeType})");
+		DbgLayer("ExitArm PRE");
 		PopFrame(closeType, true);
+		DbgLayer("ExitArm POST");
 	}
 
 	public void EndPatternMatch()
 	{
+		if (DebugTrace) DbgWrite($"[DEBUG_LOG] >>> EndPatternMatch");
+		DbgAllLayers("EndPatternMatch PRE");
 		if (_scopes.TryPeek(out var scope))
 		{
 			if (scope.IsArmUmbrella)
@@ -616,7 +678,7 @@ public class Context
 			if (scope.IsArmUmbrella)
 			{
 				//inside ? but not inside specific arm body.
-				return true;
+				continue;
 			}
 
 			if (scope.ArmID != null)
@@ -624,17 +686,27 @@ public class Context
 				//walk it back to a progenitor that lives in this arm scopes start layer.
 				var startLayer = _timeline[scope.StartLayerIndex];
 				var cur = item;
+				bool found = false;
 				while (cur != null)
 				{
 					//
 					if (startLayer.Items.Contains(cur)) //todo: optimize with HashSet<PKItem> per arm scope (cached on ScopeInfo or computed lazily?) for the start-layer membership check.
 					{
-						return cur.ArmID == scope.ArmID;
+						if (cur.ArmID != scope.ArmID)
+						{
+							return false;
+						}
+
+						found = true;//in one arm, still gotta check the above ones.
+						break;
 					}
 					cur = cur.Progenitor;
 				}
 
-				return false;
+				if (!found)
+				{
+					return false;
+				} 
 			}
 		}
 
