@@ -244,22 +244,31 @@ public class Context
 	public object ResolveVariable(PKItem item, string name, int reachOut, CastingDescription? cast = null)
 	{
 		PKItem? cur = item;
-		//first, skip the number of @^^^^name reach outs.
 		int reachedPast = reachOut;
 
 		//walk up the bindings to get the value.
 		object value = null;
 		while (cur != null)
 		{
-			cur = cur.Progenitor;
-		}
-		//then, walk up the bindings to get the value.
-		while (cur != null)
-		{
-			if (cur.TryGetValue(name, out var v))
+			if (cur.TryGetValue(name, out value))
 			{
-				return v;
+				//valid binding found, we return or skip it.
+				if (reachedPast > 0)
+				{
+					reachedPast--;
+					cur = cur.Progenitor;
+					continue;
+				}
+
+				if (cast != null)
+				{
+					//todo: replace with compiled invoker.
+					value = cast.ApplyNow(value);
+				}
+
+				return value;
 			}
+
 			cur = cur.Progenitor;
 		}
 
@@ -267,7 +276,9 @@ public class Context
 		{
 			throw new Exception($"variable {name} exists, but it was skipped by ^ reach-outs. Value not found.");
 		}
+
 		throw new Exception($"variable {name} not found");
+
 		
 	}
 
