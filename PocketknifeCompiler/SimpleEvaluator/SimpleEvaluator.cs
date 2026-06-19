@@ -114,8 +114,6 @@ public static class SimpleEvaluator
 
 	private static object[] EvaluateArguments(Arguments args, Context ctx)
 	{
-		//todo: check for variables, etc.
-
 		return args.EvaluatedArgs;
 	}
 }

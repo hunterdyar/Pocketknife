@@ -20,9 +20,9 @@ public class StringMethods
 	[Pipeline(Name = "append")]
 	public static string Append(string first, string second)
 	{
-		return first + second;
+		return first + second.ToString();
 	}
-
+	
 	[Pipeline(Name = "prepend")]
 	public static string Prepend(string first, string second)
 	{

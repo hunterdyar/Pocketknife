@@ -4,6 +4,27 @@ namespace PocketknifeCore;
 
 public static class IntMethods
 {
+	[Pipeline(Name = "to-int")]
+	public static int ToInt(object o)
+	{
+		switch (o)
+		{
+			case double d:
+				return (int)d;
+			case string s:
+				return int.Parse(s);
+			case int i:
+				return i;
+			case long l:
+				return (int)l;
+			case float f:
+				return (int)f;
+			case bool b:
+				return b ? 1 : 0;
+			default:
+				throw new Exception($"Cannot convert {o.GetType()} to int");
+		}
+	}
 	[Generator(Name = "range")]
 	public static List<int> Range(int start, int end)
 	{
@@ -41,6 +62,30 @@ public static class IntMethods
 		}
 	
 		return l;
+	}
+
+	[Pipeline(Name = "mul")]
+	public static int Mul(int i, int b)
+	{
+		return i * b;
+	}
+
+	[Pipeline(Name = "add")]
+	public static int Add(int i, int b)
+	{
+		return i + b;
+	}
+
+	[Pipeline(Name = "div-int")]
+	public static int DivInt(int i, int b)
+	{
+		return i / b;
+	}
+
+	[Pipeline(Name = "sub")]
+	public static int Sub(int i, int b)
+	{
+		return i - b;
 	}
 	
 	[Pipeline(Name = "abs")]
@@ -94,7 +139,7 @@ public static class IntMethods
 	[Filter(Name = "positive")]
 	public static bool IsPositive(int i)
 	{
-		return i > 0;
+		return i >= 0;
 	}
 
 	[Pipeline(Name = "min")]
@@ -174,5 +219,6 @@ public static class IntMethods
 
 		return factors;
 	}
+	
 	//there's a way to do math ops on the underlying scalar and have them work for any signed number type, I bet.
 }

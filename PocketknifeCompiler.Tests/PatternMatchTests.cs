@@ -67,7 +67,7 @@ public class PatternMatchTests
 	            |neg
 	          ^
 	          :print
-	          """, "5", "4", "3", "2", "1", "0")]
+	          """, "5", "4", "3", "2", "1")]
 
 	[TestCase("""
 	          >range -5 5
@@ -78,7 +78,7 @@ public class PatternMatchTests
 	            ~is-even
 	          ^
 	          :print
-	          """, "-4", "-2", "0")]
+	          """, "-4", "-2")]
 	public void PipelineMatchAnd(string source, params string[] expected)
 	{
 		Helpers.RunAndAssert(source, expected);
@@ -100,7 +100,7 @@ public class PatternMatchTests
 	{
 		Helpers.RunAndAssert(source, expectedOutput);
 	}
-	
+	//todo: nested patternmatches do not parse clearly. you currently need to close the last branch and the ? with ^'s to disambiguate.
 	[TestCase("""
 	          >range -3 4
 	          ?
@@ -117,13 +117,48 @@ public class PatternMatchTests
 	            |to-string
 	            |prepend "nonpos="
 	          ^
+	          //all branches convert to string, so this should be string; not int. 
 	          :print
-	          """, "nonpos=-3", "nonpos=-2", "nonpos=-1", "nonpos=0", "pos-odd=1", "pos-even=2", "pos-odd=3")]
+	          """, "nonpos=-3", "nonpos=-2", "nonpos=-1", "pos-even=0", "pos-odd=1", "pos-even=2", "pos-odd=3")]
+	[TestCase("""
+	          >range 1 5
+	          ?
+	          + ~is-even //2 4
+	            |mul 3
+	            ?
+	            + ~gt 10
+	              |add 1
+	            + ~~
+	              |add 2
+	            ^
+	          + ~~ //1 3
+	            |add 1
+	          ^
+	          :print
+	          """, "2", "8", "4", "13")]//stays int throughout this test.
+	[TestCase("""
+	          >range 1 5
+	          ?
+	          + ~is-even //2 4
+	            |mul 3
+	            ?
+	            + ~gt 10
+	              |add 1
+	            + ~lt 11
+	              |add 2
+	            ^
+	          + ~is-odd //1 3
+	            |add 1
+	          ^
+	          :print
+	          """, "2", "8", "4", "13")] //stays int throughout this test.
+
 	public void NestedPipelineMatch(string source, params string[] expectedOutput)
 	{
 		Helpers.RunAndAssert(source, expectedOutput);
 	}
-	
+
+
 	[TestCase("""
 	          >range 1 5
 	          .@x
@@ -159,6 +194,22 @@ public class PatternMatchTests
 	            |to-string
 	            |append "-odd-"
 	            |append @Index
+	          ^
+	          :print
+	          """, "10-even-0", "11-odd-1", "12-even-2", "13-odd-3")]
+	[TestCase("""
+	          >range 10 14
+	          ?
+	          + ~is-even
+	            |to-string
+	            |append "-even-"
+	            |append @Index
+	            
+	          + ~~
+	            |to-string
+	            |append "-odd-"
+	            |append @Index
+	            
 	          ^
 	          :print
 	          """, "10-even-0", "11-odd-1", "12-even-2", "13-odd-3")]

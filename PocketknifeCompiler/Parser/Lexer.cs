@@ -10,7 +10,6 @@ public class Lexer
     private int loc;
     private char Current => loc < _source.Length ? _source[loc] : '\0';
     public string Source => _source;
-
     public Lexer(string source)
     {
         _source = source;
@@ -298,12 +297,12 @@ public class Lexer
 
     private void AddToken(TokenType type, int start, int length)
     {
-        _tokens.Add(new Token(this, new SourceSlice(start, length), type));
+        _tokens.Add(new Token(this, new SourceSlice(start, length,this), type));
     }
 
     private void ConsumeCurrentCharAsToken(TokenType type)
     {
-        _tokens.Add(new Token(this, new SourceSlice(loc, 1), type));
+        _tokens.Add(new Token(this, new SourceSlice(loc, 1,this), type));
         loc++;//consume
     }
 

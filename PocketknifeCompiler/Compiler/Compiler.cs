@@ -166,8 +166,13 @@ public class Compiler
 				else
 				{
 					ctx.PushFrame();
+					//read variable from within itself? then we assign here, and change after the subbranch compiles. idk.
 					var subbranch = (PKNodeGroup)Compile(branchNode.Commands, ctx);
 					ctx.PopFrame(branchNode.Type);
+					//ctx.ChangeVariableType(branchNode.Label, 0, ctx.StackTop);//after transformations, we have the actual variable type.
+					//wait, 
+					ctx.AssignNewVariable(branchNode.Label, ctx.StackTop);
+
 					return new PKNamedBranch(branchNode.Label, subbranch, branchNode.Type);
 				}
 			case PipelineCommandNode pipelineNode:
@@ -178,8 +183,7 @@ public class Compiler
 					{
 						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
 						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
-						ctx.PopType();
-						ctx.PushType(call.OutType);
+						ctx.TransformType(call.OutType);
 						return new PKInlineOperatorNode(popr.Name, invoker, args);
 					}
 					
@@ -190,8 +194,7 @@ public class Compiler
 						{
 							OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, cast, out var call);
 							var args = CompileArguments(call, pipelineNode.Arguments, ctx);
-							ctx.PopType();
-							ctx.PushType(cast.OutType);
+							ctx.TransformType(cast.OutType);
 							return new PKInlineOperatorNode(popr.Name, invoker, args);
 						}//else continue
 					}
@@ -200,8 +203,7 @@ public class Compiler
 					{
 						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
 						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
-						ctx.PopType();
-						ctx.PushType(call.OutType);
+						ctx.TransformType(call.OutType);
 						return new PKInlineOperatorNode(popr.Name, invoker, args);
 					}
 					
@@ -311,8 +313,7 @@ public class Compiler
 					if (!first)
 					{
 						// Reset stack top to the ? input before compiling this arm.
-						ctx.PopType();
-						ctx.PushType(inputType);
+						ctx.TransformType(inputType);
 					}
 					first = false;
 					if (patternBranchArm.IsDefault)
@@ -337,9 +338,10 @@ public class Compiler
 					}
 				}
 
+				//ctx.Branches -= nakedPatternMatch.Arms.Count;//reset branch counter.
+
 				// Final stack top is the unified arm output (or the input type if there were no arms).
-				ctx.PopType();
-				ctx.PushType(unifiedOut ?? inputType);
+				ctx.TransformType(unifiedOut ?? inputType);
 
 				if (nakedPatternMatch.CloseType != BranchType.SideEffect)
 				{
@@ -391,17 +393,40 @@ public class Compiler
 		for (var i = 0; i < arguments.Length; i++)
 		{
 			var arg = arguments[i];
+			var paramType = overload.Method.GetParameters()[i + a].ParameterType;
+			var PKParamType = paramType;
+			
 			var e = EvaluateExpression(arg, ctx);
 			// VarRef args are resolved per-item at runtime; skip compile-time type check.
-			if (e is VarRef)
+			bool addedWithCast = false;
+			if (e is VarRef evr)
 			{
-				args.Add(e);
+				//todo: we need to check casting overloads.
+				if (evr.Type != PKParamType && PKParamType != PKType.Any)
+				{
+					foreach (var cast in _catalog.GetImplicitCasts(evr.Type))
+					{
+						if (cast.OutType == PKParamType)
+						{
+							//GetOrBuildInvoker exists inside of OperatorResolver... which arguments don't have...
+							
+							//OpInvoker castInvoker = GetOrBuildInvoker(ctx.StackTop, cast, out var call);
+							//replace e with e+cast.
+							args.Add(new VarRef(evr.Name, evr.ReachOut,cast.OutType, cast));
+							addedWithCast = true;
+							break;
+						}
+					}
+				}
+
+				if (!addedWithCast)
+				{
+					args.Add(e);
+				}
 				continue;
 			}
+			
 			var etype = e.GetType();
-			//todo: how are we going to get the type of variables? 
-			var paramType = overload.Method.GetParameters()[i+a].ParameterType;
-			var PKParamType = paramType;
 			if (etype != PKParamType && PKParamType != PKType.Any)
 			{
 				foreach (var cast in _catalog.GetImplicitCasts(etype))
@@ -430,8 +455,10 @@ public class Compiler
 			case LiteralExpressionNode literalNode:
 				return literalNode.Value;
 			case LabelNode labelNode:
+				var t = ctx.GetVariableType(labelNode.Name, labelNode.ReachOut);
 				// `@name` / `@^name` reference — resolved per-item at runtime by Context.
-				return new VarRef(labelNode.Name, labelNode.ReachOut);
+				//todo: we don't know the type, because we aren't saving it on branch openings.
+				return new VarRef(labelNode.Name, labelNode.ReachOut, t);
 			// case EmptyListLiteralExpression literalExpressionNode:
 			// 	return literalExpressionNode.Value;
 			default:
