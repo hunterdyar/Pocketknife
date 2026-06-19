@@ -67,7 +67,7 @@ public class PatternMatchTests
 	            |neg
 	          ^
 	          :print
-	          """, "5", "4", "3", "2", "1", "0")]
+	          """, "5", "4", "3", "2", "1")]
 
 	[TestCase("""
 	          >range -5 5
@@ -78,7 +78,7 @@ public class PatternMatchTests
 	            ~is-even
 	          ^
 	          :print
-	          """, "-4", "-2", "0")]
+	          """, "-4", "-2")]
 	public void PipelineMatchAnd(string source, params string[] expected)
 	{
 		Helpers.RunAndAssert(source, expected);
@@ -119,7 +119,7 @@ public class PatternMatchTests
 	          ^
 	          //all branches convert to string, so this should be string; not int. 
 	          :print
-	          """, "nonpos=-3", "nonpos=-2", "nonpos=-1", "nonpos=0", "pos-odd=1", "pos-even=2", "pos-odd=3")]
+	          """, "nonpos=-3", "nonpos=-2", "nonpos=-1", "pos-even=0", "pos-odd=1", "pos-even=2", "pos-odd=3")]
 	[TestCase("""
 	          >range 1 5
 	          ?

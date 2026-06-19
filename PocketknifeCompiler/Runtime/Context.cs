@@ -3,9 +3,9 @@ using System.Diagnostics;
 
 namespace PocketknifeCore;
 
-// Layered, breadth-first runtime.
-// _timeline is the history of layers; the current layer is the last one.
-// _scopes records open scopes ('.', '.@x', '|>' or '>'-expansion at index >= 1).
+//layered, breadth-first runtime.
+//_timeline is the history of layers; the current layer is the last one.
+//_scopes records open scopes ('.', '.@x', '|>' or '>'-expansion at index >= 1).
 public class Context
 {
 	public int TimelineLength => _timeline.Count;
@@ -14,62 +14,13 @@ public class Context
 	
 	private readonly List<PKLayer> _timeline = new();
 	private readonly Stack<ScopeInfo> _scopes = new();
-
-	public static bool DebugTrace = false;
-	public static string? DebugTracePath = null;
-	private static void DbgWrite(string s)
-	{
-		if (DebugTracePath != null) System.IO.File.AppendAllText(DebugTracePath, s + Environment.NewLine);
-		else Console.WriteLine(s);
-	}
-	private void DbgScopes()
-	{
-		if (!DebugTrace) return;
-		var parts = new List<string>();
-		foreach (var s in _scopes)
-		{
-			if (s.IsArmUmbrella) parts.Add($"U(start={s.StartLayerIndex})");
-			else if (s.ArmID != null) parts.Add($"Arm{s.ArmID}(start={s.StartLayerIndex})");
-			else parts.Add($".(start={s.StartLayerIndex},exp={s.IsExpansionScope})");
-		}
-		DbgWrite($"[DEBUG_LOG]   scopes(top->bot)=[{string.Join(", ", parts)}]");
-	}
-	private void DbgLayer(string tag)
-	{
-		if (!DebugTrace) return;
-		var top = _timeline[^1];
-		var parts = new List<string>();
-		foreach (var it in top.Items)
-		{
-			parts.Add($"{{v={it.Value},arm={(it.ArmID?.ToString()??"null")},hash={it.GetHashCode():X4}}}");
-		}
-		DbgWrite($"[DEBUG_LOG] {tag} top@{_timeline.Count-1} items=[{string.Join(",", parts)}]");
-		DbgScopes();
-	}
-	private void DbgAllLayers(string tag)
-	{
-		if (!DebugTrace) return;
-		DbgWrite($"[DEBUG_LOG] === {tag} (timeline len={_timeline.Count}) ===");
-		for (int li = 0; li < _timeline.Count; li++)
-		{
-			var lyr = _timeline[li];
-			var parts = new List<string>();
-			foreach (var it in lyr.Items)
-			{
-				parts.Add($"{{v={it.Value},arm={(it.ArmID?.ToString()??"null")},h={it.GetHashCode():X4},p={(it.Progenitor==null?"-":it.Progenitor.GetHashCode().ToString("X4"))}}}");
-			}
-			DbgWrite($"[DEBUG_LOG]   L{li}: [{string.Join(",", parts)}]");
-		}
-		DbgScopes();
-	}
-
-	// Set per iteration in *OnEach so ops (and EvaluateArguments) can ask "which item am I on?"
+	
 	public PKItem? CurrentItem { get; private set; }
 
 	public Context()
 	{
-		// Synthetic root layer at index 0.
-		// This is the implicit accumulator for top-level `&` branches and the anchor that all scope StartLayerIndexes can refer back to. The first real input layer is added at index 1.
+		//synthetic root layer at index 0.
+		//this is the implicit accumulator for top-level `&` branches and the anchor that all scope StartLayerIndexes can refer back to. The first real input layer is added at index 1.
 		_timeline.Add(new PKLayer(typeof(void)));
 	}
 
@@ -80,7 +31,7 @@ public class Context
 	{
 		if (IsAtRoot)
 		{
-			// first input: seed layer 1, push a root expansion scope rooted at the (synthetic) layer 0 so PopFrame always has matching state.
+			//first input: seed layer 1, push a root expansion scope rooted at the (synthetic) layer 0 so PopFrame always has matching state.
 			var seedValues = generator.Invoke(ia, this);
 			var layer = new PKLayer(inputType);
 			for (var i = 0; i < seedValues.Count; i++)
@@ -99,10 +50,10 @@ public class Context
 			return;
 		}
 
-		// nested expansion: each item in current layer fans out to its own list of children.
+		//nested expansion: each item in current layer fans out to its own list of children.
 		var parent = Top;
 		var expanded = new PKLayer(inputType);
-		// scope start = index of the layer BEFORE expansion (i.e., the current top).
+		//scope start = index of the layer BEFORE expansion (i.e., the current top).
 		var scope = new ScopeInfo
 		{
 			StartLayerIndex = _timeline.Count - 1,
@@ -149,13 +100,13 @@ public class Context
 			throw new InvalidOperationException();
 		}
 
-		// nested expansion: each item in current layer fans out to its own list of children.
+		//nested expansion: each item in current layer fans out to its own list of children.
 		var parent = Top;
 		var expanded = new PKLayer(inputType);
 		bool hasVars = ArgsNeedRuntimeEval(arguments);
 		object[] resolved = hasVars ? new object[arguments.Length] : arguments;
 
-		// scope start = index of the layer BEFORE expansion (i.e., the current top).
+		//scope start = index of the layer BEFORE expansion (i.e., the current top).
 		var scope = new ScopeInfo
 		{
 			StartLayerIndex = _timeline.Count - 1,
@@ -176,7 +127,7 @@ public class Context
 			var args = hasVars ? ResolveArgs(arguments, resolved, p) : arguments;
 			var children = generator.Invoke(p.Value!, args, this);
 			int idx = 0;
-			// int count = children.Count;
+			//int count = children.Count;
 			foreach (var v in children)
 			{
 				var child = new PKItem(v, p, idx);
@@ -196,7 +147,6 @@ public class Context
 	//per-item transitions
 	public void OperateOnEach(object[] arguments, OpInvoker invoker)
 	{
-		DbgLayer("OperateOnEach BEGIN");
 		var prev = Top;
 		var next = new PKLayer(prev.Type);
 		bool hasVars = ArgsNeedRuntimeEval(arguments);
@@ -339,8 +289,6 @@ public class Context
 		}
 		var packed = new PKLayer(top.Type.Lift());
 		
-		// Progenitor chain: link the single packed item to one representative item
-		// in the prior layer so variable lookup still works through Pack/Unpack.
 		var progen = top.Items.Count > 0 ? top.Items[0] : null;
 		packed.Items.Add(new PKItem(packedList, progen));
 		_timeline.Add(packed);
@@ -415,7 +363,7 @@ public class Context
 
 	public void PopFrame(BranchType frameType, bool keepHistory = false)
 	{
-		// scope was opened. Merge accordingly.
+		//scope was opened. Merge accordingly.
 		if (_scopes.Count > 0)
 		{
 			var scope = _scopes.Pop();
@@ -427,14 +375,14 @@ public class Context
 			{
 				case BranchType.SideEffect:
 				{
-					// SideEffect discards the value changes from the body, but a named binding captured inside is still propagated onto the corresponding start-layer items.
+					//SideEffect discards the value changes from the body, but a named binding captured inside is still propagated onto the corresponding start-layer items.
 					if (scope.Name != null)
 					{
 						var startSet = new HashSet<PKItem>(startLayer.Items);
 						foreach (var it in currentLayer.Items)
 						{
 							if (it.Value == null) continue;
-							// Walk progenitor chain back to a start-layer item ancestor.
+							//walk progenitor chain back to a start-layer item ancestor.
 							var anc = it;
 							while (anc != null && !startSet.Contains(anc))
 							{
@@ -447,19 +395,19 @@ public class Context
 							}
 						}
 					}
-					// discard everything after startIdx.
+					//discard everything after startIdx.
 					_timeline.RemoveRange(startIdx + 1, _timeline.Count - startIdx - 1);
 					break;
 				}
 				case BranchType.Replace:
 				{
-					// keep current layer's items, but rebase them as 1-1 results of startLayer's items.
+					//keep current layer's items, but rebase them as 1-1 results of startLayer's items.
 					var merged = new PKLayer(currentLayer.Type);
 					if (currentLayer.Items.Count > 0 && startLayer.Items.Count == currentLayer.Items.Count && !scope.IsExpansionScope)
 					{
-						// keep the start-layer item in the progenitor chain so any outer binding sitting on it (potentially shadowed by this scope's own binding) is reachable as an ancestor via @^name.
-						// For unnamed scopes there's nothing to shadow, so we preserve the historical behavior of rebasing to `p.Progenitor` to keep the chain flat.
-						// keepHistory=true (pattern-match arm exit) must also preserve the start-layer item in the progenitor chain so IsActive() can walk back to the [umbrella partition] layer where ArmID stamps live.
+						//keep the start-layer item in the progenitor chain so any outer binding sitting on it (potentially shadowed by this scope's own binding) is reachable as an ancestor via @^name.
+						//for unnamed scopes there's nothing to shadow, so we preserve the historical behavior of rebasing to `p.Progenitor` to keep the chain flat.
+						// eepHistory=true (pattern-match arm exit) must also preserve the start-layer item in the progenitor chain so IsActive() can walk back to the [umbrella partition] layer where ArmID stamps live.
 						bool keepStartItemAsProgenitor = scope.Name != null || keepHistory;
 						for (int i = 0; i < startLayer.Items.Count; i++)
 						{
@@ -500,7 +448,7 @@ public class Context
 				}
 				case BranchType.ListAppend:
 				{
-					// append current items into the start layer (flat).
+					//append current items into the start layer (flat).
 					var merged = new PKLayer(currentLayer.Type);
 					int idx = 0;
 					foreach (var it in startLayer.Items)
@@ -521,7 +469,7 @@ public class Context
 			return;
 		}
 
-		// no scope open — root-level pop on the very first input branch.
+		//no scope open root-level pop on the first input branch.
 		var top = _timeline[^1];
 		switch (frameType)
 		{
@@ -562,15 +510,15 @@ public class Context
 
 	public void BeginPatternMatch(OpInvoker[] filters, object[][] filterArgs, bool hasAlternate)
 	{
-		if (DebugTrace) DbgWrite($"[DEBUG_LOG] >>> BeginPatternMatch filters={filters.Length} hasAlternate={hasAlternate}");
-		DbgLayer("BeginPatternMatch PRE");
 		var startIdx = _timeline.Count - 1;
-		//NewClonedLayer()-style clone where the cloning helper stamps ArmID on each new PKItem according to the first matching filter (with CurrentItem set during evaluation so bindings resolve).
+		
+		//deep copy because we write item.ArmID directly. this bug got me for like a week.
 		var top = _timeline[^1];
-		var cloned = new PKLayer(top.Type)
+		var cloned = new PKLayer(top.Type);
+		foreach (var src in top.Items)
 		{
-			Items = new List<PKItem>(top.Items)
-		};
+			cloned.Items.Add(new PKItem(src.Value, src, src.Index));
+		}
 		int alternate = filters.Length;
 		foreach (var item in cloned.Items)
 		{
@@ -605,7 +553,6 @@ public class Context
 			IsArmUmbrella = true,
 		};
 		_scopes.Push(s);
-		DbgLayer("BeginPatternMatch POST-stamp");
 
 		MaxTimelineLength = Math.Max(MaxTimelineLength, _timeline.Count);
 		MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
@@ -613,8 +560,7 @@ public class Context
 
 	public void EnterArm(int i)
 	{
-		if (DebugTrace) DbgWrite($"[DEBUG_LOG] >>> EnterArm({i})");
-		// Find the umbrella's partition layer — that is the layer where ArmID stamps live, and must be used as this arm's StartLayerIndex so IsActive() can walk back to it via Progenitor to determine arm membership.
+		//find the umbrella's partition layer. this arm's StartLayerIndex so IsActive() can walk up to it via Progenitor to determine membership.
 		int partitionIdx = -1;
 		foreach (var s in _scopes)
 		{
@@ -637,23 +583,16 @@ public class Context
 			Name = null,
 		});
 		MaxScopeDepth = Math.Max(MaxScopeDepth, _scopes.Count);
-		// Clone the current top: this preserves accumulated transformations from prior arms (inactive items pass through unchanged), so each arm layers its changes on top of the previous arm's merged result.
 		NewClonedLayer();
-		DbgLayer("EnterArm POST");
 	}
 
 	public void ExitArm(BranchType closeType)
 	{
-		if (DebugTrace) DbgWrite($"[DEBUG_LOG] >>> ExitArm({closeType})");
-		DbgLayer("ExitArm PRE");
 		PopFrame(closeType, true);
-		DbgLayer("ExitArm POST");
 	}
 
 	public void EndPatternMatch()
 	{
-		if (DebugTrace) DbgWrite($"[DEBUG_LOG] >>> EndPatternMatch");
-		DbgAllLayers("EndPatternMatch PRE");
 		if (_scopes.TryPeek(out var scope))
 		{
 			if (scope.IsArmUmbrella)
