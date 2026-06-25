@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>WinExe</OutputType>
+        <OutputType>Exe</OutputType>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -16,6 +16,10 @@
         <QtBridgePackageId>$(QtBridgePackagePrefix).$(QtBridgeTemplateRid)</QtBridgePackageId>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <QtBridgeResourceLibrary>true</QtBridgeResourceLibrary>
+    </PropertyGroup>
+
     <ItemGroup Condition="'$(QtBridgeTemplateRid)' == 'win-x64' or '$(QtBridgeTemplateRid)' == 'linux-x64'">
         <PackageReference Include="$(QtBridgePackageId)" Version="0.3.*-*" />
     </ItemGroup>
@@ -25,8 +29,49 @@
     </Target>
 
     <ItemGroup>
-        <None Include="Main.qml" />
-        <Compile Include="Program.cs" />
+        <ProjectReference Include="..\PocketknifeCompiler\PocketknifeCompiler.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <None Include="Main.qml" />
+        <None Include="AstNodeView.qml"/>
+        <Compile Include="Program.cs" />
+        <Compile Include="Models\EditorModel.cs" />
+        <Compile Include="Models\EvaluatorModel.cs" />
+        <Compile Include="Models\AstNode.cs" />
+        <Compile Include="Models\GutterMarker.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="~qmlDesignScratch\QtPKTest\QtPKTestContent\App.qml" />
+      <UpToDateCheckInput Remove="~qmlDesignScratch\QtPKTest\QtPKTestContent\Screen01.ui.qml" />
+      <UpToDateCheckInput Remove="~qmlDesignScratch\QtPKTest\QtPKTest\Constants.qml" />
+      <UpToDateCheckInput Remove="~qmlDesignScratch\QtPKTest\QtPKTest\EventListModel.qml" />
+      <UpToDateCheckInput Remove="~qmlDesignScratch\QtPKTest\QtPKTest\EventListSimulator.qml" />
+    </ItemGroup>
+
+    <!--
+        Ship the MSVC++ 2015-2022 runtime DLLs next to the executable so the Qt6
+        native DLLs always bind against a compatible C++ runtime, regardless of
+        what is on PATH (notably the JetBrains/Junie agent runtime ships an
+        older MSVCP140.dll that crashes Qt6 with 0xC0000005 at startup).
+    -->
+    <ItemGroup Condition="'$(QtBridgeTemplateRid)' == 'win-x64'">
+        <VcRuntimeDll Include="$(WINDIR)\System32\msvcp140.dll" />
+        <VcRuntimeDll Include="$(WINDIR)\System32\msvcp140_1.dll" />
+        <VcRuntimeDll Include="$(WINDIR)\System32\msvcp140_2.dll" />
+        <VcRuntimeDll Include="$(WINDIR)\System32\vcruntime140.dll" />
+        <VcRuntimeDll Include="$(WINDIR)\System32\vcruntime140_1.dll" />
+    </ItemGroup>
+
+    <Target Name="CopyVcRuntimeDlls" AfterTargets="Build"
+            Condition="'$(QtBridgeTemplateRid)' == 'win-x64'"
+            Inputs="@(VcRuntimeDll)"
+            Outputs="@(VcRuntimeDll -> '$(OutDir)%(Filename)%(Extension)')">
+        <Copy SourceFiles="@(VcRuntimeDll)"
+              DestinationFolder="$(OutDir)"
+              SkipUnchangedFiles="true"
+              UseHardlinksIfPossible="false" />
+    </Target>
 
 </Project>

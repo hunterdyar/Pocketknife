@@ -1,37 +1,15 @@
-using Qt.MetaObject;
 using Qt.Quick;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 
 namespace PocketknifeDesktop;
-
-[QObject]
-[QmlElement(Name = "Counter", Singleton = true)]
-public class CounterService : INotifyPropertyChanged
-{
-	public event PropertyChangedEventHandler? PropertyChanged;
-
-	private int _clicks = 0;
-
-	public int Clicks
-	{
-		get => _clicks;
-		set
-		{
-			if (_clicks == value)
-				return;
-			_clicks = value;
-			OnPropertyChanged();
-		}
-	}
-
-	protected virtual void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-}
 
 public class Program
 {
 	internal static void Main(string[] args)
 	{
+		// Use Qt's Fusion style as the base; the QML layer paints Win95-style
+		// raised/sunken bevels on top of it for a classic, non-Material look.
+		Environment.SetEnvironmentVariable("QT_QUICK_CONTROLS_STYLE", "Fusion");
+
 		Qml.LoadFromRootModule("Main");
 		Qml.WaitForExit();
 	}
