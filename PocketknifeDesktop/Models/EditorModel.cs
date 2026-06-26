@@ -8,7 +8,7 @@ using Qt.Quick;
 namespace PocketknifeDesktop;
 
 [QObject]
-[QmlElement(Name = "Editor", Singleton = true)]
+[QmlElement(Name = "Editor")]
 public class EditorModel : INotifyPropertyChanged
 {
 	public event PropertyChangedEventHandler? PropertyChanged;
@@ -17,6 +17,10 @@ public class EditorModel : INotifyPropertyChanged
 	private int _lineCount = 1;
 	private int _executionLine = 0; // 0 = none
 
+	public EditorModel(EngineModel engineModel)
+	{
+		
+	}
 	public string Text
 	{
 		get => _text;

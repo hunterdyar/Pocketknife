@@ -9,7 +9,7 @@ namespace PocketknifeDesktop;
 
 [QObject]
 [QmlElement(Name = "AstNode")]
-public class AstNode : INotifyPropertyChanged
+public class QmlAstNode : INotifyPropertyChanged
 {
 	public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -17,9 +17,9 @@ public class AstNode : INotifyPropertyChanged
 	private string _detail = "";
 	private bool _expanded = true;
 
-	public AstNode() { }
+	public QmlAstNode() { }
 
-	public AstNode(string label, string detail = "")
+	public QmlAstNode(string label, string detail = "")
 	{
 		_label = label;
 		_detail = detail;
@@ -43,11 +43,11 @@ public class AstNode : INotifyPropertyChanged
 		set { if (_expanded == value) return; _expanded = value; OnPropertyChanged(); }
 	}
 
-	public ObservableCollection<AstNode> Children { get; } = new();
+	public ObservableCollection<QmlAstNode> Children { get; } = new();
 
 	public bool HasChildren => Children.Count > 0;
 
-	public void AddChild(AstNode child)
+	public void AddChild(QmlAstNode child)
 	{
 		Children.Add(child);
 		OnPropertyChanged(nameof(HasChildren));

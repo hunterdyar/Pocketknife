@@ -100,7 +100,7 @@ ApplicationWindow {
     menuBar: MenuBar {
         Menu {
             title: "&File"
-            Action { text: "&New"; onTriggered: { editor.text = ""; Editor.text = ""; Evaluator.reset() } }
+            Action { text: "&New"; onTriggered: { editor.text = ""; Engine.Editor.text = ""; Evaluator.reset() } }
             Action { text: "&Open..." }
             Action { text: "&Save" }
             MenuSeparator {}
@@ -158,14 +158,13 @@ ApplicationWindow {
                     MouseArea { id: ma; anchors.fill: parent; onClicked: btnRoot.clicked() }
                 }
 
-                TbButton { text: "Run";   onClicked: Evaluator.run(Editor.text) }
-                TbButton { text: "Play";  onClicked: Evaluator.play(Editor.text) }
-                TbButton { text: "Step";  onClicked: Evaluator.step(Editor.text) }
-                TbButton { text: "Undo";  onClicked: Evaluator.undo() }
-                TbButton { text: "Reset"; onClicked: { Evaluator.reset(); Editor.clearAllMarkers() } }
+                TbButton { text: "Run";   onClicked: Engine.Evaluator.run(Engine.Editor.text) }
+                TbButton { text: "Step";  onClicked: Engine.Evaluator.step(Engine.Editor.text) }
+                // TbButton { text: "Undo";  onClicked: Engine.Evaluator.undo(); }
+                TbButton { text: "Reset"; onClicked: { Engine.Evaluator.reset(); Engine.Editor.clearAllMarkers() } }
                 Item { Layout.fillWidth: true }
                 Label {
-                    text: "step " + Evaluator.stepCount + (Evaluator.isRunning ? "  ●" : "")
+                    text: "step " + Engine.Evaluator.stepCount + (Engine.Evaluator.isRunning ? "  ●" : "")
                     color: theme.textDim
                     font.family: theme.fontFamily
                     font.pixelSize: theme.fontPx
@@ -225,13 +224,13 @@ ApplicationWindow {
                                 var lineH = gutterText.font.pixelSize + 4
                                 var top = gutterText.topPadding
                                 var line = Math.floor((mouse.y - top) / lineH) + 1
-                                if (line >= 1 && line <= editor.lineCount) Editor.toggleBreakpoint(line)
+                                if (line >= 1 && line <= editor.lineCount) Engine.Editor.toggleBreakpoint(line)
                             }
                         }
 
                         // Gutter decorations (breakpoints, exec arrow, errors)
                         Repeater {
-                            model: Editor.markers
+                            model: Engine.Editor.markers
                             delegate: Item {
                                 width: gutter.width
                                 height: gutterText.font.pixelSize + 4
@@ -287,13 +286,13 @@ ApplicationWindow {
                         leftPadding: 8
                         topPadding: 8
                         focus: true
-                        Component.onCompleted: text = Editor.text
-                        onTextChanged: Editor.text = text
+                        Component.onCompleted: text = Engine.Editor.text
+                        onTextChanged: Engine.Editor.text = text
                         Connections {
-                            target: Editor
+                            target: Engine.Editor
                             function onTextChanged() {
-                                if (editor.text !== Editor.text)
-                                    editor.text = Editor.text
+                                if (editor.text !== Engine.Editor.text)
+                                    editor.text = Engine.Editor.text
                             }
                         }
                     }
@@ -375,7 +374,7 @@ ApplicationWindow {
                     readOnly: true
                     color: theme.text
                     font.family: "Consolas, Menlo, monospace"
-                    text: Evaluator.consoleOutput.length === 0 ? "(console)" : Evaluator.consoleOutput
+                    text: Engine.Evaluator.consoleOutput.length === 0 ? "(console)" : Engine.Evaluator.consoleOutput
                     background: null
                 }
             }
@@ -390,7 +389,7 @@ ApplicationWindow {
                     Column {
                         width: parent.width
                         spacing: 0
-                        AstNodeView { node: Evaluator.root; depth: 0 }
+                        AstNodeView { node: Engine.Evaluator.root; depth: 0 }
                     }
                 }
             }
@@ -405,7 +404,7 @@ ApplicationWindow {
                     readOnly: true
                     color: "#ff8a7a"
                     font.family: "Consolas, Menlo, monospace"
-                    text: Evaluator.errorsOutput
+                    text: Engine.Evaluator.errorsOutput
                     background: null
                 }
             }

@@ -15,7 +15,7 @@ using Qt.Quick;
 namespace PocketknifeDesktop;
 
 [QObject]
-[QmlElement(Name = "Evaluator", Singleton = true)]
+[QmlElement(Name = "Evaluator")]
 public class EvaluatorModel : INotifyPropertyChanged
 {
 	public event PropertyChangedEventHandler? PropertyChanged;
@@ -26,16 +26,15 @@ public class EvaluatorModel : INotifyPropertyChanged
 	private string _errorsOutput = "No errors.";
 	private bool _isRunning;
 	private int _stepCount;
-	private AstNode _root = new("(no program)");
+	private QmlAstNode _root = new("(no program)");
 
 	// Step-by-step state.
 	private IEnumerator<EvalState>? _stepIter;
-	private Context? _stepContext;
+	private Context? _context;
 	private readonly Stack<string> _consoleHistory = new();
 
-	public EvaluatorModel()
+	public EvaluatorModel(EngineModel engineModel)
 	{
-		Debug.WriteLine("EvaluatorModel");
 	}
 	public string ConsoleOutput
 	{
@@ -61,14 +60,13 @@ public class EvaluatorModel : INotifyPropertyChanged
 		private set { if (_stepCount == value) return; _stepCount = value; OnPropertyChanged(); }
 	}
 
-	public AstNode Root
+	public QmlAstNode Root
 	{
 		get => _root;
 		private set { _root = value; OnPropertyChanged(); }
 	}
 
-	//toolbar actions
-	
+	//reset context and run from the top.
 	public void Run(string source)
 	{
 		ClearOutputs();
@@ -77,38 +75,8 @@ public class EvaluatorModel : INotifyPropertyChanged
 		IsRunning = true;
 		try
 		{
-			var ctx = new Context();
-			CaptureConsoleWhile(() => SimpleEvaluator.EvaluateAll(program!, ctx));
-		}
-		catch (Exception ex)
-		{
-			ReportError(ex);
-		}
-		finally
-		{
-			IsRunning = false;
-		}
-	}
-	
-	public void Play(string source)
-	{
-		if (_stepIter == null)
-		{
-			Run(source);
-			return;
-		}
-
-		IsRunning = true;
-		try
-		{
-			CaptureConsoleWhile(() =>
-			{
-				while (_stepIter!.MoveNext())
-				{
-					StepCount++;
-					if (_stepIter.Current.IsErr) break;
-				}
-			});
+			_context = new Context();
+			CaptureConsoleWhile(() => SimpleEvaluator.EvaluateAll(program!, _context));
 		}
 		catch (Exception ex)
 		{
@@ -118,7 +86,6 @@ public class EvaluatorModel : INotifyPropertyChanged
 		{
 			IsRunning = false;
 			_stepIter = null;
-			_stepContext = null;
 		}
 	}
 	
@@ -128,8 +95,8 @@ public class EvaluatorModel : INotifyPropertyChanged
 		{
 			ClearOutputs();
 			if (!TryParseAndCompile(source, out var program)) return;
-			_stepContext = new Context();
-			_stepIter = SimpleEvaluator.Evaluate(program!, _stepContext).GetEnumerator();
+			_context = new Context();
+			_stepIter = SimpleEvaluator.Evaluate(program!, _context).GetEnumerator();
 		}
 
 		try
@@ -145,7 +112,7 @@ public class EvaluatorModel : INotifyPropertyChanged
 				{
 					// Finished — clear stepping state.
 					_stepIter = null;
-					_stepContext = null;
+					_context = null;
 				}
 			});
 		}
@@ -153,7 +120,7 @@ public class EvaluatorModel : INotifyPropertyChanged
 		{
 			ReportError(ex);
 			_stepIter = null;
-			_stepContext = null;
+			_context = null;
 		}
 	}
 	
@@ -168,11 +135,11 @@ public class EvaluatorModel : INotifyPropertyChanged
 	public void Reset()
 	{
 		_stepIter = null;
-		_stepContext = null;
+		_context = null;
 		_consoleHistory.Clear();
 		StepCount = 0;
 		ClearOutputs();
-		Root = new AstNode("(no program)");
+		Root = new QmlAstNode("(no program)");
 	}
 
 	//helpers
@@ -230,18 +197,18 @@ public class EvaluatorModel : INotifyPropertyChanged
 
 	// --- AST → QML tree conversion -----------------------------------------------
 
-	private static AstNode BuildAstTree(ASTNode? node)
+	private static QmlAstNode BuildAstTree(ASTNode? node)
 	{
-		var root = new AstNode("Script");
+		var root = new QmlAstNode("Script");
 		if (node != null) Visit(node, root);
 		return root;
 	}
 
-	private static void Visit(ASTNode node, AstNode parent)
+	private static void Visit(ASTNode node, QmlAstNode parent)
 	{
 		var label = node.GetType().Name;
 		var detail = SafeToString(node);
-		var qmlNode = new AstNode(label, detail);
+		var qmlNode = new QmlAstNode(label, detail);
 		parent.AddChild(qmlNode);
 
 		// Recurse into known container shapes. This is intentionally shallow:

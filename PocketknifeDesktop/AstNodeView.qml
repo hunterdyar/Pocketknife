@@ -23,8 +23,8 @@ Column {
             }
         }
         Text {
-            visible: node && node.detail.length > 0
-            text: "  ; " + (node ? node.detail.split('\n')[0] : "")
+            //visible: node && node.detail && node.detail.length > 0
+            text: (node ? node.children.length : 0)
             color: "#8fbf6f"
             font.family: "MS Sans Serif, Tahoma, Microsoft Sans Serif, sans-serif"
             font.pixelSize: 12

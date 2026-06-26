@@ -35,10 +35,11 @@
     <ItemGroup>
         <None Include="Main.qml" />
         <None Include="AstNodeView.qml"/>
+        <Compile Include="Models\EngineModel.cs" />
         <Compile Include="Program.cs" />
         <Compile Include="Models\EditorModel.cs" />
         <Compile Include="Models\EvaluatorModel.cs" />
-        <Compile Include="Models\AstNode.cs" />
+        <Compile Include="Models\QmlAstNode.cs" />
         <Compile Include="Models\GutterMarker.cs" />
     </ItemGroup>
 
