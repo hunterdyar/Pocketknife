@@ -65,7 +65,7 @@ public class Program
 		RenderFrameInfo frame = new RenderFrameInfo(Raylib.GetScreenWidth(), Raylib.GetScreenHeight());
 		UiInputState input = CollectUiInput();
 
-		_ui.Frame(frame, mp, input, new FrameContext(_state,frame.LogicalHeight), static (root, context) =>
+		_ui.Frame(frame, mp, input, new FrameContext(_state), static (root, context) =>
 		{
 			DrawRoot(root, context);
 		});
@@ -91,7 +91,7 @@ public class Program
     AddKey(keys, UiKey.C, KeyboardKey.C);
     AddKey(keys, UiKey.V, KeyboardKey.V);
     AddKey(keys, UiKey.X, KeyboardKey.X);
-
+    
     string textInput = CollectTextInput();
     bool shift = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
     bool ctrl = Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl);
@@ -148,52 +148,11 @@ public class Program
 	private static void DrawRoot(Ui root, FrameContext context)
 	{
 		root.FillViewport(root.Theme.SurfaceBg);
-		// using (root.MaxWidth(1040, UiAlign.Center))
-		// {
-		// }
-		
-		DrawMenuBar(root, context.State);
+		context.State.Application.Draw(root, context.State);
 	}
 
-	static Response DrawMenuBar(Ui host, AppState state)
-	{
-		 return host.MenuBar(host.AvailableWidth, state, static (bar, state) =>
-    {
-        bar.Menu("File", state, static (menu, state) =>
-        {
-	        if (menu.MenuItem("open", closeOnActivate: true, shortcut: "Ctrl+O").Clicked)
-	        {
-		        //
-	        }
 
-	        if (menu.MenuItem("save", closeOnActivate: true, shortcut: "Ctrl+O").Clicked)
-	        {
-		        //
-	        }
-	        menu.MenuSeparator();
-
-	        if (menu.MenuItem("exit", closeOnActivate: true, shortcut: "Ctrl+Q").Clicked)
-	        {
-		       Shutdown();
-	        }
-
-            
-        }, popupWidth: 260f);
-
-        bar.Menu("Edit", state, static (menu, state) =>
-        {
-
-          
-        });
-
-        bar.Menu("View", state, static (menu, state) =>
-        {
-            
-        });
-    });
-	}
-
-	private static void Shutdown()
+	public static void Shutdown()
 	{
 		_ui?.Dispose();
 		_renderer?.Shutdown();
