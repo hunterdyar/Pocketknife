@@ -5,7 +5,7 @@ namespace PocketKnifeDesktop;
 
 public class EvalToolbar : ComponentBase
 {
-	private const float _buttonWidth = 48;
+	private const float _buttonWidth = 36;
 	public override void Draw(Ui host, AppState state)
 	{
 		host.Panel(host.AvailableWidth, state, static (panel, state) =>

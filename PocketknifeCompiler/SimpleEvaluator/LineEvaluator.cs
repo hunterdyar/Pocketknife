@@ -20,8 +20,6 @@ public class LineEvaluator()
 	}
 	public void RunCurrentToEnd()
 	{
-		
-		
 		if (_current.IsDone)
 		{
 			return;
@@ -38,8 +36,7 @@ public class LineEvaluator()
 					_current = execEnum.Current;
 				}
 				else
-				{
-					throw new Exception("Execution ended unexpectedly (EvalState and enumerator mismatch).");
+				{ 
 					break;
 				}
 			}
@@ -52,7 +49,7 @@ public class LineEvaluator()
 			}
 			_ctx = new Context();
 			int stepCount = 0;
-			foreach (var state in SimpleEvaluator.Evaluate(_root, _ctx))
+			foreach (var state in SimpleEvaluator.Evaluate(_root, _current.Depth, _ctx))
 			{
 				if (state.IsErr)
 				{
@@ -74,13 +71,44 @@ public class LineEvaluator()
 		if (!_current.IsStarted)
 		{
 			_ctx = new Context();
-			_execution = SimpleEvaluator.Evaluate(_root, _ctx);
+			_execution = SimpleEvaluator.Evaluate(_root, 0, _ctx);
 		}
 		
+		var currentDepth = _current.Depth;
 		using var execEnum = _execution.GetEnumerator();
 		if (execEnum.MoveNext())
 		{
 			_current = execEnum.Current;
+		}
+		else
+		{
+			throw new Exception("Execution ended unexpectedly (EvalState and enumerator mismatch).");
+		}
+	}
+
+	public void StepOut()
+	{
+		if (_current.IsDone || _current.IsErr)
+		{
+			return;
+		}
+
+		if (!_current.IsStarted)
+		{
+			_ctx = new Context();
+			_execution = SimpleEvaluator.Evaluate(_root, _current.Depth, _ctx);
+		}
+
+		var currentDepth = _current.Depth;
+		using var execEnum = _execution.GetEnumerator();
+		if (execEnum.MoveNext())
+		{
+			_current = execEnum.Current;
+			//keep going until we end up less deep current, then stop.
+			while(execEnum.MoveNext() && execEnum.Current.Depth >= currentDepth)
+			{
+				_current = execEnum.Current;
+			}
 		}
 		else
 		{

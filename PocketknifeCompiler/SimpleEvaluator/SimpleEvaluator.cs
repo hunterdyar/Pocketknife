@@ -7,7 +7,7 @@ public static class SimpleEvaluator
 	public static void EvaluateAll(PKNode node, Context ctx = null)
 	{
 		int stepCount = 0;
-		foreach (var state in Evaluate(node, ctx))
+		foreach (var state in Evaluate(node,0, ctx))
 		{
 			if (state.IsErr)
 			{
@@ -16,14 +16,14 @@ public static class SimpleEvaluator
 			stepCount++;
 		}
 	}
-	public static IEnumerable<EvalState> Evaluate(PKNode node, Context ctx = null)
+	public static IEnumerable<EvalState> Evaluate(PKNode node, int depth, Context ctx = null)
 	{
 		switch (node)
 		{
 			case PKNodeGroup group:
 				foreach (var n in group.Nodes)
 				{
-					foreach (var state in Evaluate(n, ctx))
+					foreach (var state in Evaluate(n,depth+1, ctx))
 					{
 						yield return state;
 					}
@@ -31,9 +31,9 @@ public static class SimpleEvaluator
 				break;
 			case PKInputBranch branch:
 				//push the input stream onto the stack.
-				foreach (var evalState in Evaluate(branch.Input, ctx)) yield return evalState;
+				foreach (var evalState in Evaluate(branch.Input, depth, ctx)) yield return evalState;
 				//take that and operate on it
-				foreach (var evalState in Evaluate(branch.Body, ctx)) yield return evalState;
+				foreach (var evalState in Evaluate(branch.Body, depth + 1, ctx)) yield return evalState;
 				
 				//pop the (input) stream off of the branch.
 				ctx.PopFrame(branch.BranchType);
@@ -41,49 +41,49 @@ public static class SimpleEvaluator
 			case PKGenInputProvider input:
 				var ia = EvaluateArguments(input.Arguments, ctx);
 				ctx.PushStreamWithGenerator(input.Type, ia, input.Generator);
-				yield return EvalState.Good();
+				yield return EvalState.Good(depth);
 				break;
 			case PKPipeInputProvider input:
 				var pia = EvaluateArguments(input.Arguments, ctx);
 				ctx.PushStreamWithPipeGenerator(input.Type, pia, input.PipeGenerator);
-				yield return EvalState.Good();
+				yield return EvalState.Good(depth);
 				break;
 			case PKFilterOperatorNode fopr:
 				var fa = EvaluateArguments(fopr.Arguments, ctx);
 				ctx.FilterOnEach(fa, fopr.Invoker);
-				yield return EvalState.Good();
+				yield return EvalState.Good(depth);
 				break;
 			case PKSignalOperatorNode sopr:
 				var soprArguments = EvaluateArguments(sopr.Arguments, ctx);
 				ctx.SignalOnEach(soprArguments, sopr.Invoker);
-				yield return EvalState.Good();
+				yield return EvalState.Good(depth);
 				break;
 			case PKInlineOperatorNode iopr:
 				var ioprArguments = EvaluateArguments(iopr.Arguments, ctx);
 				ctx.OperateOnEach(ioprArguments, iopr.Invoker);
-				yield return EvalState.Good();
+				yield return EvalState.Good(depth);
 				break;
 			case PKPack:
 				ctx.Pack();
-				yield return EvalState.Good();
+				yield return EvalState.Good(depth);
 				break;
 			case PKUnpack:
 				ctx.Unpack();
-				yield return EvalState.Good();
+				yield return EvalState.Good(depth);
 				break;
 			case PKNamedBranch namedBranch:
 				ctx.NewNamedFrame(namedBranch.Label);
-				yield return EvalState.Good();
-				foreach (var state in Evaluate(namedBranch.Body, ctx)) yield return state;
+				yield return EvalState.Good(depth);
+				foreach (var state in Evaluate(namedBranch.Body, depth + 1, ctx)) yield return state;
 				ctx.PopFrame(namedBranch.Type);
-				yield return EvalState.Good();
+				yield return EvalState.Good(depth);
 				break;
 			case PKBranch branch:
 				ctx.NewFrame();
-				yield return EvalState.Good();
-				foreach (var state in Evaluate(branch.Body, ctx)) yield return state;
+				yield return EvalState.Good(depth);
+				foreach (var state in Evaluate(branch.Body, depth + 1, ctx)) yield return state;
 				ctx.PopFrame(branch.Type);
-				yield return EvalState.Good();
+				yield return EvalState.Good(depth);
 				break;
 			case PKPatternMatch patternMatch:
 				//todo: optimize for allocations
@@ -95,17 +95,17 @@ public static class SimpleEvaluator
 				{
 					var branch = patternMatch.Branches[i];
 					ctx.EnterArm(i);
-					foreach (var state in Evaluate(branch.Body, ctx)) yield return state;
+					foreach (var state in Evaluate(branch.Body,depth+1, ctx)) yield return state;
 					ctx.ExitArm(branch.CloseType);
 				}
 				if (patternMatch.Alternate != null)
 				{
 					ctx.EnterArm(patternMatch.Branches.Count);
-					foreach (var state in Evaluate(patternMatch.Alternate.Body, ctx)) yield return state;
+					foreach (var state in Evaluate(patternMatch.Alternate.Body,depth+1, ctx)) yield return state;
 					ctx.ExitArm(patternMatch.Alternate.CloseType);
 				}
 				ctx.EndPatternMatch();
-				yield return EvalState.Good();
+				yield return EvalState.Good(depth);
 				break;
 			// default:
 			// 	throw new NotImplementedException($"{node.GetType()} not yet compilable");

@@ -5,47 +5,52 @@ public struct EvalState
 	public bool IsErr = false;
 	public bool IsDone = false;
 	public bool IsStarted = false;
-	public EvalState()
+	public int Depth;
+	public EvalState(int depth)
 	{
+		Depth = depth;
 	}
-
-	public static EvalState None()
+	public static EvalState None(int depth = 0)
 	{
 		return new EvalState()
 		{
 			IsErr = false,
 			IsDone = false,
-			IsStarted = false
+			IsStarted = false,
+			Depth = depth
 		};
 	}
 
-	public static EvalState Good()
+	public static EvalState Good(int depth)
 	{
 		return new EvalState()
 		{
 			IsStarted = true,
 			IsErr = false,
-			IsDone = false
+			IsDone = false,
+			Depth = depth
 		};
 	}
 
-	public static EvalState Bad()
+	public static EvalState Bad(int depth)
 	{
 		return new EvalState()
 		{
 			IsErr = true,
 			IsDone = true,
-			IsStarted = true
+			IsStarted = true,
+			Depth = depth
 		};
 	}
 
-	public static EvalState Done()
+	public static EvalState Done(int depth)
 	{
 		return new EvalState()
 		{
 			IsDone = true,
 			IsErr = false,
-			IsStarted = true
+			IsStarted = true,
+			Depth = depth
 		};
 	}
 }
