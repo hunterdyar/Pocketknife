@@ -15,12 +15,14 @@ public class EvalToolbar : ComponentBase
 			{
 				if (panel.Button($"{MaterialSymbols.PlayArrow}", width: _buttonWidth).Clicked)
 				{
-					//run!
+					state.RecompileIfNeeded();
+					state.LineEvaluator.RunCurrentToEnd();
 				}
 
 				if (panel.Button($"{MaterialSymbols.StepInto}", width: _buttonWidth).Clicked)
 				{
-					//step
+					state.RecompileIfNeeded();
+					state.LineEvaluator.Step();
 				}
 
 				if (panel.Button($"{MaterialSymbols.StepOut}", width: _buttonWidth).Clicked)
@@ -31,6 +33,8 @@ public class EvalToolbar : ComponentBase
 				if (panel.Button($"{MaterialSymbols.Refresh}", width: _buttonWidth).Clicked)
 				{
 					//reset
+					//state.RecompileIfNeeded();
+					state.LineEvaluator.Reset();
 				}
 			}
 		});

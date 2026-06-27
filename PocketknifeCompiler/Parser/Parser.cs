@@ -12,6 +12,7 @@ public class Parser
     public ScriptNode Program;
     public void Parse(string input)
     {
+        _tokenIndex = 0;
         _lexer = new Lexer(input);
         Parse(_lexer);
     }
@@ -19,8 +20,8 @@ public class Parser
     public void Parse(Lexer input)
     {
         //Reset/Initiate Command List.
-        _lexer = input;
         _tokenIndex = 0;
+        _lexer = input;
         Program = ParseProgram();
     }
 

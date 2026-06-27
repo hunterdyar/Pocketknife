@@ -4,13 +4,29 @@ public struct EvalState
 {
 	public bool IsErr = false;
 	public bool IsDone = false;
+	public bool IsStarted = false;
 	public EvalState()
 	{
 	}
-	
+
+	public static EvalState None()
+	{
+		return new EvalState()
+		{
+			IsErr = false,
+			IsDone = false,
+			IsStarted = false
+		};
+	}
+
 	public static EvalState Good()
 	{
-		return new EvalState();
+		return new EvalState()
+		{
+			IsStarted = true,
+			IsErr = false,
+			IsDone = false
+		};
 	}
 
 	public static EvalState Bad()
@@ -19,6 +35,7 @@ public struct EvalState
 		{
 			IsErr = true,
 			IsDone = true,
+			IsStarted = true
 		};
 	}
 
@@ -27,7 +44,8 @@ public struct EvalState
 		return new EvalState()
 		{
 			IsDone = true,
-			IsErr = false
+			IsErr = false,
+			IsStarted = true
 		};
 	}
 }
