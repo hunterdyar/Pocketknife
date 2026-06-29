@@ -1,4 +1,4 @@
-﻿using PocketKnife.Compiler;
+﻿using PocketknifeCore.Compiler;
 
 namespace PocketknifeCore;
 
@@ -9,7 +9,7 @@ public class PKBranch : PKNode
 	
 	public BranchType Type => _type;
 	private BranchType _type;
-	public PKBranch(PKNodeGroup body, BranchType type)
+	public PKBranch(PKNodeGroup body, BranchType type, SourceSlice span) : base(span)
 	{
 		_body = body;
 		_type = type;
@@ -19,7 +19,7 @@ public class PKBranch : PKNode
 public class PKNamedBranch : PKBranch
 {
 	public string Label { get; }
-	public PKNamedBranch(string label, PKNodeGroup body, BranchType type) : base(body, type)
+	public PKNamedBranch(string label, PKNodeGroup body, BranchType type, SourceSlice span) : base(body, type, span)
 	{
 		Label = label;
 	}

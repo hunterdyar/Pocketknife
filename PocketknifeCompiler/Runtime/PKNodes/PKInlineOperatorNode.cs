@@ -1,4 +1,6 @@
-﻿namespace PocketknifeCore;
+﻿using PocketknifeCore.Compiler;
+
+namespace PocketknifeCore;
 
 public class PKInlineOperatorNode : PKNode
 {
@@ -11,7 +13,7 @@ public class PKInlineOperatorNode : PKNode
 	public Arguments Arguments => _arguments;
 	private Arguments _arguments;
 
-	public PKInlineOperatorNode(string name, OpInvoker invoker, Arguments arguments)
+	public PKInlineOperatorNode(string name, OpInvoker invoker, Arguments arguments, SourceSlice span) : base(span)
 	{
 		_name = name;
 		_invoker = invoker;
@@ -21,14 +23,14 @@ public class PKInlineOperatorNode : PKNode
 
 public class PKFilterOperatorNode : PKInlineOperatorNode
 {
-	public PKFilterOperatorNode(string name, OpInvoker invoker, Arguments arguments) : base(name, invoker, arguments)
+	public PKFilterOperatorNode(string name, OpInvoker invoker, Arguments arguments, SourceSlice span) : base(name, invoker, arguments, span)
 	{
 	}
 }
 
 public class PKSignalOperatorNode : PKInlineOperatorNode
 {
-	public PKSignalOperatorNode(string name, OpInvoker invoker, Arguments arguments) : base(name, invoker, arguments)
+	public PKSignalOperatorNode(string name, OpInvoker invoker, Arguments arguments, SourceSlice span) : base(name, invoker, arguments, span)
 	{
 	}
 }

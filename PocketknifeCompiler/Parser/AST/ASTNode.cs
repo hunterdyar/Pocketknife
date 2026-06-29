@@ -1,11 +1,11 @@
 using System.Text;
 using PocketknifeCore;
 
-namespace PocketKnife.Compiler;
+namespace PocketknifeCore.Compiler;
 
 public abstract class ASTNode
 {
-    public SourceSlice Start;
+    public SourceSlice Span;
     public virtual bool IsBoundary => false;
 
     public static string BranchTypeToString(BranchType type)

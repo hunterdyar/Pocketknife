@@ -1,4 +1,4 @@
-namespace PocketKnife.Compiler;
+namespace PocketknifeCore.Compiler;
 
 public class Lexer
 {

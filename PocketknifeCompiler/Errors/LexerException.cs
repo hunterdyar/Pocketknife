@@ -1,6 +1,6 @@
-﻿using PocketKnife.Compiler;
+﻿using PocketknifeCore.Compiler;
 
-namespace PocketKnife;
+namespace PocketknifeCore;
 
 public class LexerException : PocketknifeException
 {

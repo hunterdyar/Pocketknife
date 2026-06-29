@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace PocketKnife.Compiler;
+namespace PocketknifeCore.Compiler;
 
 //[sigil]identity arg0 arg1 ar2 (opt=options)
 //|transform, filter, etc, etc.

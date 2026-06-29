@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using PocketknifeCore;
 
-namespace PocketKnife.Compiler;
+namespace PocketknifeCore.Compiler;
 
 public class Parser
 {

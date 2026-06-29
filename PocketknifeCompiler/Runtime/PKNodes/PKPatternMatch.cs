@@ -10,7 +10,7 @@ public class PKPatternMatch : PKNode
 	public BranchType BranchType;
 	//we have different types of pattern matches?
 	
-	public PKPatternMatch(List<PKPatternFilterMatchBranch> branches, PKPatternBranch? alternate, BranchType branchType)
+	public PKPatternMatch(List<PKPatternFilterMatchBranch> branches, PKPatternBranch? alternate, BranchType branchType, SourceSlice span) : base(span)
 	{
 		Branches = branches;
 		Alternate = alternate;
@@ -22,7 +22,7 @@ public class PKPatternBranch : PKNode
 {
 	public PKNodeGroup Body;
 	public BranchType CloseType;
-	public PKPatternBranch(PKNodeGroup body, BranchType closeType)
+	public PKPatternBranch(PKNodeGroup body, BranchType closeType, SourceSlice span) : base(span)
 	{
 		Body = body;
 		CloseType = closeType;
@@ -33,7 +33,7 @@ public class PKPatternFilterMatchBranch : PKPatternBranch
 {
 	public OpInvoker Filter;
 	public Arguments Arguments;
-	public PKPatternFilterMatchBranch(OpInvoker filter, Arguments arguments, PKNodeGroup body, BranchType closeType) : base(body, closeType)
+	public PKPatternFilterMatchBranch(OpInvoker filter, Arguments arguments, PKNodeGroup body, BranchType closeType, SourceSlice span) : base(body, closeType, span)
 	{
 		Filter = filter;
 		Arguments = arguments;

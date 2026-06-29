@@ -1,4 +1,6 @@
-namespace PocketKnife.Compiler;
+using PocketknifeCore.Compiler;
+
+namespace PocketknifeCore;
 
 public readonly struct SourceSlice(int startLoc, int length, Lexer lexer)
 {
@@ -19,4 +21,20 @@ public readonly struct SourceSlice(int startLoc, int length, Lexer lexer)
     {
         return PrettyLineCol(false)+": "+ GetString(_lexer.Source);
     }
+
+    public static SourceSlice Span(SourceSlice start, SourceSlice end)
+    {
+        if (start.StartLoc > end.StartLoc)
+        {
+            return Span(end, start);
+        }
+
+        if (Equals(start, end))
+        {
+            return start;
+        }
+        return new SourceSlice(start.StartLoc, (end.StartLoc+end.Length) - start.StartLoc, start._lexer);
+    }
+    
+    
 }

@@ -10,7 +10,7 @@ public class PKInputProvider : PKNode
 	
 	public Arguments Arguments => _arguments;
 	private Arguments _arguments;
-	public PKInputProvider(Type type, string opName, Arguments arguments)
+	public PKInputProvider(Type type, string opName, Arguments arguments, SourceSlice span) : base(span)
 	{
 		_type = type;
 		_name = opName;
@@ -28,7 +28,7 @@ public class PKGenInputProvider : PKInputProvider
 	public GenInvoker Generator => _generator;
 	private GenInvoker _generator;
 
-	public PKGenInputProvider(Type type, string opName, Arguments arguments, GenInvoker generator) : base(type, opName, arguments)
+	public PKGenInputProvider(Type type, string opName, Arguments arguments, GenInvoker generator, SourceSlice span) : base(type, opName, arguments, span)
 	{
 		_generator = generator;
 	}

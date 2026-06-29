@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text;
 using PocketknifeCore;
 
-namespace PocketKnife.Compiler;
+namespace PocketknifeCore.Compiler;
 
 public class ExpressionNode : ASTNode
 {

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
-using PocketKnife.Compiler;
+using PocketknifeCore.Compiler;
 using PocketknifeCore.Errors;
+using PocketknifeCore;
 
 namespace PocketknifeCore.Compiler;
 
@@ -32,7 +33,7 @@ public class Compiler
 					nodes.Add(n);
 				}
 
-				return new PKNodeGroup(nodes);
+				return new PKNodeGroup(nodes, SourceSlice.Span(scriptNode.RootNodes[0].Span, scriptNode.RootNodes[^1].Span));
 			case CommandSetNode commandSetNode:
 			{
 				var commands = commandSetNode.Commands;
@@ -55,7 +56,16 @@ public class Compiler
 					{
 						compiled.Add(Compile(c, ctx));
 					}
-					return new PKNodeGroup(compiled);
+
+					if (commands.Count == 0)
+					{
+						//todo: ???? we returned an empty one before.
+						return new PKNodeGroup(compiled, commandSetNode.Span);
+					}
+					else
+					{
+						return new PKNodeGroup(compiled, SourceSlice.Span(commands[0].Span, commands[^1].Span));
+					}
 				}
 
 				//split into segments around boundaries.
@@ -69,23 +79,23 @@ public class Compiler
 					{
 						segment.Add(Compile(commands[k], ctx));
 					}
-					groups.Add(new PKNodeGroup(segment));
+					groups.Add(new PKNodeGroup(segment, SourceSlice.Span(segment[start].Span, segment[end - 1].Span)));
 					start = end;
 				}
 
-				return new PKNodeGroup(groups);
+				return new PKNodeGroup(groups, SourceSlice.Span(groups[0].Span, groups[^1].Span));
 			}
 			case InputBranchNode inputBranchNode:
 				var ic = (PKInputProvider)Compile(inputBranchNode.Input, ctx);
 				Debug.Assert(!PKType.IsNone(ctx.StackTop));
 				var body = (PKNodeGroup)Compile(inputBranchNode.CommandSet, ctx);
-				return new PKInputBranch(ic, body, inputBranchNode.BranchType);
+				return new PKInputBranch(ic, body, inputBranchNode.BranchType, SourceSlice.Span(ic.Span, body.Span));
 				
 			case InputLiteralProviderNode inputLiteralProviderNode:
 				//
 				if (inputLiteralProviderNode.Arguments.Length == 0)
 				{
-					throw new CompilerException(inputLiteralProviderNode.Start, "no arguments to literal provider");
+					throw new CompilerException(inputLiteralProviderNode.Span, "no arguments to literal provider");
 				}
 				else
 				{
@@ -108,13 +118,13 @@ public class Compiler
 							}
 							else
 							{
-								throw new CompilerException(inputLiteralProviderNode.Arguments[i].Start, $"all arguments must be of the same type. {argKind} != {resArg.GetPKType()}");
+								throw new CompilerException(inputLiteralProviderNode.Arguments[i].Span, $"all arguments must be of the same type. {argKind} != {resArg.GetPKType()}");
 							}
 						}
 					}
 					
 					ctx.PushType(argKind);
-					return new PKGenInputProvider(argKind, inputLiteralProviderNode.Name, Arguments.Empty, (args, context) => literals);
+					return new PKGenInputProvider(argKind, inputLiteralProviderNode.Name, Arguments.Empty, (args, context) => literals, inputLiteralProviderNode.Span);
 
 				}
 			case PipeInInputProviderNode pipeInInputProviderNode:
@@ -127,11 +137,11 @@ public class Compiler
 					var args = CompileArguments(call, pipeInInputProviderNode.Arguments, ctx);
 					var callType = call.OutType.Lower();
 					ctx.PushType(callType);
-					return new PKPipeInputProvider(callType, piopr.Name, opInvoker, args);
+					return new PKPipeInputProvider(callType, piopr.Name, opInvoker, args, pipeInInputProviderNode.Span);
 				}
 				else
 				{
-					throw new CompilerException(pipeInInputProviderNode.Start, $"unknown operator {pipeInInputProviderNode.Name}");
+					throw new CompilerException(pipeInInputProviderNode.Span, $"unknown operator {pipeInInputProviderNode.Name}");
 				}
 				break;
 			case InputProviderNode inputProviderNode:
@@ -144,11 +154,11 @@ public class Compiler
 					//generator out type should be list<x>, but really, it's list. we are doing the following commands on every one.
 					var callType = call.OutType.Lower();
 					ctx.PushType(callType);
-					return new PKGenInputProvider(callType, iopr.Name, args, genInvoker);
+					return new PKGenInputProvider(callType, iopr.Name, args, genInvoker, inputProviderNode.Span);
 				}
 				else
 				{
-					throw new CompilerException(inputProviderNode.Start, $"unknown operator {inputProviderNode.Name}");
+					throw new CompilerException(inputProviderNode.Span, $"unknown operator {inputProviderNode.Name}");
 				}
 			case BranchNode branchNode:
 				if (branchNode.Type == BranchType.Unknown)
@@ -161,7 +171,7 @@ public class Compiler
 					ctx.PushFrame();
 					var subbranch = (PKNodeGroup)Compile(branchNode.Commands, ctx);
 					ctx.PopFrame(branchNode.Type);
-					return new PKBranch(subbranch, branchNode.Type);
+					return new PKBranch(subbranch, branchNode.Type, branchNode.Span);
 				}
 				else
 				{
@@ -173,7 +183,7 @@ public class Compiler
 					//wait, 
 					ctx.AssignNewVariable(branchNode.Label, ctx.StackTop);
 
-					return new PKNamedBranch(branchNode.Label, subbranch, branchNode.Type);
+					return new PKNamedBranch(branchNode.Label, subbranch, branchNode.Type, branchNode.Span);
 				}
 			case PipelineCommandNode pipelineNode:
 				Debug.Assert(pipelineNode.sigil == "|");
@@ -184,7 +194,7 @@ public class Compiler
 						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
 						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
 						ctx.TransformType(call.OutType);
-						return new PKInlineOperatorNode(popr.Name, invoker, args);
+						return new PKInlineOperatorNode(popr.Name, invoker, args, pipelineNode.Span);
 					}
 					
 					//check if any of our casts are useful for this operator... they are not sorted, but we presume not a big deal for now!
@@ -195,7 +205,7 @@ public class Compiler
 							OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, cast, out var call);
 							var args = CompileArguments(call, pipelineNode.Arguments, ctx);
 							ctx.TransformType(cast.OutType);
-							return new PKInlineOperatorNode(popr.Name, invoker, args);
+							return new PKInlineOperatorNode(popr.Name, invoker, args, pipelineNode.Span);
 						}//else continue
 					}
 					
@@ -204,15 +214,15 @@ public class Compiler
 						OpInvoker invoker = popr.GetOrBuildInvoker(ctx.StackTop, out var call);
 						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
 						ctx.TransformType(call.OutType);
-						return new PKInlineOperatorNode(popr.Name, invoker, args);
+						return new PKInlineOperatorNode(popr.Name, invoker, args, pipelineNode.Span);
 					}
 					
-					throw new CompilerException(pipelineNode.Start, $"operator {popr.Name} does not have an overload for incoming type {ctx.StackTop}");
+					throw new CompilerException(pipelineNode.Span, $"operator {popr.Name} does not have an overload for incoming type {ctx.StackTop}");
 					
 				}
 				else
 				{
-					throw new CompilerException(pipelineNode.Start, $"unknown | operator {pipelineNode.Name}");
+					throw new CompilerException(pipelineNode.Span, $"unknown | operator {pipelineNode.Name}");
 				}
 			case SignalCommandNode pipelineNode:
 				Debug.Assert(pipelineNode.sigil == ":");
@@ -223,7 +233,7 @@ public class Compiler
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(ctx.StackTop, out var call);
 						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
-						return new PKInlineOperatorNode(sopr.Name, invoker, args);
+						return new PKInlineOperatorNode(sopr.Name, invoker, args, pipelineNode.Span);
 					}
 					
 					//check if any of our casts are useful for this operator... they are not sorted, but we presume not a big deal for now!
@@ -233,7 +243,7 @@ public class Compiler
 						{
 							OpInvoker invoker = sopr.GetOrBuildInvoker(ctx.StackTop, cast, out var call);
 							var args = CompileArguments(call, pipelineNode.Arguments, ctx);
-							return new PKInlineOperatorNode(sopr.Name, invoker, args);
+							return new PKInlineOperatorNode(sopr.Name, invoker, args, pipelineNode.Span);
 						} //else continue
 					}
 					
@@ -241,23 +251,23 @@ public class Compiler
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(PKType.Any, out var call);
 						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
-						return new PKInlineOperatorNode(sopr.Name, invoker, args);
+						return new PKInlineOperatorNode(sopr.Name, invoker, args, pipelineNode.Span);
 					}
 					else if (sopr.HasOp(PKType.None))
 					{
 						OpInvoker invoker = sopr.GetOrBuildInvoker(PKType.None, out var call);
 						var args = CompileArguments(call, pipelineNode.Arguments, ctx);
-						return new PKInlineOperatorNode(sopr.Name, invoker, args);
+						return new PKInlineOperatorNode(sopr.Name, invoker, args, pipelineNode.Span);
 					}
 					else
 					{
-						throw new CompilerException(pipelineNode.Start, $"operator {sopr.Name} does not have an overload for incoming type {ctx.StackTop}");
+						throw new CompilerException(pipelineNode.Span, $"operator {sopr.Name} does not have an overload for incoming type {ctx.StackTop}");
 					}
 				}
-				throw new CompilerException(pipelineNode.Start, $"unknown : operator {pipelineNode.Name}");
+				throw new CompilerException(pipelineNode.Span, $"unknown : operator {pipelineNode.Name}");
 			case DefaultFilterCommandNode defaultFilterNode:
 				Debug.Assert(defaultFilterNode.sigil == "~~");
-				return new PKFilterOperatorNode("~~", ((input, args, context) => true), Arguments.Empty);
+				return new PKFilterOperatorNode("~~", ((input, args, context) => true), Arguments.Empty, defaultFilterNode.Span);
 				break;
 			case FilterCommandNode filterNode:
 				Debug.Assert(filterNode.sigil == "~");
@@ -267,37 +277,37 @@ public class Compiler
 					{
 						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, out var call);
 						var args = CompileArguments(call, filterNode.Arguments, ctx);
-						return new PKFilterOperatorNode(fopr.Name, invoker, args);
+						return new PKFilterOperatorNode(fopr.Name, invoker, args, filterNode.Span);
 					}
 
 					foreach (var cast in _catalog.GetImplicitCasts(ctx.StackTop))
 					{
 						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, cast, out var call);
 						var args = CompileArguments(call, filterNode.Arguments, ctx);
-						return new PKFilterOperatorNode(fopr.Name, invoker, args);
+						return new PKFilterOperatorNode(fopr.Name, invoker, args, filterNode.Span);
 					}
 					
 					if (fopr.HasOp(PKType.Any))
 					{
 						OpInvoker invoker = fopr.GetOrBuildInvoker(ctx.StackTop, out var call);
 						var args = CompileArguments(call, filterNode.Arguments, ctx);
-						return new PKFilterOperatorNode(fopr.Name, invoker, args);
+						return new PKFilterOperatorNode(fopr.Name, invoker, args, filterNode.Span);
 					}
 					else
 					{
-						throw new CompilerException(filterNode.Start, $"operator {fopr.Name} does not have an overload for incoming type {ctx.StackTop}");
+						throw new CompilerException(filterNode.Span, $"operator {fopr.Name} does not have an overload for incoming type {ctx.StackTop}");
 					}
 					
 				}
 
-				throw new CompilerException(filterNode.Start, $"unknown ~ operator {filterNode.Name}");
+				throw new CompilerException(filterNode.Span, $"unknown ~ operator {filterNode.Name}");
 
-			case PackListNode:
+			case PackListNode packListNode:
 				ctx.Pack();
-				return new PKPack();
-			case UnpackListNode:
+				return new PKPack(packListNode.Span);
+			case UnpackListNode unpackListNode:
 				ctx.Unpack();
-				return new PKUnpack();
+				return new PKUnpack(unpackListNode.Span);
 			case NakedPatternMatch nakedPatternMatch:
 				var arms = new List<PKPatternFilterMatchBranch>(nakedPatternMatch.Arms.Count);
 				PKPatternBranch? defaultArm = null;
@@ -345,9 +355,9 @@ public class Compiler
 
 				if (nakedPatternMatch.CloseType != BranchType.SideEffect)
 				{
-					throw new CompilerException(nakedPatternMatch.Start, "pattern match (?+) must have ^ closer. (it's not a real branch, it can't &append or <replace because it doesn't branch away to begin with).");
+					throw new CompilerException(nakedPatternMatch.Span, "pattern match (?+) must have ^ closer. (it's not a real branch, it can't &append or <replace because it doesn't branch away to begin with).");
 				}
-				return new PKPatternMatch(arms, defaultArm, nakedPatternMatch.CloseType);
+				return new PKPatternMatch(arms, defaultArm, nakedPatternMatch.CloseType, nakedPatternMatch.Span);
 			// case PatternExpressionMatch patternExpressionMatchNode:
 			// 	//compile the branches but we expect expressions, not filters.
 			// 	throw new NotImplementedException();
@@ -367,11 +377,11 @@ public class Compiler
 				
 				if (filter == null)
 				{
-					return new PKPatternBranch(armBody, armCloseType);
+					return new PKPatternBranch(armBody, armCloseType, branchArm.Span);
 				}
 				else
 				{
-					return new PKPatternFilterMatchBranch(filter.Invoker, filter.Arguments, armBody, armCloseType);
+					return new PKPatternFilterMatchBranch(filter.Invoker, filter.Arguments, armBody, armCloseType, branchArm.Span);
 				}
 				
 				break;
@@ -438,7 +448,7 @@ public class Compiler
 					}
 				}
 				
-				throw new CompilerException(arguments[i].Start, $"Invalid Type for {etype} when expected {PKParamType} for parameter {i} of {overload.Method.Name}");
+				throw new CompilerException(arguments[i].Span, $"Invalid Type for {etype} when expected {PKParamType} for parameter {i} of {overload.Method.Name}");
 				
 			}
 			WithCorrectType:

@@ -1,4 +1,3 @@
-using PocketKnife.Compiler;
 using PocketknifeCore;
 using PocketknifeCore.Compiler;
 using PocketknifeCore.SimpleEvaluator;
