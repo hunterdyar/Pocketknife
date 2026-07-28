@@ -8,18 +8,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Resources\SiteData\" />
-    </ItemGroup>
-
-    <ItemGroup>
+      <PackageReference Include="Markdig" Version="1.3.2" />
       <PackageReference Include="Stubble.Core" Version="1.10.8" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="Resources\Templates\home.mustache" />
-      <AdditionalFiles Include="Resources\Templates\home.mustache">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </AdditionalFiles>
+        <Content Include="Resources\Templates\**" LinkBase="Resources\Templates\" CopyToOutputDirectory="Always"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Content Include="Resources\Content\**" LinkBase="Resources\Content\" CopyToOutputDirectory="Always"/>
     </ItemGroup>
 
+    <Target Name="AfterBuild">
+        <Copy SourceFiles="@(TemplateData)" DestinationFiles="@(TemplateData->'$(OutDir)\Resources\%(RecursiveDir)%(Filename)%(Extension)')"/>
+    </Target>
+    
 </Project>

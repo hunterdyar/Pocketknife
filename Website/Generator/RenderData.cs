@@ -39,6 +39,6 @@ public class RenderData
 			return value;
 		}
 
-		throw new Exception($"template {value} not found!");
+		throw new Exception($"template {template} not found!");
 	}
 }

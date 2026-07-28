@@ -7,16 +7,13 @@ public struct PagePath
 
 	public string FileName()
 	{
-		var i = Path.LastIndexOf("/", StringComparison.Ordinal);
-		string p = i <= 0 ? "/" : Path.Substring(i, Path.Length-i);
-		
-		if (!p.EndsWith("/"))
+		if (Path.EndsWith("/"))
 		{
-			return p;
+			return "index";
 		}
 		else
 		{
-			return "index";
+			return System.IO.Path.GetFileNameWithoutExtension(Path);
 		}
 	}
 
