@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="Resources\SiteData\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Stubble.Core" Version="1.10.8" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\Templates\home.mustache" />
+      <AdditionalFiles Include="Resources\Templates\home.mustache">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </AdditionalFiles>
+    </ItemGroup>
+
+</Project>
