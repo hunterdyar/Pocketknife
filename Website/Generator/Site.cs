@@ -20,9 +20,13 @@ public class Site
 		{
 			var dir = outputDir+pagePath.Directory();
 			var name = pagePath.FileName();
-			var fullPath = dir + name + ".html";
+			var fullPath = dir + "/"+name + ".html";
 			var output = pagePath.Page.Render(data);
 
+			if (!Directory.Exists(dir))
+			{
+				Directory.CreateDirectory(dir);
+			}
 			using (var sw = new StreamWriter(fullPath))
 			{
 				sw.Write(output);

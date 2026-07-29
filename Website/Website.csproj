@@ -19,6 +19,10 @@
     <ItemGroup>
         <Content Include="Resources\Content\**" LinkBase="Resources\Content\" CopyToOutputDirectory="Always"/>
     </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\PocketknifeCompiler\PocketknifeCompiler.csproj" />
+    </ItemGroup>
 
     <Target Name="AfterBuild">
         <Copy SourceFiles="@(TemplateData)" DestinationFiles="@(TemplateData->'$(OutDir)\Resources\%(RecursiveDir)%(Filename)%(Extension)')"/>

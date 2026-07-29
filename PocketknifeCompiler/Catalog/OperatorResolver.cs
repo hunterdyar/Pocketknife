@@ -9,6 +9,8 @@ namespace PocketknifeCore;
 public class OperatorResolver
 {
 	public string Name;
+
+	public List<OperatorDescription> Overloads => _overloads;
 	private List<OperatorDescription> _overloads = new List<OperatorDescription>(1);
 
 	public OperatorResolver(string name)

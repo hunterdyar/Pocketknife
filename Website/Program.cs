@@ -1,6 +1,8 @@
-﻿using Markdig;
+﻿using System.Text;
+using Markdig;
 using Markdig.Extensions.Yaml;
 using Markdig.Syntax;
+using PocketknifeCore;
 
 namespace Website;
 
@@ -29,7 +31,15 @@ class Program
 		else
 		{
 			//clear content
-			//Directory.Delete(OutputDir, true);
+			try
+			{
+				Directory.Delete(OutputDir, true);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine("can't delete the existing folder. I dunno why, ignoring.");
+			}
+
 			Directory.CreateDirectory(OutputDir);
 		}
 		
@@ -60,7 +70,10 @@ class Program
 	{
 		Site = new Site();
 		LoadMarkdownPages();
+		LoadPocketKnifeFeatures();
 	}
+
+
 
 	private static void LoadMarkdownPages()
 	{
@@ -96,6 +109,98 @@ class Program
 				}), relPath);
 			}
 		}
+	}
+
+	private static void LoadPocketKnifeFeatures()
+	{
+		var catalog = OpCatalog.GetDefaultOpCatalog();
+		foreach (var op in catalog.Operators.Values)
+		{
+			var content = new Dictionary<string, object>();
+			var name = op.Name;
+			var overloadDescriptions = op.Overloads;
+			var descs = new List<Dictionary<string, string>>();
+			foreach (var description in overloadDescriptions)
+			{
+				var overloadData = new Dictionary<string, string>();
+				overloadData.Add("argCount", description.ArgCount.ToString());
+				overloadData.Add("inType", description.InType.ToString());
+				overloadData.Add("outType", description.OutType.ToString());
+				overloadData.Add("kind",description.OpKind.ToString());
+				overloadData.Add("pretty", GetPrettyDescription(name,description));
+				// overloadData.Add("",description.Method.);
+				descs.Add(overloadData);
+			}
+			
+			content.Add("overloads", descs);
+			content.Add("name", name);
+			Site.AddPage(new Page("operator", content), "ops/"+name);
+		}
+	}
+
+	private static string GetPrettyDescription(string name, OperatorDescription description)
+	{
+		StringBuilder sb = new StringBuilder();
+		
+		//inType
+		if (description.InType != typeof(void))
+		{
+			sb.Append("> " + description.InType.ToString() + "<br />");
+		}
+
+		switch (description.OpKind)
+		{
+			case OpKind.Filter:
+				sb.Append('~');
+				break;
+			case OpKind.Generator:
+				sb.Append('>');
+				break;
+			case OpKind.PipeIn:
+				sb.Append("|>");
+				break;
+			case OpKind.Pipeline:
+				sb.Append('|');
+				break;
+			case OpKind.Signal:
+				sb.Append(':');
+				break;
+		}
+
+		sb.Append("<strong>");
+		sb.Append(name);
+		sb.Append("</strong>");
+		sb.Append(' ');
+		if (description.ArgCount > 0)
+		{
+			sb.Append('(');
+			var paramy = description.Method.GetParameters();
+			for (var i = 0; i < paramy.Length; i++)
+			{
+				var pi = description.Method.GetParameters()[i];
+				sb.Append('[');
+				sb.Append(pi.ParameterType.Name);
+				sb.Append(' ');
+				sb.Append("<strong>");
+				sb.Append(pi.Name.ToString());
+				sb.Append("</strong>");
+
+				sb.Append(']');
+				if (i < paramy.Length - 1)
+				{
+					sb.Append(' ');
+				}
+			}
+
+			sb.Append(") ");
+		}
+
+		if (description.OutType != typeof(void))
+		{
+			sb.Append("<br />< " + description.OutType.ToString());
+		}
+
+		return sb.ToString();
 	}
 
 
