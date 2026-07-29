@@ -11,7 +11,10 @@ class Program
 	public static RenderData RenderData;
 	public static Site Site;
 	public static string OutputDir;
-	
+	public static string StaticDir => Environment.CurrentDirectory + "/Resources/Static/";
+	public static string TemplateDir => Environment.CurrentDirectory + "/Resources/Templates/";
+	public static string ContentDir => Environment.CurrentDirectory + "/Resources/Content/";
+
 	static void Main(string[] args)
 	{
 		if (args.Length > 0)
@@ -52,7 +55,7 @@ class Program
 	private static void LoadRenderData()
 	{
 		RenderData = new RenderData();
-		DirectoryInfo templateDir = new DirectoryInfo(Environment.CurrentDirectory + "/Resources/Templates/");
+		DirectoryInfo templateDir = new DirectoryInfo(TemplateDir);
 		if (!templateDir.Exists)
 		{
 			throw new Exception("Template Directory Not Found");
@@ -75,7 +78,7 @@ class Program
 	private static void LoadMarkdownPages()
 	{
 		var mdpipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseYamlFrontMatter().Build();
-		DirectoryInfo contentDir = new DirectoryInfo(Environment.CurrentDirectory + "/Resources/Content/");
+		DirectoryInfo contentDir = new DirectoryInfo(ContentDir);
 		if (!contentDir.Exists)
 		{
 			throw new Exception("No content directory found!");
@@ -211,6 +214,14 @@ class Program
 
 	private static void RenderSite()
 	{
+		//copy static data
+		Directory.CreateDirectory(OutputDir);
+		if (Directory.Exists(StaticDir))
+		{
+			Helpers.CopyDirectory(StaticDir, OutputDir, true);
+		}
+
+		//render the rest of the site.
 		Site.RenderFullSite(RenderData, OutputDir);
 	}
 }
