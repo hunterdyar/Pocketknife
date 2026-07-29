@@ -12,7 +12,6 @@ class Program
 	public static Site Site;
 	public static string OutputDir;
 	
-	
 	static void Main(string[] args)
 	{
 		if (args.Length > 0)
@@ -72,9 +71,7 @@ class Program
 		LoadMarkdownPages();
 		LoadPocketKnifeFeatures();
 	}
-
-
-
+	
 	private static void LoadMarkdownPages()
 	{
 		var mdpipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseYamlFrontMatter().Build();
@@ -114,6 +111,7 @@ class Program
 	private static void LoadPocketKnifeFeatures()
 	{
 		var catalog = OpCatalog.GetDefaultOpCatalog();
+		Dictionary<string, Dictionary<string, object>> opContent = new Dictionary<string, Dictionary<string, object>>();
 		foreach (var op in catalog.Operators.Values)
 		{
 			var content = new Dictionary<string, object>();
@@ -134,8 +132,15 @@ class Program
 			
 			content.Add("overloads", descs);
 			content.Add("name", name);
+			if (!opContent.TryAdd(name, content))
+			{
+				throw new Exception($"duplicate op {name}?");
+			}
 			Site.AddPage(new Page("operator", content), "ops/"+name);
 		}
+
+		//index data to navigate to pages and such.
+		Site.SiteData.Add("ops", opContent);
 	}
 
 	private static string GetPrettyDescription(string name, OperatorDescription description)

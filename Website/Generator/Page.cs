@@ -15,9 +15,10 @@ public class Page
 		Data = content;
 	}
 
-	public virtual string Render(RenderData data)
+	public virtual string Render(RenderData data, Dictionary<string, object> siteData)
 	{
 		var stubble = new StubbleBuilder().Build();
+		Data["site"] = siteData;
 		return stubble.Render(data.GetTemplate(Template), Data);
 	}
 }
