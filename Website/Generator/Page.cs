@@ -17,7 +17,6 @@ public class Page
 
 	public virtual string Render(RenderData data, Dictionary<string, object> siteData)
 	{
-		
 		Data["site"] = siteData;
 		return data.Builder.Render(data.GetTemplate(Template), Data);
 	}

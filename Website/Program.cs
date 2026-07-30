@@ -3,6 +3,7 @@ using Markdig;
 using Markdig.Extensions.Yaml;
 using Markdig.Syntax;
 using PocketknifeCore;
+using YamlDotNet.Serialization;
 
 namespace Website;
 
@@ -14,6 +15,7 @@ class Program
 	public static string StaticDir => Environment.CurrentDirectory + "/Resources/Static/";
 	public static string TemplateDir => Environment.CurrentDirectory + "/Resources/Templates/";
 	public static string ContentDir => Environment.CurrentDirectory + "/Resources/Content/";
+	public static string ConfigFile => Environment.CurrentDirectory + "/Resources/Content/config.yaml";
 
 	static void Main(string[] args)
 	{
@@ -71,13 +73,34 @@ class Program
 	private static void LoadSiteData()
 	{
 		Site = new Site();
+		LoadConfig();
 		LoadMarkdownPages();
 		LoadPocketKnifeFeatures();
 	}
-	
+
+	private static void LoadConfig()
+	{
+		var configInfo = new FileInfo(ConfigFile);
+		if (!configInfo.Exists)
+		{
+			return;
+		}
+
+		var yamlDeserializer = new DeserializerBuilder().Build();
+
+		using (StreamReader stream = new StreamReader(configInfo.FullName))
+		{
+			var configYAML = stream.ReadToEnd();
+			var configData = yamlDeserializer.Deserialize(configYAML);
+			Site.SiteData.Add("config",configData!);
+		}
+	}
+
 	private static void LoadMarkdownPages()
 	{
 		var mdpipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseYamlFrontMatter().Build();
+		var yamlDeserializer = new DeserializerBuilder().Build();
+		
 		DirectoryInfo contentDir = new DirectoryInfo(ContentDir);
 		if (!contentDir.Exists)
 		{
@@ -95,10 +118,11 @@ class Program
 				var document = Markdown.Parse(mdContent, mdpipeline);
 				var yaml = document.Descendants<YamlFrontMatterBlock>().FirstOrDefault();
 				string template = "main";//default template.
+				object? data = null;
 				if (yaml != null)
 				{
 					string yamlText = mdContent.Substring(yaml.Span.Start, yaml.Span.Length);
-					//parse yaml, identify template, set it.
+					data = yamlDeserializer.Deserialize(yamlText);
 				}
 
 				var relPath = Path.GetRelativePath(contentDir.FullName, file.FullName);
@@ -106,6 +130,7 @@ class Program
 				Site.AddPage(new Page(template, new Dictionary<string, object>()
 				{
 					{"content", document.ToHtml()},
+					{"page", data!}
 				}), relPath);
 			}
 		}

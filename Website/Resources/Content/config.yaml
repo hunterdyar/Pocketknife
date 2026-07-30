@@ -1,0 +1,7 @@
+﻿nav:
+  - Home:
+      path: index
+      display: Home
+  - Why:
+      path: why
+      display: Why?

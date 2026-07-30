@@ -1,5 +1,15 @@
 ﻿<ul>
-    <li>this is the</li>
-    <li>sidebar</li>
-    <li>links go here</li>
+    {{#config}}
+        config is present.
+        {{#nav}}
+            {{.}}
+            <li><a href="{{path}}.html">{{display}}</a></li>
+        {{/nav}}
+        {{^nav}}
+            No nav
+        {{/nav}}
+    {{/config}}
+    
+    {{^config}}no config{{/config}}
 </ul>
+
