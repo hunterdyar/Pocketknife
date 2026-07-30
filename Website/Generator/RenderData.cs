@@ -1,20 +1,35 @@
 ﻿using System.Text;
 using Stubble.Core;
 using Stubble.Core.Builders;
+using Stubble.Core.Loaders;
 
 namespace Website;
 
 public class RenderData
 {
-	public Dictionary<string, string> Templates = new Dictionary<string, string>();
+	public readonly Dictionary<string, string> Templates = new Dictionary<string, string>();
 
-	public StubbleVisitorRenderer Builder;
-	public RenderData()
+	//lazy getter
+	public StubbleVisitorRenderer? Builder
 	{
-		Builder = new StubbleBuilder().Configure(settings =>
+		get
+		{
+			if (_builder == null)
+			{
+				BuildRenderer();
+			}
+
+			return _builder;
+		}
+	}
+
+	private StubbleVisitorRenderer? _builder;
+	public void BuildRenderer()
+	{
+		_builder = new StubbleBuilder().Configure(settings =>
 		{
 			// settings.SetIgnoreCaseOnKeyLookup(true);
-			
+			settings.AddToPartialTemplateLoader(new DictionaryLoader(Templates));
 		}).Build();
 	}
 	public void LoadTemplate(string path)

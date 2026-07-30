@@ -25,7 +25,7 @@
     </ItemGroup>
     
     <ItemGroup>
-      <Folder Include="Resources\Static\**" LinkBase="Resources\Static\" CopyToOutputDirectory="Always"/>
+      <Content Include="Resources\Static\**" LinkBase="Resources\Static\" CopyToOutputDirectory="Always"/>
     </ItemGroup>
     
 </Project>

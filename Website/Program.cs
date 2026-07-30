@@ -94,7 +94,7 @@ class Program
 				var mdContent = streamReader.ReadToEnd();
 				var document = Markdown.Parse(mdContent, mdpipeline);
 				var yaml = document.Descendants<YamlFrontMatterBlock>().FirstOrDefault();
-				string template = "page";//default template.
+				string template = "main";//default template.
 				if (yaml != null)
 				{
 					string yamlText = mdContent.Substring(yaml.Span.Start, yaml.Span.Length);
@@ -214,8 +214,9 @@ class Program
 
 	private static void RenderSite()
 	{
-		//copy static data
 		Directory.CreateDirectory(OutputDir);
+
+		//copy static data
 		if (Directory.Exists(StaticDir))
 		{
 			Helpers.CopyDirectory(StaticDir, OutputDir, true);

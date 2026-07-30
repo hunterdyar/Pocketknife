@@ -1,4 +1,6 @@
-﻿namespace Website;
+﻿using Stubble.Core.Interfaces;
+
+namespace Website;
 
 public class Site
 {
@@ -34,4 +36,6 @@ public class Site
 		}
 		
 	}
+
+	
 }
