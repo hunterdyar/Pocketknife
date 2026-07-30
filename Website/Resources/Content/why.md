@@ -1,4 +1,23 @@
-﻿This language started as a research proof-of-concept. I was exploring novel syntax design while considering what meaningful domains existed to design in.
+﻿## What Makes Pocketknife Interesting
+What makes Pocketknife Interesting:
+
+## Syntax
+Pocketknife has a novel but intuitive syntax that is easy to reason about pipeline structures. It was designed to be a concise and effective way to communicate a data pipeline... then wrangled into also being a programming language.
+
+## Runtime
+The execution is implemented to execute top-to-bottom, without jumps. Loops happen 'breadth-first', on all items, as you go down the list. This lets the user think in operations, not iterations.
+
+It is reversible and debuggable by default. You can execute and undo most operations (and it's clear which ones you cannot). 
+
+## Environment
+A custom IDE of sorts, in progress, is designed to be friendly and cozy; collaborating with the user to solve problems, and help them think about what they want to do, not how the language works.
+
+We position as a tool. No virtual environments, only one version of the software installed on the machine. The downsides are hypothetical at this stage, and the upsides are real.
+
+---
+
+# The Design Story
+This language started as a research proof-of-concept. I was exploring novel syntax design while considering what meaningful domains existed to design in.
 
 ## The Problem Space
 Simultaneously, I was researching AI. One of my research tasks was, whenever I heard about what someone used AI for, I added it to a big list. A theme appeared: People were doing things that their operating system should already be good at. Basically, AI was a chance for people to *literally just ask* a computer to do something for them, that they felt a computer should do.
