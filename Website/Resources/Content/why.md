@@ -1,5 +1,4 @@
-﻿## What Makes Pocketknife Interesting
-What makes Pocketknife Interesting:
+﻿# What Makes Pocketknife Interesting
 
 ## Syntax
 Pocketknife has a novel but intuitive syntax that is easy to reason about pipeline structures. It was designed to be a concise and effective way to communicate a data pipeline... then wrangled into also being a programming language.
