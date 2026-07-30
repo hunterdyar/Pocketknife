@@ -13,6 +13,9 @@
   - section:
       display: Guides
       links:
+        - item:
+            path: syntax-overview
+            display: Syntax Overview
         - item: 
             path: operators
             display: Operators
