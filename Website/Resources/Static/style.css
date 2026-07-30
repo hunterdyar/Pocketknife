@@ -67,6 +67,24 @@ h1 {
     grid-area: sb;
     border-left: 1px solid var(--soft-accent);
     padding: .5em;
+    font-size: larger;
+}
+.sidebar ul{
+    padding-left: 1em;
+}
+.sidebar li{
+    font-size: 120%;
+    list-style: none;
+    margin-left: 0;
+    margin-top: .2em;
+}
+
+.sidebar li a{
+    text-decoration: none;
+}
+
+.sidebar li a:hover {
+    text-decoration: underline;
 }
 
 .footer {

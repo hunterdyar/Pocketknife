@@ -16,7 +16,6 @@ public class Site
 		});
 	}
 
-
 	public void RenderFullSite(RenderData data, string outputDir)
 	{
 		foreach (var pagePath in Pages)
@@ -36,6 +35,4 @@ public class Site
 		}
 		
 	}
-
-	
 }

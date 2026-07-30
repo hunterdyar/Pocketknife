@@ -1,15 +1,8 @@
 ﻿<ul>
-    {{#config}}
-        config is present.
+    {{#site.config}}
         {{#nav}}
-            {{.}}
-            <li><a href="{{path}}.html">{{display}}</a></li>
+            <li><a href="{{item.path}}.html">{{item.display}}</a></li>
         {{/nav}}
-        {{^nav}}
-            No nav
-        {{/nav}}
-    {{/config}}
-    
-    {{^config}}no config{{/config}}
+    {{/site.config}}
 </ul>
 

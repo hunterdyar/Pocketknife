@@ -85,7 +85,7 @@ class Program
 		{
 			return;
 		}
-
+		//todo: make static readonly
 		var yamlDeserializer = new DeserializerBuilder().Build();
 
 		using (StreamReader stream = new StreamReader(configInfo.FullName))

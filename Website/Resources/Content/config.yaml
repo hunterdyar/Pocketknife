@@ -1,7 +1,9 @@
 ﻿nav:
-  - Home:
+  - item:
       path: index
       display: Home
-  - Why:
+  - item:
       path: why
       display: Why?
+      
+test: test data

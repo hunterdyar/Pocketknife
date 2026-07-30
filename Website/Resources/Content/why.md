@@ -24,9 +24,12 @@ The environment should be welcoming and friendly. Help documentation should not 
 ### Intuitive
 The language should be, if not obvious, clear. It should look like what it does.
 
+### Baggage
+Existing language and language design principles are *not* reasonable defaults. In most cases, designing a language-feature that is familiar is a positive! I specifically threw this perfectly sound principle away in order to allow other ideas and shapes to float up. 
+
 I considered these, among other points, and made a wishlist for the same domain as shell languages or simple scripting languages:
 
-##3 Feature Wishlist
+### Feature Wishlist
 - Intuitable syntax
 - Reversible runtime 
 - High quality error messages.
@@ -34,15 +37,15 @@ I considered these, among other points, and made a wishlist for the same domain 
 - OS User-scoped environment. One install, one set of libraries.
 - Debug-Always. Stack traces, step-by-step execution, and so on as a first-class feature.
 
-## Constraints
-- Cross-platform (I use win, mac, and linux; so this was always a constraint! Thanks, dotnet)
-- All-In-One software is fine. It doesn't have to be a 'normal' programming languge (but it is!), it can be like processing or R studio.
-- Reasonably Performant (I'm not heavily optimizing, but I am non-pessimizing)
+From there, I took some inspirations from the enjoyable syntax of a [previous project](https://pinch.hdyar.com), and got to designing.
 
-From there, I took some inspirations from the syntax of a [previous project](https://pinch.hdyar.com), and hacked away at it. I showed it to friends without context, and asked them to guess what it did. While not obvious, once explaining the "pipeline" approach, things clicked into place for them and they managed to guess most or all of the features. 
+## Successes
+My favorite thing about Pocketknife design is the left-hand column. Scanning down the characters top-to-bottom tells you the shape of the program.
 
-As for the 'cozy' and 'debugger-first', reversible runtime, as of Summer 2026, this is still a work-in-progress.
+As for the runtime, control flow being top-to-bottom always is really nice. It breaks my programmer brain, not having jumps in the traditional sense; but once I let go of those expectations, it just kind of works. The complicated (and inefficient) backend handles it for you. This wasn't originally a goal, it's something that fell out of reversability and debuggability. 
 
 ---
 # What's Next?
-This research prototype has effectivley worked for my original design goals. And that's the problem! Now that I can *almost* daily drive it, I want to continue working on the rest. Get the software together, get the reversible elements fully working (I'm close!), make errors good (I'm not close!). There's a lot to do!
+The software environment. The language is at a good stopping point to pivot over to 'cozy' software design.
+
+Once it's all minimum-viable tool, it will be time to get the reversible elements fully working (I'm close!) and make the errors 'good' (I'm not close!). There's a lot to do!
