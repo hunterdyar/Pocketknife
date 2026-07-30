@@ -1,9 +1,18 @@
 ﻿nav:
-  - item:
-      path: index
-      display: Home
-  - item:
-      path: why
-      display: Why?
-      
-test: test data
+  - section:
+      links:
+        - item:
+            path: index
+            display: Home
+        - item:
+            path: why
+            display: Why?
+        - item:
+            path: install
+            display: Install
+  - section:
+      display: Guides
+      links:
+        - item: 
+            path: operators
+            display: Operators

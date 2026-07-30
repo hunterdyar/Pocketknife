@@ -58,12 +58,8 @@ I considered these, among other points, and made a wishlist for the same domain 
 From there, I took some inspirations from the enjoyable syntax of a [previous project](https://pinch.hdyar.com), and got to designing.
 
 ## Successes
-My favorite thing about Pocketknife design is the left-hand column. Scanning down the characters top-to-bottom tells you the shape of the program.
+My favorite thing about Pocketknife design is the left-hand column. Scanning down the characters top-to-bottom tells you the shape of the program. It's good enough that I can worry about syntax highlighting support later... I'll get to it eventually.
 
-As for the runtime, control flow being top-to-bottom always is really nice. It breaks my programmer brain, not having jumps in the traditional sense; but once I let go of those expectations, it just kind of works. The complicated (and inefficient) backend handles it for you. This wasn't originally a goal, it's something that fell out of reversability and debuggability. 
+As for the runtime, control flow being top-to-bottom feels really nice. It breaks my programmer brain - not having jumps in the traditional sense. Once I let go... it just kind of works. The complicated backend that was a pain to implement handles that thinking for you.
 
----
-# What's Next?
-The software environment. The language is at a good stopping point to pivot over to 'cozy' software design.
-
-Once it's all minimum-viable tool, it will be time to get the reversible elements fully working (I'm close!) and make the errors 'good' (I'm not close!). There's a lot to do!
+This wasn't originally a direct goal, it's something that fell out of reversability and debuggability.
