@@ -7,9 +7,6 @@ namespace Vellum.Web;
 readonly record struct FrameContext(AppState State);
 public class AppState
 {
-	//IDs
-	public UiId ConsoleScrollID = UiId.FromString("console_scroll");
-	public UiId TimelineTable = UiId.FromString("timeline_table");
 
 	public PocketKnifeDesktop.Application Application { get; set; } = new PocketKnifeDesktop.Application();
 	public Context? Context => _lineEvaluator.Context;
