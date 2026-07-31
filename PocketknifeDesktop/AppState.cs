@@ -18,6 +18,9 @@ public class AppState
 	public Parser Parser => _parser;
 	private Parser _parser = new Parser();
 	
+	public TextWriter Console => _textWriter;
+	private TextWriter _textWriter = new StringWriter();
+	
 	public Lexer? Lexer => _lexer;
 	private Lexer? _lexer = null;
 

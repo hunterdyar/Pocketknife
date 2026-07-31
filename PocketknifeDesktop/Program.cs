@@ -49,6 +49,8 @@ public class Program
 		};
 		
 		_state = new AppState();
+		Console.SetOut(_state.Console);
+		
 		_initialized = true;
 	}
 
@@ -154,6 +156,7 @@ public class Program
 
 	public static void Shutdown()
 	{
+		Console.SetOut(Console.Out);//pick up closing error messages
 		_ui?.Dispose();
 		_renderer?.Shutdown();
 		_ui = null;
