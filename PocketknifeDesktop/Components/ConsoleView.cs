@@ -3,18 +3,30 @@ using Vellum.Web;
 
 namespace PocketKnifeDesktop;
 
-public class ConsoleView :ComponentBase
+public class ConsoleView : ComponentBase
 {
 	public override void Draw(Ui host, AppState state)
 	{
+
 		host.Panel(host.AvailableWidth, state, static (panel, state) =>
 		{
-			panel.Label("Editor", color: panel.Theme.Accent);
+			using (panel.Row())
+			{
+				panel.Label("Console", color: panel.Theme.Accent);
+				panel.Separator();
+				if (panel.Button("Clear", 36).Clicked)
+				{
+					state.ClearConsole();
+				}
+			}
+
 			// panel.Label(subtitle, color: panel.Theme.TextSecondary, maxWidth: panel.AvailableWidth, wrap: TextWrapMode.WordWrap);
 			using (panel.Row())
 			{
-				panel.TextArea("Code", ref state.Code, panel.AvailableWidth, 123, placeholder: "");
-				panel.Label(state.Console.ToString());
+				panel.ScrollArea(state.ConsoleScrollID, panel.AvailableWidth, 200,ui =>
+				{
+					ui.Label(state.Console.ToString());
+				});
 			}
 		});
 	}

@@ -7,9 +7,12 @@ namespace Vellum.Web;
 readonly record struct FrameContext(AppState State);
 public class AppState
 {
+	//IDs
+	public UiId ConsoleScrollID = UiId.FromString("console_scroll");
+	public UiId TimelineTable = UiId.FromString("timeline_table");
+
 	public PocketKnifeDesktop.Application Application { get; set; } = new PocketKnifeDesktop.Application();
-	public Context? Context => _context;
-	private Context? _context = null;
+	public Context? Context => _lineEvaluator.Context;
 	
 	public OpCatalog OpCatalog => _opCatalog;
 	private OpCatalog _opCatalog;
@@ -32,7 +35,7 @@ public class AppState
 	private PKNode? _compiled;
 	
 	public LineEvaluator LineEvaluator => _lineEvaluator;
-	private LineEvaluator _lineEvaluator = new LineEvaluator();
+	private LineEvaluator _lineEvaluator;
 	public string Code = """
 	                     >range 0 6
 	                     |mul 2
@@ -44,6 +47,7 @@ public class AppState
 	{
 		_opCatalog = OpCatalog.GetDefaultOpCatalog();
 		_compiler = new Compiler(_opCatalog);
+		_lineEvaluator = new LineEvaluator();
 	}
 	public void RecompileIfNeeded()
 	{
@@ -55,7 +59,13 @@ public class AppState
 			var ctx = new CompileContext();
 			_compiled = Compiler.Compile(_script, ctx);
 			_lineEvaluator.SetRoot(_compiled);
-			_context = new Context();
 		}
+	}
+
+	public void ClearConsole()
+	{
+		//todo: this is inefficient but whatever
+		_textWriter= new StringWriter();
+		System.Console.SetOut(_textWriter);
 	}
 }

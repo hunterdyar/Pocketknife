@@ -11,7 +11,8 @@ public class Context
 	public int TimelineLength => _timeline.Count;
 	public int MaxTimelineLength;
 	public int MaxScopeDepth;
-	
+
+	public List<PKLayer> Timeline => _timeline;
 	private readonly List<PKLayer> _timeline = new();
 	private readonly Stack<ScopeInfo> _scopes = new();
 

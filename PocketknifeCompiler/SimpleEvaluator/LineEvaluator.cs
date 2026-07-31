@@ -3,17 +3,17 @@
 namespace PocketknifeCore.SimpleEvaluator;
 
 //Steps through evaluation one line at a time.
-public class LineEvaluator()
+public class LineEvaluator
 {
 	private EvalState _current = EvalState.None();
 
 	public Context? Context => _ctx;
-	private Context? _ctx;
+	private Context? _ctx = new Context();
 
 	private IEnumerable<EvalState> _execution;
 	
 	private PKNode? _root;
-	
+
 	public void Run()
 	{
 			
@@ -134,7 +134,7 @@ public class LineEvaluator()
 	
 	public void Reset()
 	{
-		_ctx = null;
+		_ctx = new Context();
 		_current = EvalState.None();
 	}
 }
