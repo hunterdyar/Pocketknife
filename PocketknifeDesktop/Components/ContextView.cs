@@ -37,7 +37,7 @@ public class ContextView : ComponentBase
 						{
 							foreach (var item in layer.Items)
 							{
-								ui.Label(layer.Items.Count + "_"+item.Value?.ToString() ?? "");
+								ui.Label(item.Value?.ToString() ?? "");
 							}
 						}
 					}

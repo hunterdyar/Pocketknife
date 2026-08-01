@@ -10,7 +10,7 @@ public class LineEvaluator
 	public Context? Context => _ctx;
 	private Context? _ctx = new Context();
 
-	private IEnumerable<EvalState> _execution;
+	private IEnumerator<EvalState> _execution;
 	
 	private PKNode? _root;
 
@@ -28,12 +28,11 @@ public class LineEvaluator
 			//error!
 		}else if (_current.IsStarted)
 		{
-			using var execEnum = _execution.GetEnumerator();
 			while (!_current.IsDone && !_current.IsErr)
 			{
-				if (execEnum.MoveNext())
+				if (_execution.MoveNext())
 				{
-					_current = execEnum.Current;
+					_current = _execution.Current;
 				}
 				else
 				{ 
@@ -71,14 +70,13 @@ public class LineEvaluator
 		if (!_current.IsStarted)
 		{
 			_ctx = new Context();
-			_execution = SimpleEvaluator.Evaluate(_root, 0, _ctx);
+			_execution = SimpleEvaluator.Evaluate(_root, 0, _ctx).GetEnumerator();
 		}
 		
 		var currentDepth = _current.Depth;
-		using var execEnum = _execution.GetEnumerator();
-		if (execEnum.MoveNext())
+		if (_execution.MoveNext())
 		{
-			_current = execEnum.Current;
+			_current = _execution.Current;
 		}
 		else
 		{
@@ -96,18 +94,17 @@ public class LineEvaluator
 		if (!_current.IsStarted)
 		{
 			_ctx = new Context();
-			_execution = SimpleEvaluator.Evaluate(_root, _current.Depth, _ctx);
+			_execution = SimpleEvaluator.Evaluate(_root, _current.Depth, _ctx).GetEnumerator();
 		}
 
 		var currentDepth = _current.Depth;
-		using var execEnum = _execution.GetEnumerator();
-		if (execEnum.MoveNext())
+		if (_execution.MoveNext())
 		{
-			_current = execEnum.Current;
+			_current = _execution.Current;
 			//keep going until we end up less deep current, then stop.
-			while(execEnum.MoveNext() && execEnum.Current.Depth >= currentDepth)
+			while(_execution.MoveNext() && _execution.Current.Depth >= currentDepth)
 			{
-				_current = execEnum.Current;
+				_current = _execution.Current;
 			}
 		}
 		else
