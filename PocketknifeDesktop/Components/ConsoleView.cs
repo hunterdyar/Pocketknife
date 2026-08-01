@@ -5,12 +5,12 @@ namespace PocketKnifeDesktop;
 
 public class ConsoleView : ComponentBase
 {
-	private static UiId _consoleScrollID = UiId.FromString("console_scroll");
+	private static readonly UiId _consoleScrollID = UiId.FromString("console_scroll");
 
 	public override void Draw(Ui host, AppState state)
 	{
 
-		host.Panel(host.AvailableWidth, state, static (panel, state) =>
+		host.Panel(host.AvailableWidth, state,  (panel, s) =>
 		{
 			using (panel.Row())
 			{
@@ -25,10 +25,10 @@ public class ConsoleView : ComponentBase
 			// panel.Label(subtitle, color: panel.Theme.TextSecondary, maxWidth: panel.AvailableWidth, wrap: TextWrapMode.WordWrap);
 			using (panel.Row())
 			{
-				panel.ScrollArea(_consoleScrollID, panel.AvailableWidth, 200,ui =>
+				panel.ScrollArea(_consoleScrollID, panel.AvailableWidth, 120,scrollarea =>
 				{
-					ui.Label(state.Console.ToString());
-				});
+					scrollarea.Label(state?.Console?.ToString() ?? "");
+				}, true);
 			}
 		});
 	}

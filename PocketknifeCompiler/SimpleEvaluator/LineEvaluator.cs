@@ -5,6 +5,7 @@ namespace PocketknifeCore.SimpleEvaluator;
 //Steps through evaluation one line at a time.
 public class LineEvaluator
 {
+	public EvalState Current => _current;
 	private EvalState _current = EvalState.None();
 
 	public Context? Context => _ctx;
@@ -80,7 +81,9 @@ public class LineEvaluator
 		}
 		else
 		{
-			throw new Exception("Execution ended unexpectedly (EvalState and enumerator mismatch).");
+			//todo: not sure why this is failing in this way.
+			_current = EvalState.Bad(_current.Depth);
+			//throw new Exception("Execution ended unexpectedly (EvalState and enumerator mismatch).");
 		}
 	}
 
@@ -122,7 +125,7 @@ public class LineEvaluator
 		
 		if (_root != rootNode)
 		{
-			//reset when recompiled i think
+			//reset when recompiled I think
 			_root = rootNode;
 			_ctx = new Context();//would be fun to try to do on-the-fly recompilation.
 			_current = EvalState.None();

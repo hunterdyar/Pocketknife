@@ -7,7 +7,7 @@ namespace Vellum.Web;
 public class Program
 {
 
-	public static int InitialWindowHeight { get; set; } = 720;
+	public static int InitialWindowHeight { get; set; } = 960;
 	public static int InitialWindowWidth { get; set; } = 1280;
 	
 	private static Ui _ui;

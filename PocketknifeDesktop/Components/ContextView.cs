@@ -8,6 +8,7 @@ namespace PocketKnifeDesktop;
 public class ContextView : ComponentBase
 {
 	private static UiId _contextScrollID = UiId.FromString("console_scroll");
+	private static UiId _tableID = UiId.FromString("table_id");
 
 	private static readonly TableColumn[] _columns =
 	[
@@ -22,6 +23,8 @@ public class ContextView : ComponentBase
 		host.Panel(host.AvailableWidth, state, static (panel, state) =>
 		{
 			panel.Label("Context", color: panel.Theme.Accent);
+			panel.Label(state.State);
+
 			panel.ScrollArea(_contextScrollID, panel.AvailableWidth, 200,ui =>
 			{
 				if (state.Context == null)
@@ -35,6 +38,7 @@ public class ContextView : ComponentBase
 					{
 						using (ui.Column())
 						{
+							ui.Label("__");
 							foreach (var item in layer.Items)
 							{
 								ui.Label(item.Value?.ToString() ?? "");

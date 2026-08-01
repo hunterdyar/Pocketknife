@@ -13,6 +13,7 @@ public class AppState
 	
 	public OpCatalog OpCatalog => _opCatalog;
 	private OpCatalog _opCatalog;
+	
 	public Compiler Compiler => _compiler;
 	private Compiler _compiler;
 	public Parser Parser => _parser;
@@ -36,8 +37,37 @@ public class AppState
 	public string Code = """
 	                     >range 0 6
 	                     |mul 2
+	                     |add 1
 	                     :print
 	                     """;
+
+	public string State => GetState();
+
+	private string GetState()
+	{
+		if (_lexer == null || Code != _lexer.Source)
+		{
+			return "uncompiled";
+		}
+
+		if (_lineEvaluator.Current.IsDone)
+		{
+			return "done";
+		}
+
+		if (_lineEvaluator.Current.IsErr)
+		{
+			return "err";
+		}
+
+		if (_lineEvaluator.Current.IsStarted)
+		{
+			return "running...";
+		}
+
+		return "other?";
+	}
+
 	public float UiCpuTimeMs { get; set; }
 
 	public AppState()

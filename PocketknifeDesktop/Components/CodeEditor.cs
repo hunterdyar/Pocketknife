@@ -13,7 +13,7 @@ public class CodeEditor : ComponentBase
 			// panel.Label(subtitle, color: panel.Theme.TextSecondary, maxWidth: panel.AvailableWidth, wrap: TextWrapMode.WordWrap);
 			using (panel.Row())
 			{
-				panel.TextArea("Code", ref state.Code, panel.AvailableWidth, 123, placeholder: "");
+				panel.TextArea("Code", ref state.Code, panel.AvailableWidth, 540, placeholder: "");
 			}
 		});
 	}
