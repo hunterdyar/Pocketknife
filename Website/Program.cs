@@ -1,7 +1,10 @@
 ﻿using System.Text;
 using Markdig;
 using Markdig.Extensions.Yaml;
+using Markdig.Renderers;
+using Markdig.Renderers.Html;
 using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
 using PocketknifeCore;
 using YamlDotNet.Serialization;
 
@@ -108,14 +111,26 @@ class Program
 		}
 
 		foreach (var file in contentDir.EnumerateFiles("*.md", new EnumerationOptions()
-		         {
-			         RecurseSubdirectories = true
-		         }))
+	         {
+		         RecurseSubdirectories = true
+	         }))
 		{
 			using (StreamReader streamReader = new StreamReader(file.FullName))
 			{
 				var mdContent = streamReader.ReadToEnd();
 				var document = Markdown.Parse(mdContent, mdpipeline);
+				var code = document.Descendants<CodeBlock>().ToList();
+				var indented = document.Descendants<CodeInline>().ToList();
+
+				//add a class to the inline code blocks vs. the block ones.
+				for (int i = 0; i < indented.Count; i++)
+				{
+					indented[i].SetAttributes(new HtmlAttributes()
+					{
+						Classes = new List<string>(["inline-code-block"]),
+					});
+				}
+				
 				var yaml = document.Descendants<YamlFrontMatterBlock>().FirstOrDefault();
 				string template = "main";//default template.
 				object? data = null;
@@ -124,7 +139,7 @@ class Program
 					string yamlText = mdContent.Substring(yaml.Span.Start, yaml.Span.Length);
 					data = yamlDeserializer.Deserialize(yamlText);
 				}
-
+				
 				var relPath = Path.GetRelativePath(contentDir.FullName, file.FullName);
 				
 				Site.AddPage(new Page(template, new Dictionary<string, object>()

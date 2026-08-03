@@ -109,6 +109,10 @@ code {
     padding: .5em;
 }
 
+code.inline-code-block{
+    display: inline;
+}
+
 code pre {
     word-wrap: break-word;
     box-decoration-break: clone;
