@@ -13,7 +13,23 @@ public class CodeEditor : ComponentBase
 			// panel.Label(subtitle, color: panel.Theme.TextSecondary, maxWidth: panel.AvailableWidth, wrap: TextWrapMode.WordWrap);
 			using (panel.Row())
 			{
-				panel.TextArea("Code", ref state.Code, panel.AvailableWidth, 540, placeholder: "");
+				using (panel.Column())
+				{
+					//hacky temporary alignment
+					panel.Spacing(10);
+					for (int i = 0; i < 540/10/2; i++)
+					{
+						if (state.LineEvaluator.Current.Evaluated.Line == i && state.State == "running...")
+						{
+							panel.Label($"({(i+1).ToString()})", maxLines: 1, align: UiAlign.End, size: 11);
+						}
+						else
+						{
+							panel.Label((i + 1).ToString(), maxLines: 1, align: UiAlign.End, size: 11);
+						}
+					}
+				}
+				var r = panel.TextArea("Code", ref state.Code, panel.AvailableWidth, 540, placeholder: "");
 			}
 		});
 	}
