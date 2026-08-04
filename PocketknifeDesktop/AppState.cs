@@ -80,12 +80,27 @@ public class AppState
 	{
 		if(_lexer == null || Code != _lexer.Source)
 		{
-			_lexer = new Lexer(Code);
-			_parser.Parse(_lexer);
-			_script = _parser.Program;
-			var ctx = new CompileContext();
-			_compiled = Compiler.Compile(_script, ctx);
-			_lineEvaluator.SetRoot(_compiled);
+			try
+			{
+				_lexer = new Lexer(Code);
+				_parser.Parse(_lexer);
+				_script = _parser.Program;
+				var ctx = new CompileContext();
+				_compiled = Compiler.Compile(_script, ctx);
+				_lineEvaluator.SetRoot(_compiled);
+			}
+			catch (Exception e)
+			{
+				if (e is PocketknifeException pke)
+				{
+					System.Console.WriteLine(pke.Message);
+				}
+				else
+				{
+					System.Console.WriteLine(e);
+					throw;
+				}
+			}
 		}
 	}
 

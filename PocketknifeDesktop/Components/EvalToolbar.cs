@@ -16,18 +16,20 @@ public class EvalToolbar : ComponentBase
 				if (panel.Button($"{MaterialSymbols.PlayArrow}", width: _buttonWidth).Clicked)
 				{
 					state.RecompileIfNeeded();
+					//todo: check compilation state
 					state.LineEvaluator.RunCurrentToEnd();
 				}
 
 				if (panel.Button($"{MaterialSymbols.StepInto}", width: _buttonWidth).Clicked)
 				{
 					state.RecompileIfNeeded();
+					//todo: check compilation state
 					state.LineEvaluator.Step();
 				}
 
 				if (panel.Button($"{MaterialSymbols.StepOut}", width: _buttonWidth).Clicked)
 				{
-					//step
+					//Undo! go back! go back!
 				}
 
 				if (panel.Button($"{MaterialSymbols.Refresh}", width: _buttonWidth).Clicked)

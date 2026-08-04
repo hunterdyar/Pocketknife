@@ -36,14 +36,16 @@ public class ContextView : ComponentBase
 				{
 					foreach (var layer in state.Context.Timeline)
 					{
+						ui.Separator();
+
 						using (ui.Column())
 						{
-							ui.Label("__");
 							foreach (var item in layer.Items)
 							{
 								ui.Label(item.Value?.ToString() ?? "");
 							}
 						}
+
 					}
 				}
 			});
