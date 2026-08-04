@@ -7,10 +7,12 @@ namespace PocketknifeCore.Compiler;
 
 public class ExpressionNode : ASTNode
 {
-    
+    public ExpressionNode(SourceSlice span) : base(span)
+    {
+    }
 }
 //raw ident
-public class IdentifierNode(string source) : ExpressionNode
+public class IdentifierNode(string source, SourceSlice span) : ExpressionNode(span)
 {
     public string Name = source;
     override public string ToString() => Name;
@@ -19,7 +21,7 @@ public class IdentifierNode(string source) : ExpressionNode
 public class NumberNode : LiteralExpressionNode
 {
 
-    public NumberNode(object source) : base(source)
+    public NumberNode(object source, SourceSlice span) : base(source, span)
     {
     }
 
@@ -27,7 +29,7 @@ public class NumberNode : LiteralExpressionNode
     {
         return Value.ToString();
     }
-    public static NumberNode FromString(string source)
+    public static NumberNode FromString(string source, SourceSlice span)
     {
         // if(source.EndsWith("f"))
         // {
@@ -36,19 +38,19 @@ public class NumberNode : LiteralExpressionNode
         if (source.Contains('.'))
         {
             var d = Convert.ToDouble(source, CultureInfo.InvariantCulture);
-            return new NumberNode(d);
+            return new NumberNode(d, span);
         }
         else
         {
             var i = Convert.ToInt32(source, CultureInfo.InvariantCulture);
-            return new NumberNode(i);
+            return new NumberNode(i, span);
         }
     }
 }
 
 public class StringLiteralNode : LiteralExpressionNode
 {
-    public StringLiteralNode(string source) : base(source)
+    public StringLiteralNode(string source, SourceSlice span) : base(source, span)
     {
     }
 
@@ -63,7 +65,7 @@ public class LabelNode : ExpressionNode
     public string Name;
     public int ReachOut => _reachOut;
     int _reachOut;
-    public LabelNode(string source, int reachOut = 0)
+    public LabelNode(string source,SourceSlice span, int reachOut = 0) : base(span)
     {
         Name = source;
         _reachOut = reachOut;
@@ -88,7 +90,7 @@ public class KeyValuePairNode : ExpressionNode
     public string Key;
     public ExpressionNode Value;
 
-    public KeyValuePairNode(string key, ExpressionNode expressionNode)
+    public KeyValuePairNode(string key, ExpressionNode expressionNode, SourceSlice span): base(span)
     {
         Key = key;
         Value = expressionNode;
@@ -100,7 +102,7 @@ public class CommandGroupExpression : ExpressionNode
 {
     public List<CommandNode> CommandNodes;
 
-    public CommandGroupExpression(List<CommandNode> nodes)
+    public CommandGroupExpression(List<CommandNode> nodes, SourceSlice span): base(span)
     {
         CommandNodes = nodes;
     }
@@ -122,7 +124,7 @@ public abstract class LiteralExpressionNode : ExpressionNode
     public object Value => _value;
     private object _value;
 
-    protected LiteralExpressionNode(object value)
+    protected LiteralExpressionNode(object value, SourceSlice span) : base(span)
     {
         _value = value;
     }
@@ -133,7 +135,7 @@ public class EmptyListLiteralExpression : LiteralExpressionNode
 {
     //FromList<PKValue>
     
-    public EmptyListLiteralExpression() : base(new List<object>())
+    public EmptyListLiteralExpression(SourceSlice span) : base(new List<object>(), span)
     {
     }
 

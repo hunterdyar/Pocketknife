@@ -10,10 +10,14 @@ public class Lexer
     private int loc;
     private char Current => loc < _source.Length ? _source[loc] : '\0';
     public string Source => _source;
+    private int _line;
+    private int _colStartLoc;
     public Lexer(string source)
     {
         _source = source;
         _tokens = new List<Token>(source.Length / 3); // Guessing average token length
+        _line = 0;
+        _colStartLoc = 0;
         LexTokens();
     }
 
@@ -31,6 +35,8 @@ public class Lexer
         switch (Current)
         {
             case '\n':
+                _colStartLoc = loc;
+                _line++;
                 ConsumeCurrentCharAsToken(TokenType.LineBreak);
                 return;
             case '/':
@@ -297,12 +303,12 @@ public class Lexer
 
     private void AddToken(TokenType type, int start, int length)
     {
-        _tokens.Add(new Token(this, new SourceSlice(start, length,this), type));
+        _tokens.Add(new Token(this, new SourceSlice(start, length, _line, loc-_colStartLoc, this), type));
     }
 
     private void ConsumeCurrentCharAsToken(TokenType type)
     {
-        _tokens.Add(new Token(this, new SourceSlice(loc, 1,this), type));
+        _tokens.Add(new Token(this, new SourceSlice(loc, 1, _line, loc - _colStartLoc, this), type));
         loc++;//consume
     }
 
@@ -360,5 +366,10 @@ public class Lexer
         
         errorPoint += "^";
         return $"{Environment.NewLine}{lineNum}{lineOfError}{Environment.NewLine}{errorPoint}{Environment.NewLine}";
+    }
+
+    public SourceSlice EntireSpan()
+    {
+        return new SourceSlice(0, _source.Length, 0, 0, this);
     }
 }

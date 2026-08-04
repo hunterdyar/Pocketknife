@@ -35,7 +35,7 @@ public class Parser
            nodesList.Add(ParseRootNode());
         }
 
-        return new ScriptNode(nodesList);
+        return new ScriptNode(nodesList, _lexer.EntireSpan());
     }
 
     private RootNode ParseRootNode()
@@ -67,7 +67,7 @@ public class Parser
             var token = _lexer.Tokens[_tokenIndex];
             if (token.Type == TokenType.Identifier)
             {
-                var matchName = ConsumeIdent();
+                var span = ConsumeIdent(out var matchName);
                 //?try, ?help
                 //or takes the same standard command as any filter?
                 //~contains could be ?contains and //+true, +false.
@@ -98,7 +98,7 @@ public class Parser
                     }
                 }
 
-                return new NakedPatternMatch(arms, closer);
+                return new NakedPatternMatch(arms, closer, token.Source);
             }
             else
             {
@@ -148,6 +148,7 @@ public class Parser
         Consume(TokenType.PatternBranch);//+
         BranchType branchType = default;
         FilterCommandNode? filter = null;
+        var startToken = _lexer.Tokens[_tokenIndex];
         if (_tokenIndex < _lexer.TokenCount)
         {
             var t = _lexer.Tokens[_tokenIndex];
@@ -157,7 +158,7 @@ public class Parser
             }else if (t.Type == TokenType.PatternDefault)
             {
                 Consume(TokenType.PatternDefault);
-                filter = new DefaultFilterCommandNode();
+                filter = new DefaultFilterCommandNode(t.Source);
             }
             else
             {
@@ -186,20 +187,20 @@ public class Parser
         {
             branchType = BranchType.SideEffect;
         }
-        var body = new CommandSetNode(commands);
-        return new PatternBranchArm(filter, body, branchType);
+        var body = new CommandSetNode(commands, _lexer.Tokens[_tokenIndex].Source);
+        return new PatternBranchArm(filter, body, branchType, startToken.Source);
     }
 
     private PackListNode ParsePackList()
     {
-        Consume(TokenType.PackList);
-        return new PackListNode();
+        var s = Consume(TokenType.PackList);
+        return new PackListNode(s);
     }
 
     private UnpackListNode ParseUnpackList()
     {
-        Consume(TokenType.UnpackList);
-        return new UnpackListNode();
+        var s =Consume(TokenType.UnpackList);
+        return new UnpackListNode(s);
     }
 
     private InputBranchNode ParseInputToOutputBranch()
@@ -207,6 +208,7 @@ public class Parser
         var input = ParseInputCommand();
         List<RootNode> commands = new List<RootNode>();
         BranchType btype = default;
+        var startToken = _lexer.Tokens[_tokenIndex];
         while (_tokenIndex < _lexer.TokenCount)
         {
             if (TryEndBranch(out btype))
@@ -226,7 +228,7 @@ public class Parser
             btype = BranchType.SideEffect;
         }
         
-        var b = new InputBranchNode(input, btype, commands);
+        var b = new InputBranchNode(input, btype, commands, startToken.Source);
         return b;
     }
 
@@ -303,7 +305,7 @@ public class Parser
     
     private BranchNode ParseBranch()
     {
-        Consume(TokenType.StartBranch);
+        var start = Consume(TokenType.StartBranch);
         LabelNode? label;
         if (_lexer.Tokens[_tokenIndex].Type == TokenType.Label)
         {
@@ -340,31 +342,32 @@ public class Parser
             throw new ParserException(this, _lexer.Tokens[_tokenIndex],$"Unexpected token {_lexer.Tokens[_tokenIndex]}. Expected ^, <, or & to end a branch.");
         }
         
-        return new BranchNode(label, branchType, branchCommands);
+        //todo: merge the span to start/end points.
+        return new BranchNode(label, branchType, branchCommands, start);
     }
 
     private FilterCommandNode ParseFilterCommand()
     {
-        Consume(TokenType.Filter);
-        var (name, args, opts) = ParseStandardCommand();
+        var s = Consume(TokenType.Filter);
+        var (name, args, opts, span) = ParseStandardCommand();
         ConsumeLinebreakOrEndOfFile();
-        return new FilterCommandNode(name, args, opts);
+        return new FilterCommandNode(name, args, opts, SourceSlice.Span(s,span));
     }
 
     private AbortCommandNode ParseAbortCommand()
     {
-        Consume(TokenType.Bang);
-        var (name, args, opts) = ParseStandardCommand();
+        var s = Consume(TokenType.Bang);
+        var (name, args, opts, span) = ParseStandardCommand();
         ConsumeLinebreakOrEndOfFile();
-        return new AbortCommandNode(name, args, opts);
+        return new AbortCommandNode(name, args, opts, SourceSlice.Span(s, span));
     }
 
     private SignalCommandNode ParseSignalCommand()
     {
-        Consume(TokenType.Signal);
-        var (name, args, opts) = ParseStandardCommand();
+        var s = Consume(TokenType.Signal);
+        var (name, args, opts, span) = ParseStandardCommand();
         ConsumeLinebreakOrEndOfFile();
-        return new SignalCommandNode(name, args, opts);
+        return new SignalCommandNode(name, args, opts, SourceSlice.Span(s, span));
     }
 
     private InputProviderNode ParseInputCommand()
@@ -374,27 +377,28 @@ public class Parser
             return ParsePipeInInputProvider();
         }//else
         
-        Consume(TokenType.Input);
+        var s = Consume(TokenType.Input);
         //we now have either a literal or an identifier.
         if (_lexer.Tokens[_tokenIndex].Type == TokenType.Identifier)
         {
-            var (name, args, opts) = ParseStandardCommand();
+            var (name, args, opts, span) = ParseStandardCommand();
             ConsumeLinebreakOrEndOfFile();
-            return new InputProviderNode(name, args, opts);
+            return new InputProviderNode(name, args, opts, SourceSlice.Span(s, span));
         }
         else
         {
             var (args, opts) = ParseNakedCommand();
             
             ConsumeLinebreakOrEndOfFile();
-            return new InputLiteralProviderNode(args, opts);
+            return new InputLiteralProviderNode(args, opts, s);
         }
     }
 
     private PipeInInputProviderNode ParsePipeInInputProvider()
     {
-        Consume(TokenType.PipeIn);
-        var (name, args, opts) = ParseStandardCommand();
+        //todo: this is off by one.
+        var s = Consume(TokenType.PipeIn);
+        var (name, args, opts, span) = ParseStandardCommand();
         EatOptionalLinebreaks();
 
         // List<RootNode> branchCommands = new List<RootNode>();
@@ -414,14 +418,14 @@ public class Parser
         //     EatOptionalLinebreaks();
         // }
 
-        return new PipeInInputProviderNode(name, args, opts);
+        return new PipeInInputProviderNode(name, args, opts, SourceSlice.Span(s,span));
     }
     private PipelineCommandNode ParsePipeCommand()
     {
-        Consume(TokenType.Pipe);
-        var (name, args, opts) = ParseStandardCommand();
+        var s = Consume(TokenType.Pipe);
+        var (name, args, opts, span) = ParseStandardCommand();
         ConsumeLinebreakOrEndOfFile();
-        return new PipelineCommandNode(name, args, opts);
+        return new PipelineCommandNode(name, args, opts, SourceSlice.Span(s,span));
     }
 
    
@@ -447,9 +451,9 @@ public class Parser
         }
     }
 
-    private (string name, List<ExpressionNode> args, Options? opts) ParseStandardCommand()
+    private (string name, List<ExpressionNode> args, Options? opts, SourceSlice span) ParseStandardCommand()
     {
-        var name = ConsumeIdent();
+        var s = ConsumeIdent(out var name);
         List<ExpressionNode> args = new List<ExpressionNode>();
         List<KeyValuePairNode>? opts = null;
         while (_tokenIndex < _lexer.TokenCount && _lexer.Tokens[_tokenIndex].Type != TokenType.LineBreak)
@@ -464,7 +468,7 @@ public class Parser
                 args.Add(e);
             }
         }
-        return (name, args, new Options(opts));
+        return (name, args, new Options(opts), s);
     }
 
     private (List<ExpressionNode> args, Options? opts) ParseNakedCommand()
@@ -510,12 +514,12 @@ public class Parser
 
             if (token.Type == TokenType.Identifier)
             {
-                var p = ConsumeIdent();
+                var s = ConsumeIdent(out var p);
                 EatOptionalLinebreaks();
                 Consume(TokenType.Equals);
                 EatOptionalLinebreaks();
                 var e = ParseExpression();
-                props.Add(new KeyValuePairNode(p,e));
+                props.Add(new KeyValuePairNode(p,e,s));
             }
             else
             {
@@ -536,22 +540,24 @@ public class Parser
             {
                 case TokenType.Identifier:
                     _tokenIndex++;
-                    return new IdentifierNode(token.GetSource(Source));
+                    return new IdentifierNode(token.GetSource(Source), token.Source);
                 case TokenType.Number:
                     _tokenIndex++;
-                    return NumberNode.FromString(token.GetSource(Source));
+                    return NumberNode.FromString(token.GetSource(Source), token.Source);
                 case TokenType.Label:
                     return ParseLabel();
                 case TokenType.String:
                     _tokenIndex++;
-                    return new StringLiteralNode(token.GetSource(Source));
+                    return new StringLiteralNode(token.GetSource(Source), token.Source);
                 case TokenType.GroupStart:
                     //[] is empty-list literal. maybe it shouldn't be?
                     if(_tokenIndex + 1 < _lexer.TokenCount && _lexer.Tokens[_tokenIndex + 1].Type == TokenType.GroupEnd)
                     {
                         //todo: we'll need to save our source span always when parsing.
+                        var s = _lexer.Tokens[_tokenIndex].Source;
+                        var e = _lexer.Tokens[_tokenIndex + 1].Source;
                         _tokenIndex += 2;
-                        return new EmptyListLiteralExpression();
+                        return new EmptyListLiteralExpression(SourceSlice.Span(s,e));
                     }
                     //else:
                     return ParseCommandGroupExpression();
@@ -567,29 +573,29 @@ public class Parser
 
     private LabelNode ParseLabel()
     {
-        Consume(TokenType.Label);
+        var s = Consume(TokenType.Label);
         int reachOutCount = 0;
         while (_tokenIndex < _lexer.TokenCount && _lexer.Tokens[_tokenIndex].Type == TokenType.EndBranchStop)
         {
             reachOutCount++;
             Consume(TokenType.EndBranchStop);
         }
-        var id = ConsumeIdent();
-        return new LabelNode(id, reachOutCount);
+        var e = ConsumeIdent(out var id);
+        return new LabelNode(id, SourceSlice.Span(s,e), reachOutCount);
     }
 
     private ExpressionNode ParseCommandGroupExpression()
     {
         var commands = new List<CommandNode>();
-        Consume(TokenType.GroupStart);
+        var start = Consume(TokenType.GroupStart);
         EatOptionalLinebreaks();
-
+        var end = start;
         while (_tokenIndex < _lexer.TokenCount)
         {
             var token = _lexer.Tokens[_tokenIndex];
             if (token.Type == TokenType.GroupEnd)
             {
-                Consume(TokenType.GroupEnd);
+                end = Consume(TokenType.GroupEnd);
                 break;
             }
             else
@@ -600,10 +606,10 @@ public class Parser
             EatOptionalLinebreaks();
         }
       
-        return new CommandGroupExpression(commands);
+        return new CommandGroupExpression(commands, SourceSlice.Span(start,end));
     }
 
-    private string ConsumeIdent()
+    private SourceSlice ConsumeIdent(out string identity)
     {
         if (_tokenIndex >= _lexer.TokenCount)
         {
@@ -614,7 +620,8 @@ public class Parser
         if (t.Type == TokenType.Identifier)
         {
             _tokenIndex++;
-            return t.GetSource(Source);
+            identity = t.GetSource(Source);
+            return t.Source;
         }
         else
         {
@@ -622,13 +629,13 @@ public class Parser
         }
     }
 
-    private void Consume(TokenType tokenType, bool optional = false)
+    private SourceSlice Consume(TokenType tokenType, bool optional = false)
     {
         if (_tokenIndex >= _lexer.TokenCount)
         {
             if (optional)
             {
-                return;
+                return _lexer.Tokens[_tokenIndex].Source;//this is not correct, we should return... nothing?
             }
             else
             {
@@ -639,6 +646,7 @@ public class Parser
         if (_lexer.Tokens[_tokenIndex].Type == tokenType)
         {
             _tokenIndex++;
+            return _lexer.Tokens[_tokenIndex-1].Source;
         }
         else
         {
@@ -647,6 +655,8 @@ public class Parser
                 throw new ParserException(this, _lexer.Tokens[_tokenIndex],$"Unexpected Token {_lexer.Tokens[_tokenIndex].Type}. Expected {tokenType}");
             }
         }
+
+        return _lexer.Tokens[_tokenIndex].Source;
     }
 }
 

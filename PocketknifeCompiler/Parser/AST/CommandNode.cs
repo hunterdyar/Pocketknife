@@ -36,7 +36,7 @@ public class CommandNode : RootNode
     public Options? Options => _options;
     private Options? _options;
     
-    public CommandNode(string name, List<ExpressionNode> args, Options? opts)
+    public CommandNode(string name, List<ExpressionNode> args, Options? opts, SourceSlice span) : base(span)
     {
         commandName = name;
         _arguments = args.ToArray();
@@ -54,14 +54,14 @@ public class InputProviderNode : CommandNode
 {
     override public string sigil => ">";
     //>dir input
-    public InputProviderNode(string name, List<ExpressionNode> args, Options? opts) : base(name, args, opts)
+    public InputProviderNode(string name, List<ExpressionNode> args, Options? opts, SourceSlice span) : base(name, args, opts, span)
     {
     }
 }
 
 public class InputLiteralProviderNode : InputProviderNode
 {
-    public InputLiteralProviderNode(List<ExpressionNode> args, Options? opts) : base("", args, opts)
+    public InputLiteralProviderNode(List<ExpressionNode> args, Options? opts, SourceSlice span) : base("", args, opts, span)
     {
     }
 
@@ -74,7 +74,7 @@ public class InputLiteralProviderNode : InputProviderNode
 public class PipelineCommandNode : CommandNode
 {
     override public string sigil => "|";
-    public PipelineCommandNode(string name, List<ExpressionNode> args, Options? opts) : base(name, args, opts)
+    public PipelineCommandNode(string name, List<ExpressionNode> args, Options? opts, SourceSlice span) : base(name, args, opts, span)
     {
     }
 }
@@ -83,7 +83,7 @@ public class FilterCommandNode : CommandNode
 {
     override public string sigil => "~";
     //~do thing
-    public FilterCommandNode(string name, List<ExpressionNode> args, Options? opts) : base(name, args, opts)
+    public FilterCommandNode(string name, List<ExpressionNode> args, Options? opts, SourceSlice span) : base(name, args, opts, span)
     {
     }
 }
@@ -91,7 +91,7 @@ public class FilterCommandNode : CommandNode
 public class DefaultFilterCommandNode : FilterCommandNode
 {
     override public string sigil => "~~";
-    public DefaultFilterCommandNode() : base("", [], null)
+    public DefaultFilterCommandNode(SourceSlice span) : base("", [], null, span)
     {
     }
     
@@ -101,7 +101,7 @@ public class AbortCommandNode : CommandNode
 {
     public override string sigil => "!";
 
-    public AbortCommandNode(string name, List<ExpressionNode> args, Options? opts) : base(name, args, opts)
+    public AbortCommandNode(string name, List<ExpressionNode> args, Options? opts, SourceSlice span) : base(name, args, opts, span)
     {
     }
 }
@@ -110,7 +110,7 @@ public class SignalCommandNode : CommandNode
 {
     override public string sigil => ":";
     //:start-row
-    public SignalCommandNode(string name, List<ExpressionNode> args, Options? opts) : base(name, args, opts)
+    public SignalCommandNode(string name, List<ExpressionNode> args, Options? opts, SourceSlice span) : base(name, args, opts, span)
     {
     }
 }
@@ -119,7 +119,7 @@ public class PipeInInputProviderNode : InputProviderNode
 {
     override public string sigil => "|>";
     //|>transform data into stream<data>
-    public PipeInInputProviderNode(string name, List<ExpressionNode> args, Options? opts) : base(name, args, opts)
+    public PipeInInputProviderNode(string name, List<ExpressionNode> args, Options? opts, SourceSlice span) : base(name, args, opts, span)
     {
         
     }

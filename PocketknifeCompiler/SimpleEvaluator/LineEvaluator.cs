@@ -82,7 +82,7 @@ public class LineEvaluator
 		else
 		{
 			//todo: not sure why this is failing in this way.
-			_current = EvalState.Bad(_current.Depth);
+			_current = EvalState.Bad(_current.Depth, _current.Evaluated);
 			//throw new Exception("Execution ended unexpectedly (EvalState and enumerator mismatch).");
 		}
 	}

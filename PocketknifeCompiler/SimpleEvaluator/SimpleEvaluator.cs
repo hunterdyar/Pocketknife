@@ -41,49 +41,49 @@ public static class SimpleEvaluator
 			case PKGenInputProvider input:
 				var ia = EvaluateArguments(input.Arguments, ctx);
 				ctx.PushStreamWithGenerator(input.Type, ia, input.Generator);
-				yield return EvalState.Good(depth);
+				yield return EvalState.Good(depth, input.Span);
 				break;
 			case PKPipeInputProvider input:
 				var pia = EvaluateArguments(input.Arguments, ctx);
 				ctx.PushStreamWithPipeGenerator(input.Type, pia, input.PipeGenerator);
-				yield return EvalState.Good(depth);
+				yield return EvalState.Good(depth, input.Span);
 				break;
 			case PKFilterOperatorNode fopr:
 				var fa = EvaluateArguments(fopr.Arguments, ctx);
 				ctx.FilterOnEach(fa, fopr.Invoker);
-				yield return EvalState.Good(depth);
+				yield return EvalState.Good(depth, fopr.Span);
 				break;
 			case PKSignalOperatorNode sopr:
 				var soprArguments = EvaluateArguments(sopr.Arguments, ctx);
 				ctx.SignalOnEach(soprArguments, sopr.Invoker);
-				yield return EvalState.Good(depth);
+				yield return EvalState.Good(depth, sopr.Span);
 				break;
 			case PKInlineOperatorNode iopr:
 				var ioprArguments = EvaluateArguments(iopr.Arguments, ctx);
 				ctx.OperateOnEach(ioprArguments, iopr.Invoker);
-				yield return EvalState.Good(depth);
+				yield return EvalState.Good(depth, iopr.Span);
 				break;
-			case PKPack:
+			case PKPack pack:
 				ctx.Pack();
-				yield return EvalState.Good(depth);
+				yield return EvalState.Good(depth, pack.Span);
 				break;
-			case PKUnpack:
+			case PKUnpack unpack:
 				ctx.Unpack();
-				yield return EvalState.Good(depth);
+				yield return EvalState.Good(depth, unpack.Span);
 				break;
 			case PKNamedBranch namedBranch:
 				ctx.NewNamedFrame(namedBranch.Label);
-				yield return EvalState.Good(depth);
+				//yield return EvalState.Good(depth, namedBranch.Span);
 				foreach (var state in Evaluate(namedBranch.Body, depth + 1, ctx)) yield return state;
 				ctx.PopFrame(namedBranch.Type);
-				yield return EvalState.Good(depth);
+				yield return EvalState.Good(depth, namedBranch.Span);
 				break;
 			case PKBranch branch:
 				ctx.NewFrame();
-				yield return EvalState.Good(depth);
+				//yield return EvalState.Good(depth, branch.Span);
 				foreach (var state in Evaluate(branch.Body, depth + 1, ctx)) yield return state;
 				ctx.PopFrame(branch.Type);
-				yield return EvalState.Good(depth);
+				yield return EvalState.Good(depth, branch.Span);
 				break;
 			case PKPatternMatch patternMatch:
 				//todo: optimize for allocations
@@ -105,7 +105,7 @@ public static class SimpleEvaluator
 					ctx.ExitArm(patternMatch.Alternate.CloseType);
 				}
 				ctx.EndPatternMatch();
-				yield return EvalState.Good(depth);
+				yield return EvalState.Good(depth, patternMatch.Span);
 				break;
 			// default:
 			// 	throw new NotImplementedException($"{node.GetType()} not yet compilable");

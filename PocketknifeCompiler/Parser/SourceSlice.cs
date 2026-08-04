@@ -2,11 +2,23 @@ using PocketknifeCore.Compiler;
 
 namespace PocketknifeCore;
 
-public readonly struct SourceSlice(int startLoc, int length, Lexer lexer)
+public readonly struct SourceSlice
 {
-    public readonly int StartLoc = startLoc;
-    public readonly int Length = length;
-    private readonly Lexer _lexer = lexer;
+    public readonly int StartLoc;
+    public readonly int Length;
+    private readonly Lexer _lexer;
+    public readonly int Line;
+    public readonly int Col;
+
+    public SourceSlice(int startLoc, int length, int line, int col, Lexer lexer)
+    {
+        StartLoc = startLoc;
+        Length = length;
+        _lexer = lexer;
+        Line = line;
+        Col = col;
+    }
+
     public string GetString(string source)
     {
         return source.Substring(StartLoc, Length);
@@ -33,7 +45,7 @@ public readonly struct SourceSlice(int startLoc, int length, Lexer lexer)
         {
             return start;
         }
-        return new SourceSlice(start.StartLoc, (end.StartLoc+end.Length) - start.StartLoc, start._lexer);
+        return new SourceSlice(start.StartLoc, (end.StartLoc+end.Length) - start.StartLoc, start.Line, start.Col, start._lexer);
     }
     
     

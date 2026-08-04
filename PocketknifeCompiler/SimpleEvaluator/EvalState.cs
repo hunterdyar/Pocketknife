@@ -2,6 +2,7 @@
 
 public struct EvalState
 {
+	public SourceSlice Evaluated;
 	public bool IsErr = false;
 	public bool IsDone = false;
 	public bool IsStarted = false;
@@ -21,36 +22,39 @@ public struct EvalState
 		};
 	}
 
-	public static EvalState Good(int depth)
+	public static EvalState Good(int depth, SourceSlice evaluated)
 	{
 		return new EvalState()
 		{
 			IsStarted = true,
 			IsErr = false,
 			IsDone = false,
-			Depth = depth
+			Depth = depth,
+			Evaluated = evaluated,
 		};
 	}
 
-	public static EvalState Bad(int depth)
+	public static EvalState Bad(int depth, SourceSlice evaluated)
 	{
 		return new EvalState()
 		{
 			IsErr = true,
 			IsDone = true,
 			IsStarted = true,
-			Depth = depth
+			Depth = depth,
+			Evaluated = evaluated
 		};
 	}
 
-	public static EvalState Done(int depth)
+	public static EvalState Done(int depth, SourceSlice evaluated)
 	{
 		return new EvalState()
 		{
 			IsDone = true,
 			IsErr = false,
 			IsStarted = true,
-			Depth = depth
+			Depth = depth,
+			Evaluated = evaluated
 		};
 	}
 }

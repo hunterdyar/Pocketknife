@@ -24,6 +24,7 @@ public class ContextView : ComponentBase
 		{
 			panel.Label("Context", color: panel.Theme.Accent);
 			panel.Label(state.State);
+			panel.Label($"line: {state.LineEvaluator.Current.Evaluated.Line} col: {state.LineEvaluator.Current.Evaluated.Col}");
 
 			panel.ScrollArea(_contextScrollID, panel.AvailableWidth, 200,ui =>
 			{

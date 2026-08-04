@@ -5,7 +5,13 @@ namespace PocketknifeCore.Compiler;
 
 public abstract class ASTNode
 {
-    public SourceSlice Span;
+    public readonly SourceSlice Span;
+
+    protected ASTNode(SourceSlice span)
+    {
+        Span = span;
+    }
+
     public virtual bool IsBoundary => false;
 
     public static string BranchTypeToString(BranchType type)
@@ -24,7 +30,7 @@ public class ScriptNode : ASTNode
 {
     public List<RootNode> RootNodes;
 
-    public ScriptNode(List<RootNode> nodes)
+    public ScriptNode(List<RootNode> nodes, SourceSlice span) : base(span)
     {
         RootNodes = nodes;
     }
@@ -42,13 +48,16 @@ public class ScriptNode : ASTNode
 
 public class RootNode : ASTNode
 {
+    public RootNode(SourceSlice span) : base(span)
+    {
+    }
 }
 
 public class CommandSetNode : ASTNode
 {
     public List<RootNode> Commands;
 
-    public CommandSetNode(List<RootNode> commands)
+    public CommandSetNode(List<RootNode> commands, SourceSlice span) : base(span)
     {
         Commands = commands;
     }
@@ -59,11 +68,11 @@ public class InputBranchNode : RootNode
     public InputProviderNode Input;
     public CommandSetNode CommandSet;
     public BranchType BranchType;
-    public InputBranchNode(InputProviderNode input, BranchType type, List<RootNode> commands)
+    public InputBranchNode(InputProviderNode input, BranchType type, List<RootNode> commands, SourceSlice span) : base(span)
     {
         this.BranchType = type;
         Input = input;
-        CommandSet = new CommandSetNode(commands);
+        CommandSet = new CommandSetNode(commands, span);
     }
 
     public override string ToString()
@@ -97,7 +106,7 @@ public class BranchNode : RootNode
     public CommandSetNode Commands;
     public bool HasLabel = false;
     public string Label = "";
-    public BranchNode(LabelNode? label, BranchType type,List<RootNode> commands)
+    public BranchNode(LabelNode? label, BranchType type,List<RootNode> commands, SourceSlice span) : base(span)
     {
         this.Type = type;
         if (label == null)
@@ -111,7 +120,7 @@ public class BranchNode : RootNode
             Label = label.Name;
             HasLabel = !string.IsNullOrEmpty(label.Name);
         }
-        Commands = new CommandSetNode(commands);
+        Commands = new CommandSetNode(commands, span);
     }
 
     override public string ToString()
@@ -137,6 +146,10 @@ public class BranchNode : RootNode
 
 public class PackListNode : RootNode
 {
+    public PackListNode(SourceSlice span) : base(span)
+    {
+    }
+
     public override bool IsBoundary => false;
 
     public override string ToString()
@@ -147,6 +160,10 @@ public class PackListNode : RootNode
 
 public class UnpackListNode : RootNode
 {
+    public UnpackListNode(SourceSlice span) : base(span)
+    {
+    }
+
     public override bool IsBoundary => false;
     override public string ToString()
     {
@@ -158,7 +175,7 @@ public abstract class PatternMatch : RootNode
 {
     public List<PatternBranchArm> Arms;
     public BranchType CloseType;
-    public PatternMatch(List<PatternBranchArm> arms, BranchType closeType)
+    public PatternMatch(List<PatternBranchArm> arms, BranchType closeType, SourceSlice span) : base(span)
     {
         Arms = arms;
         CloseType = closeType;
@@ -179,7 +196,7 @@ public abstract class PatternMatch : RootNode
 
 public class NakedPatternMatch : PatternMatch
 {
-    public NakedPatternMatch(List<PatternBranchArm> arms, BranchType closeType) : base(arms, closeType)
+    public NakedPatternMatch(List<PatternBranchArm> arms, BranchType closeType, SourceSlice span) : base(arms, closeType, span)
     {
     }
 }
@@ -200,7 +217,7 @@ public class PatternBranchArm : RootNode
     public BranchType CloseType;
     public bool IsDefault = false;
     public FilterCommandNode? FilterToMatch;
-    public PatternBranchArm(FilterCommandNode? filterCommandNode, CommandSetNode commands, BranchType closeType)
+    public PatternBranchArm(FilterCommandNode? filterCommandNode, CommandSetNode commands, BranchType closeType, SourceSlice span) : base(span)
     {
         Commands = commands;
         CloseType = closeType;
