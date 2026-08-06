@@ -20,16 +20,16 @@ public class EvalToolbar : ComponentBase
 					state.LineEvaluator.RunCurrentToEnd();
 				}
 
-				if (panel.Button($"{MaterialSymbols.StepInto}", width: _buttonWidth).Clicked)
+				if (panel.Button($"{MaterialSymbols.StepInto}", width: _buttonWidth, enabled: state.LineEvaluator.CanStep).Clicked)
 				{
 					state.RecompileIfNeeded();
 					//todo: check compilation state
 					state.LineEvaluator.Step();
 				}
 
-				if (panel.Button($"{MaterialSymbols.StepOut}", width: _buttonWidth).Clicked)
+				if (panel.Button($"{MaterialSymbols.StepOut}", width: _buttonWidth, enabled: state.LineEvaluator.CanStepBack).Clicked)
 				{
-					//Undo! go back! go back!
+					state.LineEvaluator.StepBack();
 				}
 
 				if (panel.Button($"{MaterialSymbols.Refresh}", width: _buttonWidth).Clicked)

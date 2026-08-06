@@ -5,13 +5,18 @@ namespace PocketknifeCore.SimpleEvaluator;
 //Steps through evaluation one line at a time.
 public class LineEvaluator
 {
+	private EvalCursor? _cursor; // replaces _execution
+	private readonly Stack<ContextSnapshot> _undoStack = new();
+
+	public bool CanStep => !_current.IsDone && !_current.IsErr;
+	public bool CanStepBack => _undoStack.Count > 0;
+	
 	public EvalState Current => _current;
-	private EvalState _current = EvalState.None();
+	private EvalState _current = EvalState.NotStarted();
 
 	public Context? Context => _ctx;
-	private Context? _ctx = new Context();
 
-	private IEnumerator<EvalState> _execution;
+	private Context? _ctx = new Context();
 	
 	private PKNode? _root;
 
@@ -21,101 +26,48 @@ public class LineEvaluator
 	}
 	public void RunCurrentToEnd()
 	{
-		if (_current.IsDone)
+		Step();
+		//todo: re-implement
+		while (!_current.IsDone && !_current.IsErr)
 		{
-			return;
-		}else if (_current.IsErr)
-		{
-			//error!
-		}else if (_current.IsStarted)
-		{
-			while (!_current.IsDone && !_current.IsErr)
-			{
-				if (_execution.MoveNext())
-				{
-					_current = _execution.Current;
-				}
-				else
-				{ 
-					break;
-				}
-			}
-		}
-		else
-		{
-			if (_root == null)
-			{
-				throw new InvalidOperationException("No root node set.");
-			}
-			_ctx = new Context();
-			int stepCount = 0;
-			foreach (var state in SimpleEvaluator.Evaluate(_root, _current.Depth, _ctx))
-			{
-				if (state.IsErr)
-				{
-					return;
-				}
-
-				stepCount++;
-			}
+			Step();
 		}
 	}
 
 	public void Step()
 	{
-		if(_current.IsDone || _current.IsErr)
-		{
-			return;
-		}
+		if (_current.IsDone || _current.IsErr) return;
 
 		if (!_current.IsStarted)
 		{
 			_ctx = new Context();
-			_execution = SimpleEvaluator.Evaluate(_root, 0, _ctx).GetEnumerator();
+			_cursor = SimpleEvaluator.CreateCursor(_root); // build initial cursor
+			_undoStack.Clear();
 		}
-		
-		var currentDepth = _current.Depth;
-		if (_execution.MoveNext())
-		{
-			_current = _execution.Current;
-		}
-		else
-		{
-			//todo: not sure why this is failing in this way.
-			_current = EvalState.Bad(_current.Depth, _current.Evaluated);
-			//throw new Exception("Execution ended unexpectedly (EvalState and enumerator mismatch).");
-		}
+
+		// Snapshot BEFORE the step (includes cursor clone)
+		_undoStack.Push(TakeSnapshot(_current));
+		_current = SimpleEvaluator.StepOnce(_cursor, _ctx); // advance one node
 	}
 
-	public void StepOut()
+	public void StepBack()
 	{
-		if (_current.IsDone || _current.IsErr)
-		{
-			return;
-		}
+		if (!CanStepBack) return;
 
-		if (!_current.IsStarted)
-		{
-			_ctx = new Context();
-			_execution = SimpleEvaluator.Evaluate(_root, _current.Depth, _ctx).GetEnumerator();
-		}
-
-		var currentDepth = _current.Depth;
-		if (_execution.MoveNext())
-		{
-			_current = _execution.Current;
-			//keep going until we end up less deep current, then stop.
-			while(_execution.MoveNext() && _execution.Current.Depth >= currentDepth)
-			{
-				_current = _execution.Current;
-			}
-		}
-		else
-		{
-			throw new Exception("Execution ended unexpectedly (EvalState and enumerator mismatch).");
-		}
+		var snap = _undoStack.Pop();
+		_ctx.RestoreFrom(snap);
+		_cursor = snap.Cursor; // restore cursor — no replay needed
+		_current = snap.StateBefore;
 	}
 
+	private ContextSnapshot TakeSnapshot(EvalState stateBefore) => new()
+	{
+		StateBefore = stateBefore,
+		Timeline = _ctx.Timeline.Select(Context.CloneLayer).ToList(),
+		Scopes = new Stack<ScopeInfo>(_ctx.Scopes.Reverse()),
+		Cursor = _cursor!.Clone(),
+	};
+	
 	public void SetRoot(PKNode rootNode)
 	{
 		if (rootNode == null)
@@ -128,13 +80,15 @@ public class LineEvaluator
 			//reset when recompiled I think
 			_root = rootNode;
 			_ctx = new Context();//would be fun to try to do on-the-fly recompilation.
-			_current = EvalState.None();
+			_current = EvalState.NotStarted();
 		}
 	}
 	
 	public void Reset()
 	{
 		_ctx = new Context();
-		_current = EvalState.None();
+		_current = EvalState.NotStarted();
+		_undoStack.Clear();
+		_cursor = null;
 	}
 }

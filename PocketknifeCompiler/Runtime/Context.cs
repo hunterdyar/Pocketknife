@@ -14,6 +14,7 @@ public class Context
 
 	public List<PKLayer> Timeline => _timeline;
 	private readonly List<PKLayer> _timeline = new();
+	public Stack<ScopeInfo> Scopes => _scopes;
 	private readonly Stack<ScopeInfo> _scopes = new();
 
 	// Set per iteration in *OnEach so ops (and EvaluateArguments) can ask "which item am I on?"
@@ -608,6 +609,51 @@ public class Context
 		{
 			throw new Exception("no active pattern scope");
 		}
+	}
+
+	public void RestoreFrom(ContextSnapshot snapshot)
+	{
+		_timeline.Clear();
+		foreach (var layer in snapshot.Timeline)
+		{
+			_timeline.Add(layer);
+		}
+		_scopes.Clear();
+		foreach (var scope in snapshot.Scopes)
+		{
+			_scopes.Push(scope);
+		}
+	}
+
+	private static PKItem CloneItem(PKItem source)
+	{
+		if (source.Bindings == null)
+		{
+			return new PKItem(source.ArmID, source.Progenitor)
+			{
+				Bindings = null,
+				Value = source.Value,//clone?
+			};
+		}
+		else
+		{
+			return new PKItem(source.ArmID, source.Progenitor)
+			{
+				//should be fine to shallow-copy this.
+				Bindings = new Dictionary<string, object>(source.Bindings),
+				Value = source.Value,//clone?
+			};
+		}
+	}
+
+	public static PKLayer CloneLayer(PKLayer source)
+	{
+		var clone = new PKLayer(source.Type);
+		foreach (var item in source.Items)
+		{
+			clone.Items.Add(CloneItem(item));
+		}
+		return clone;
 	}
 
 	private bool IsActive(PKItem item)

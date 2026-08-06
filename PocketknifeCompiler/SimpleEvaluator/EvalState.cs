@@ -1,60 +1,26 @@
 ﻿namespace PocketknifeCore.SimpleEvaluator;
 
-public struct EvalState
+public enum EvalPhase
 {
-	public SourceSlice Evaluated;
-	public bool IsErr = false;
-	public bool IsDone = false;
-	public bool IsStarted = false;
-	public int Depth;
-	public EvalState(int depth)
-	{
-		Depth = depth;
-	}
-	public static EvalState None(int depth = 0)
-	{
-		return new EvalState()
-		{
-			IsErr = false,
-			IsDone = false,
-			IsStarted = false,
-			Depth = depth
-		};
-	}
+	NotStarted,
+	Running,
+	Complete,
+	Error
+}
 
-	public static EvalState Good(int depth, SourceSlice evaluated)
-	{
-		return new EvalState()
-		{
-			IsStarted = true,
-			IsErr = false,
-			IsDone = false,
-			Depth = depth,
-			Evaluated = evaluated,
-		};
-	}
+public readonly struct EvalState
+{
+	public EvalPhase Phase { get; init; }
+	public int Depth { get; init; }
+	public SourceSlice Evaluated { get; init; }
 
-	public static EvalState Bad(int depth, SourceSlice evaluated)
-	{
-		return new EvalState()
-		{
-			IsErr = true,
-			IsDone = true,
-			IsStarted = true,
-			Depth = depth,
-			Evaluated = evaluated
-		};
-	}
+	// Convenience properties kept for minimal call-site churn
+	public bool IsStarted => Phase != EvalPhase.NotStarted;
+	public bool IsDone => Phase == EvalPhase.Complete;
+	public bool IsErr => Phase == EvalPhase.Error;
 
-	public static EvalState Done(int depth, SourceSlice evaluated)
-	{
-		return new EvalState()
-		{
-			IsDone = true,
-			IsErr = false,
-			IsStarted = true,
-			Depth = depth,
-			Evaluated = evaluated
-		};
-	}
+	public static EvalState NotStarted(int depth = 0) => new() { Phase = EvalPhase.NotStarted, Depth = depth };
+	public static EvalState Running(int depth, SourceSlice evaluated) => new() { Phase = EvalPhase.Running, Depth = depth, Evaluated = evaluated };
+	public static EvalState Complete(int depth, SourceSlice evaluated) => new() { Phase = EvalPhase.Complete, Depth = depth, Evaluated = evaluated };
+	public static EvalState Error(int depth, SourceSlice evaluated) => new() { Phase = EvalPhase.Error, Depth = depth, Evaluated = evaluated };
 }
