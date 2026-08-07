@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Markdig" Version="1.3.2" />
+      <PackageReference Include="Stubble.Core" Version="1.10.8" />
+      <PackageReference Include="YamlDotNet" Version="18.1.0" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\PocketknifeCompiler\PocketknifeCompiler.csproj"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Content Include="Resources\Templates\**" LinkBase="Resources\Templates\" CopyToOutputDirectory="Always"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Content Include="Resources\Content\**" LinkBase="Resources\Content\" CopyToOutputDirectory="Always"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Content Include="Resources\Static\**" LinkBase="Resources\Static\" CopyToOutputDirectory="Always"/>
+    </ItemGroup>
+    
+</Project>

@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PocketknifeCompiler.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PocketknifeDesktop", "PocketknifeDesktop\PocketknifeDesktop.csproj", "{BF6E6958-44B2-4D0C-9C80-623D2E585587}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Website", "Website\Website.csproj", "{3700C155-9442-4DB7-BC8D-956B3F3785EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +55,22 @@ Global
 		{2CA93DF5-2E09-4A2F-B0AC-0B888829FE4D}.Release|x64.Build.0 = Release|Any CPU
 		{2CA93DF5-2E09-4A2F-B0AC-0B888829FE4D}.Release|x86.ActiveCfg = Release|Any CPU
 		{2CA93DF5-2E09-4A2F-B0AC-0B888829FE4D}.Release|x86.Build.0 = Release|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Debug|x64.Build.0 = Debug|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Debug|x86.Build.0 = Debug|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Release|ARM64.Build.0 = Release|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Release|x64.ActiveCfg = Release|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Release|x64.Build.0 = Release|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Release|x86.ActiveCfg = Release|Any CPU
+		{3700C155-9442-4DB7-BC8D-956B3F3785EF}.Release|x86.Build.0 = Release|Any CPU
 		{BF6E6958-44B2-4D0C-9C80-623D2E585587}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BF6E6958-44B2-4D0C-9C80-623D2E585587}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BF6E6958-44B2-4D0C-9C80-623D2E585587}.Debug|ARM64.ActiveCfg = Debug|Any CPU

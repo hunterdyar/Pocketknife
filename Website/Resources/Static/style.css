@@ -1,0 +1,127 @@
+﻿:root {
+    --bg-color: #F5F0F3;
+    --soft-accent: #E4DEE2;
+    --highlight: #4a766f;
+}
+
+.roboto-mono-300 {
+    font-family: "Roboto Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 450;
+    font-style: normal;
+}
+
+body {
+    font-family: "Roboto", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings: "wdth" 100;
+
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--bg-color);
+}
+
+.content {
+    padding-top: 2em;
+    width: 720px;
+    display: grid;
+    grid-template-rows: 7em 1fr 6em;
+    grid-template-columns: auto 12em;
+    grid-template-areas: 
+                "hd hd"
+                "pg sb"
+                "ft ft";
+}
+
+.header {
+    grid-area: hd;
+}
+
+.page {
+    grid-area: pg;
+    padding: .5em;
+    border-bottom: 1px solid var(--soft-accent);
+
+}
+
+.header p {
+    margin-top: .1em;
+    font-style: italic;
+}
+
+.header img {
+    display: inline;
+    height: 64px;
+}
+
+.header h1 {
+    font-size: 64px;
+    margin-bottom: 0;
+    display: inline;
+}
+
+.sidebar {
+    grid-area: sb;
+    border-left: 1px solid var(--soft-accent);
+    padding: .5em;
+    font-size: larger;
+}
+.sidebar ul{
+    padding-left: 1em;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+.sidebar li{
+    font-size: 120%;
+    list-style: none;
+    margin-left: 0;
+    margin-top: .2em;
+}
+.sidebar h3,h4{
+    padding-left: .5em;
+    margin-top: .5em;
+    margin-bottom: 0;
+}
+
+.sidebar li a{
+    text-decoration: none;
+}
+
+.sidebar li a:hover {
+    text-decoration: underline;
+}
+
+.footer {
+    padding: .5em;
+    grid-area: ft;
+}
+
+code {
+    display: block;
+    background-color: var(--soft-accent);
+    -webkit-overflow-scrolling: touch;
+    overflow-x: scroll;
+    max-width: 100%;
+    min-width: 100px;
+    padding: .5em;
+}
+
+code.inline-code-block{
+    display: inline;
+}
+
+code pre {
+    word-wrap: break-word;
+    box-decoration-break: clone;
+    padding: .1rem .3rem .2rem;
+    border-radius: .2rem;
+    margin: 0;
+    white-space: pre;
+}
+
+a {
+    color: var(--highlight);
+}

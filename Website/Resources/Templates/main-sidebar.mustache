@@ -1,0 +1,16 @@
+﻿    {{#site.config}}
+        {{#nav}}
+            {{#section}}
+                {{#display}}
+                    <h3>{{.}}</h3>
+                {{/display}}
+                <ul>
+                    {{#links}}
+                        <li><a href="{{item.path}}.html">{{item.display}}</a></li>
+                    {{/links}}
+                </ul>
+            {{/section}}
+           
+        {{/nav}}
+    {{/site.config}}
+
