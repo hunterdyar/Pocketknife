@@ -63,7 +63,7 @@ class Program
 		DirectoryInfo templateDir = new DirectoryInfo(TemplateDir);
 		if (!templateDir.Exists)
 		{
-			throw new Exception("Template Directory Not Found");
+			throw new Exception($"Template Directory Not Found: {TemplateDir}");
 		}
 
 		foreach (var file in templateDir.EnumerateFiles("*.mustache"))
