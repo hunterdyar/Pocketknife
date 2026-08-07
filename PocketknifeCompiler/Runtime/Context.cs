@@ -523,24 +523,40 @@ public class Context
 			Items = new List<PKItem>(top.Items)
 		};
 		int alternate = filters.Length;
-		foreach (var item in cloned.Items)
+
+		for (var j = 0; j < cloned.Items.Count; j++)
 		{
+			var item = cloned.Items[j];
+			
+			//this only matters if we are nesting, so we can skip inactive items from outer branches, and not mangle their armId
+			//if we're the outermost branch (e.g. most of the time), we can skip this semi-expensive operation?
+			if (!IsActive(item))
+			{
+				cloned.Items[j] = new PKItem(item.Value, item, item.Index) { ArmID = null };
+				continue;
+			}
+
+			// Always create a new PKItem for the partition layer so we don't mutate shared objects
+			// that may also live in outer partition layers (shallow-copy aliasing).
+			var stamped = new PKItem(item.Value, item, item.Index);
 			for (int i = 0; i < filters.Length; i++)
 			{
+				//this is the actual filter! wow.
 				var f = (bool)filters[i](item.Value, filterArgs[i], this);
 				if (f)
 				{
-					item.ArmID = i;
+					stamped.ArmID = i;
 					break;
 				}
 			}
 
-			if (hasAlternate && item.ArmID == null)
+			if (hasAlternate && stamped.ArmID == null)
 			{
-				item.ArmID = alternate;
+				stamped.ArmID = alternate;
 			}
-			
+			cloned.Items[j] = stamped;
 		}
+
 		//
 		_timeline.Add(cloned);
 		
@@ -676,7 +692,7 @@ public class Context
 					//
 					if (startLayer.Items.Contains(cur)) //todo: optimize with HashSet<PKItem> per arm scope (cached on ScopeInfo or computed lazily?) for the start-layer membership check.
 					{
-						return cur.ArmID == scope.ArmID;
+					return cur.ArmID == scope.ArmID;
 					}
 					cur = cur.Progenitor;
 				}
