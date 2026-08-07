@@ -29,4 +29,8 @@
       <Content Include="Resources\Static\**" LinkBase="Resources\Static\" CopyToOutputDirectory="Always"/>
     </ItemGroup>
     
+    <ItemGroup>
+      <Folder Include="Resources\Content\guides\" />
+    </ItemGroup>
+    
 </Project>
