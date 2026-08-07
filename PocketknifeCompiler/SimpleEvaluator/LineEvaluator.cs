@@ -79,6 +79,7 @@ public class LineEvaluator
 		{
 			//reset when recompiled I think
 			_root = rootNode;
+			_undoStack.Clear();
 			_ctx = new Context();//would be fun to try to do on-the-fly recompilation.
 			_current = EvalState.NotStarted();
 		}
