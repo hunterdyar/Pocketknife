@@ -1,14 +1,18 @@
 ﻿# The Runtime
 
-The goal of Pocketknife is to behave like it looks. The execution is top to bottom, line-by-line. It achieves this through a novel runtime. 
-
-## The Basics
-Pocketknife uses a tree-walk interpreter that operates on what we call the context. The context is basically a list of the items that are being operated on.
+The goal of Pocketknife is to behave like it looks like. The execution is top to bottom, line-by-line. It achieves this through a novel runtime. 
 
 ## Pipelines
 Pocketknife is a pipeline oriented language. This means that the language describes a flow charts for data. Each step modifies that data (the context), then passes it along to the next step.
 
+There are many other pipeline-style languages, and many languages have pipeline-esque behaviours, like method chaining. 
+
+Also see: [Concatenative Languages](https://concatenative.org/wiki/view/Concatenative%20language).
+
 ## Line-By-Line Evaluation
+Pocketknife uses a tree-walk interpreter that operates on what we call the context. The context is basically a list of
+the items that are being operated on, and every operation modifies the entire list.
+
 The pipeline works on sets of data. A common use is to do something with a directory of files, for example, and you would describe the step you want.
 
 A normal language does this with a loop. While loops, for loops, so on. Then the action inside the loop. "On these, do this, then do that". Pocketknife flips that around and operates on the entire set of data one step at a time. "do this on these, do that on these". This is also called [Breadth-First](https://en.wikipedia.org/wiki/Breadth-first_search) evaluation.
@@ -34,8 +38,10 @@ Even pattern matches, Pocketknifes version of switch or if/else statements, are 
 ^
 ```
 
-## Default Closers
-Because of the line-by-line syntax, you don't need to close (^) open branches at the end of the file. It isn't ambiguous in what order they branches close in; so we can just close any open scopes when parsing. 
+### Default Closers
+Because of the line-by-line syntax, you don't need to close (^) open branches at the end of the file. It isn't ambiguous in what order they branches close in; so we can just close any open scopes with the default 'nop' closer when parsing. 
+
+This is only worth mentioning because it is one of the few edge-cases to the line-by-line execution model.
 
 ## Reversibility
 Pocketknife is [Reversible](https://en.wikipedia.org/wiki/Reversible_computing). It can return to a prior state. The default behavior is to do this on a line-by-line level of granularity.
@@ -50,3 +56,5 @@ The reversibility is implemented with a history stack, that keeps copies of the 
 If "saving copies of everything as you run" and "iterating over and skipping items constantly sounds inefficient to you... you're right. Pocketknife is not an efficient runtime, all things considered. My goal is it to be good enough to get out of the way.
 
 Luckily, computers are pretty fast, and Pocketknife scripts are generally quite small. It's fine! Or it isn't. It's an experimental language.
+
+It is *hypothetically* trivial to parallelize many expensive tasks, thanks to the language design. This is not currently implemented.
